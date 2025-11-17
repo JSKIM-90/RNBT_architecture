@@ -3,11 +3,15 @@ const WKit = {};
 /* Public API: data mapping */
 WKit.pipeForDataMapping = function (targetInstance) {
   const currentPage = wemb.isPage(targetInstance) ? targetInstance : targetInstance.page;
-  return new Promise((res, rej) => {
-    fx.go(resolveMappingInfo(targetInstance), fx.map(getDataFromMapping.bind(currentPage)))
-      .then(res)
-      .catch(rej);
-  });
+  /* 
+  getDataFromMapping에서 사용할 데이터셋 param을 변경하려면 
+  미리 targetInstance에서 param을 변경해야함 --> 최선?
+  targetInstance에서 데이터 매핑 정보를 변경할 떄의 setter가 필요해보이고, 
+  setter가 변경되었을 때, 상태 변경이 필요한 모든 곳에 reactivity하게 변경되도록 해볼 것.
+  */
+  return fx.go(
+      resolveMappingInfo(targetInstance), 
+      fx.map(getDataFromMapping.bind(currentPage)))
 };
 
 /* Public API: 2D event binding */
