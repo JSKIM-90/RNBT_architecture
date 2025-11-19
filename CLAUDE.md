@@ -133,10 +133,12 @@ WEventBus.emit('@myClickEvent', { event, targetInstance })
 // 구독자
 WEventBus.on('@myClickEvent', async ({ event, targetInstance }) => {
   // primitive 조합으로 처리
-  const { dataMapping } = targetInstance;
-  const { datasetName, param } = dataMapping[0].datasetInfo;
-  const data = await WKit.fetchData(page, datasetName, param);
-  // 처리 로직
+  const { datasetInfo } = targetInstance;
+  if (datasetInfo) {
+    const { datasetName, param } = datasetInfo;
+    const data = await WKit.fetchData(page, datasetName, param);
+    // 처리 로직
+  }
 })
 ```
 
@@ -260,40 +262,27 @@ function renderTable(data) {
 ```
 
 #### 3D 컴포넌트
-`component_3d_register.js:1-34`
+`component_3d_register.js:1-24`
 
 ```javascript
 const { bind3DEvents } = WKit;
 
-this.customEvents = getCustomEvents();
-this.dataMapping = getDataMapping.call(this);
-init.call(this);
+// Event schema
+this.customEvents = {
+    click: '@3dObjectClicked'
+};
 
-function init() {
-    bind3DEvents(this, this.customEvents);
-}
+// Data source info (optional)
+this.datasetInfo = {
+    datasetName: 'myDataset',
+    param: {
+        type: 'geometry',
+        id: this.id
+    }
+};
 
-function getCustomEvents() {
-    return {
-        click: '@myClickEvent'
-    };
-}
-
-function getDataMapping() {
-    return [
-        {
-            ownerId: this.id,
-            visualInstanceList: ['ComponentDataVisualizer'],
-            datasetInfo: {
-                datasetName: 'dummyjson',
-                param: {
-                    dataType: 'carts',
-                    id: this.id
-                }
-            }
-        },
-    ];
-}
+// Bind 3D events
+bind3DEvents(this, this.customEvents);
 ```
 
 #### 컴포넌트 Destroy
@@ -386,13 +375,16 @@ function getEventBusHandlers() {
     return {
         ['@myClickEvent']: async ({ event, targetInstance }) => {
             // primitive 조합으로 데이터 fetch
-            const { dataMapping } = targetInstance;
-            const { datasetName, param } = dataMapping[0].datasetInfo;
-            const data = await fetchData(this, datasetName, param);
+            const { datasetInfo } = targetInstance;
+
+            if (datasetInfo) {
+                const { datasetName, param } = datasetInfo;
+                const data = await fetchData(this, datasetName, param);
+                console.log('[@Fetched Data]', data);
+            }
 
             console.log('[@myClickEvent]', event);
             console.log('[@targetInstance]', targetInstance);
-            console.log('[@Fetched Data]', data);
         }
     }
 }
@@ -467,20 +459,23 @@ function clearThreeInstances() {
 // 이벤트 핸들러에서 직접 primitive 조합
 this.eventBusHandlers = {
   '@myClickEvent': async ({ event, targetInstance }) => {
-    const { dataMapping } = targetInstance;
-    const { datasetName, param } = dataMapping[0].datasetInfo;
+    const { datasetInfo } = targetInstance;
 
-    // WKit이 제공하는 primitive 사용
-    const data = await WKit.fetchData(this, datasetName, param);
+    if (datasetInfo) {
+      const { datasetName, param } = datasetInfo;
 
-    // 데이터 처리
-    console.log('Fetched data:', data);
+      // WKit이 제공하는 primitive 사용
+      const data = await WKit.fetchData(this, datasetName, param);
+
+      // 데이터 처리
+      console.log('Fetched data:', data);
+    }
   }
 };
 ```
 
 **처리 과정**:
-1. targetInstance에서 dataMapping 정보 추출
+1. targetInstance에서 datasetInfo 정보 추출
 2. `WKit.fetchData()` - 데이터셋에서 데이터 fetch
 3. 필요시 `WKit.getInstanceByName()` - 다른 인스턴스 찾기
 4. 사용자가 직접 로직 조합
@@ -606,17 +601,24 @@ const schema = WKit.getDataMappingSchema();
 
 **After (제거 후)**:
 ```javascript
-// 사용자가 필요한 구조를 직접 정의
-this.dataMapping = [
-    {
-        ownerId: this.id,
-        visualInstanceList: ['ChartComponent'],
-        datasetInfo: {
-            datasetName: 'myDataset',
-            param: { ... }
-        }
+// 사용자가 필요한 구조를 직접 정의 (v1.1 simplified)
+// 3D 컴포넌트의 경우 간단한 datasetInfo 객체만 정의
+this.datasetInfo = {
+    datasetName: 'myDataset',
+    param: {
+        type: 'geometry',
+        id: this.id
     }
-];
+};
+
+// 페이지 이벤트 핸들러에서 primitive 조합
+'@3dObjectClicked': async ({ event, targetInstance }) => {
+    const { datasetInfo } = targetInstance;
+    if (datasetInfo) {
+        const { datasetName, param } = datasetInfo;
+        const data = await WKit.fetchData(this, datasetName, param);
+    }
+}
 ```
 
 **남은 스키마 함수들** (유지):
@@ -737,9 +739,10 @@ WKit.bindEvents(this, this.customEvents);
 this.eventBusHandlers = {
   '@productClicked': async ({ event, targetInstance }) => {
     // primitive 조합으로 데이터 fetch
-    const { dataMapping } = targetInstance;
-    if (dataMapping?.length) {
-      const { datasetName, param } = dataMapping[0].datasetInfo;
+    const { datasetInfo } = targetInstance;
+
+    if (datasetInfo) {
+      const { datasetName, param } = datasetInfo;
       const data = await WKit.fetchData(this, datasetName, param);
       // 상세 페이지로 이동 또는 모달 표시
       console.log('Product data:', data);
@@ -798,25 +801,43 @@ this.myMethod = (data) => { ... };
 // 정리 로직 누락 (메모리 누수)
 ```
 
-### 2. 데이터 매핑
+### 2. 데이터 소스 정의
 
 **DO**:
 ```javascript
-// ownerId로 데이터와 컴포넌트 매칭
-{
-  ownerId: this.id,
-  visualInstanceList: ['ChartComponent'],
-  datasetInfo: { ... }
-}
+// 3D 컴포넌트: 간단한 datasetInfo 객체
+this.datasetInfo = {
+  datasetName: 'myDataset',
+  param: {
+    type: 'geometry',
+    id: this.id  // 동적 ID 사용
+  }
+};
+
+// 페이지: GlobalDataPublisher 매핑
+this.globalDataMappings = [{
+  topic: 'users',
+  datasetInfo: {
+    datasetName: 'api',
+    param: { endpoint: '/users' }
+  }
+}];
 ```
 
 **DON'T**:
 ```javascript
 // 하드코딩된 ID 사용
-{
-  ownerId: 'hardcoded-id',  // ❌
-  ...
-}
+this.datasetInfo = {
+  datasetName: 'myDataset',
+  param: { id: 'hardcoded-id' }  // ❌
+};
+
+// 불필요한 복잡한 구조
+this.dataMapping = [{  // ❌ 배열 불필요
+  ownerId: this.id,  // ❌ 사용되지 않는 필드
+  visualInstanceList: [],  // ❌ 사용되지 않는 필드
+  datasetInfo: { ... }
+}];
 ```
 
 ### 3. 이벤트 네이밍
@@ -944,6 +965,8 @@ WKit.enableDebugMode({
 - v1.1.0: Primitive Building Blocks 원칙 적용
   - 제거된 API: `pipeForDataMapping`, `triggerEventToTargetInstance`, `getDataMappingSchema`
   - 제거된 Internal: `resolveMappingInfo`, `getDataFromMapping`
+  - 데이터 구조 간소화: 3D 컴포넌트의 `dataMapping` 배열 → 단일 `datasetInfo` 객체
+  - 제거된 불필요 필드: `ownerId`, `visualInstanceList` (사용되지 않음)
   - 프레임워크는 primitive만 제공, 조합은 사용자가 직접
 - v1.0.0: 초기 문서 작성
 

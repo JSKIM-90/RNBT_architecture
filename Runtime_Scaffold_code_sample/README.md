@@ -52,14 +52,21 @@ subscribe(topic, this, this[fn]);
 
 **파일**: `component_script/component_3d_register.js`
 
-**용도**: Three.js 객체 이벤트 바인딩
+**용도**: Three.js 객체 이벤트 바인딩 + 데이터 소스 선언
 
 **핵심**:
 ```javascript
+// Event
 this.customEvents = {
     click: '@3dObjectClicked'
 };
 bind3DEvents(this, this.customEvents);
+
+// Data source (optional)
+this.datasetInfo = {
+    datasetName: 'myDataset',
+    param: { type: 'geometry', id: this.id }
+};
 ```
 
 ---
@@ -97,9 +104,11 @@ fx.go(
 this.eventBusHandlers = {
     '@3dObjectClicked': async ({ event, targetInstance }) => {
         // Primitive composition
-        const { dataMapping } = targetInstance;
-        const { datasetName, param } = dataMapping[0].datasetInfo;
-        const data = await fetchData(this, datasetName, param);
+        const { datasetInfo } = targetInstance;
+        if (datasetInfo) {
+            const { datasetName, param } = datasetInfo;
+            const data = await fetchData(this, datasetName, param);
+        }
     }
 };
 onEventBusHandlers(this.eventBusHandlers);
@@ -164,10 +173,14 @@ await pipeForDataMapping(targetInstance);
 triggerEventToTargetInstance('MyComp', '@event');
 
 // After (v1.1 - Primitive 조합)
-const { dataMapping } = targetInstance;
-const { datasetName, param } = dataMapping[0].datasetInfo;
-const data = await fetchData(this, datasetName, param);
+// Data fetching
+const { datasetInfo } = targetInstance;
+if (datasetInfo) {
+    const { datasetName, param } = datasetInfo;
+    const data = await fetchData(this, datasetName, param);
+}
 
+// Event triggering
 const iter = makeIterator(wemb.mainPageComponent);
 const target = getInstanceByName('MyComp', iter);
 if (target) emitEvent('@event', target);
@@ -257,6 +270,8 @@ Runtime_Scaffold_code_sample/
 
 **v1.1.0** - Primitive Building Blocks 원칙 적용
 - 고수준 추상화 제거 (pipeForDataMapping, triggerEventToTargetInstance)
+- 데이터 구조 간소화: `dataMapping` 배열 → 단일 `datasetInfo` 객체
+- 불필요한 필드 제거 (ownerId, visualInstanceList)
 - Primitive 조합 패턴으로 전환
 - 패턴의 본질에 집중
 

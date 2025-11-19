@@ -14,10 +14,10 @@ this.eventBusHandlers = {
 
     '@3dObjectClicked': async ({ event, targetInstance }) => {
         // Primitive composition for data fetching
-        const { dataMapping } = targetInstance;
+        const { datasetInfo } = targetInstance;
 
-        if (dataMapping?.length) {
-            const { datasetName, param } = dataMapping[0].datasetInfo;
+        if (datasetInfo) {
+            const { datasetName, param } = datasetInfo;
             const data = await fetchData(this, datasetName, param);
             console.log('[Page] 3D Object clicked - Data:', data);
         }
