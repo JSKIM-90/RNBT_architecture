@@ -75,26 +75,6 @@ this.datasetInfo = {
 
 ### 1. Page - before_load
 
-**파일**: `page_script/page_loaded.js`
-
-**용도**: 페이지 레벨 데이터 발행 (GlobalDataPublisher 설정)
-
-**핵심**:
-```javascript
-this.globalDataMappings = [
-    { topic: 'users', datasetInfo: {...} }
-];
-fx.go(
-    this.globalDataMappings,
-    each(GlobalDataPublisher.registerMapping),
-    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
-);
-```
-
----
-
-### 2. Page - loaded
-
 **파일**: `page_script/page_before_load.js`
 
 **용도**: 이벤트 핸들러 등록, Three.js Raycasting 설정
@@ -112,6 +92,28 @@ this.eventBusHandlers = {
     }
 };
 onEventBusHandlers(this.eventBusHandlers);
+```
+
+---
+
+### 2. Page - loaded
+
+**파일**: `page_script/page_loaded.js`
+
+**용도**: 페이지 레벨 데이터 발행 (GlobalDataPublisher 설정)
+- 모든 컴포넌트가 completed된 시점에 실행
+- 구독자(컴포넌트)들이 준비된 상태에서 데이터 발행
+
+**핵심**:
+```javascript
+this.globalDataMappings = [
+    { topic: 'users', datasetInfo: {...} }
+];
+fx.go(
+    this.globalDataMappings,
+    each(GlobalDataPublisher.registerMapping),
+    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
+);
 ```
 
 ---
@@ -258,8 +260,8 @@ Runtime_Scaffold_code_sample/
 │   ├── component_2d_destroy_default.js           # 2D cleanup
 │   └── component_2d_destroy_unsubscribe_page.js  # 2D 구독 cleanup
 ├── page_script/
-│   ├── page_loaded.js          # before_load (데이터 발행)
-│   ├── page_before_load.js     # loaded (이벤트 핸들러)
+│   ├── page_before_load.js     # before_load (이벤트 핸들러, Raycasting)
+│   ├── page_loaded.js          # loaded (데이터 발행)
 │   └── page_before_unload.js   # before_unload (cleanup)
 └── README.md                   # 이 문서
 ```
@@ -272,6 +274,9 @@ Runtime_Scaffold_code_sample/
 - 고수준 추상화 제거 (pipeForDataMapping, triggerEventToTargetInstance)
 - 데이터 구조 간소화: `dataMapping` 배열 → 단일 `datasetInfo` 객체
 - 불필요한 필드 제거 (ownerId, visualInstanceList)
+- 페이지 라이프사이클 정정:
+  - before_load: 이벤트 핸들러 등록 (컴포넌트 생성 전)
+  - loaded: 데이터 발행 (모든 컴포넌트 completed 후)
 - Primitive 조합 패턴으로 전환
 - 패턴의 본질에 집중
 

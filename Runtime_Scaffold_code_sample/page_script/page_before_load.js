@@ -1,28 +1,32 @@
-/* Pattern: Page - before_load (GlobalDataPublisher Setup) */
+/* Pattern: Page - before_load (EventBus Handlers & Raycasting) */
 
-const { each } = fx;
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
 
-// Define global data mappings
-this.globalDataMappings = [
-    {
-        topic: 'users',
-        datasetInfo: {
-            datasetName: 'myapi',
-            param: { dataType: 'users', limit: 20 }
-        }
+// Setup event bus handlers
+this.eventBusHandlers = {
+    '@buttonClicked': async ({ event, targetInstance }) => {
+        console.log('[Page] Button clicked:', event, targetInstance);
     },
-    {
-        topic: 'products',
-        datasetInfo: {
-            datasetName: 'myapi',
-            param: { dataType: 'products', category: 'all' }
+
+    '@linkClicked': async ({ event, targetInstance }) => {
+        console.log('[Page] Link clicked:', event, targetInstance);
+    },
+
+    '@3dObjectClicked': async ({ event, targetInstance }) => {
+        // Primitive composition for data fetching
+        const { datasetInfo } = targetInstance;
+
+        if (datasetInfo) {
+            const { datasetName, param } = datasetInfo;
+            const data = await fetchData(this, datasetName, param);
+            console.log('[Page] 3D Object clicked - Data:', data);
         }
     }
-];
+};
 
-// Register and fetch data for all topics
-fx.go(
-    this.globalDataMappings,
-    each(GlobalDataPublisher.registerMapping),
-    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
-);
+// Register event handlers
+onEventBusHandlers(this.eventBusHandlers);
+
+// Setup Three.js raycasting (for 3D events)
+this.raycastingEventType = 'click';
+this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingEventType);

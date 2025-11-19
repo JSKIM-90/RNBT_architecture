@@ -319,75 +319,73 @@ function clearSubscribe(instance) {
 ### Page Script 패턴
 
 #### before_load
-`page_before_load.js:1-36`
+`page_before_load.js:1-32`
+
+**용도**: 컴포넌트 생성 전 초기 설정 (이벤트 핸들러, Raycasting)
 
 ```javascript
-const { go, each } = fx;
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
 
-initPageDataPublisher.call(this);
+// Setup event bus handlers
+this.eventBusHandlers = {
+    '@buttonClicked': async ({ event, targetInstance }) => {
+        console.log('[Page] Button clicked:', event, targetInstance);
+    },
 
-function initPageDataPublisher() {
-    this.globalDataMappings = getGlobalDataMappings();
-    go(
-        this.globalDataMappings,
-        each((GlobalDataPublisher.registerMapping)),
-        each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
-    )
-}
+    '@3dObjectClicked': async ({ event, targetInstance }) => {
+        // Primitive composition for data fetching
+        const { datasetInfo } = targetInstance;
 
-function getGlobalDataMappings() {
-    return [
-        {
-            topic: 'users',
-            datasetInfo: {
-                datasetName: 'dummyjson',
-                param: { dataType: 'users', id: 'default' },
-            },
-        },
-        {
-            topic: 'comments',
-            datasetInfo: {
-                datasetName: 'dummyjson',
-                param: { dataType: 'comments', id: 'default' },
-            },
-        },
-    ];
-}
+        if (datasetInfo) {
+            const { datasetName, param } = datasetInfo;
+            const data = await fetchData(this, datasetName, param);
+            console.log('[Page] 3D Object clicked - Data:', data);
+        }
+    }
+};
+
+// Register event handlers
+onEventBusHandlers(this.eventBusHandlers);
+
+// Setup Three.js raycasting (for 3D events)
+this.raycastingEventType = 'click';
+this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingEventType);
 ```
 
 #### loaded
 `page_loaded.js:1-28`
 
+**용도**: 모든 컴포넌트 completed 후 데이터 발행
+- 구독자(컴포넌트)들이 준비된 시점에 실행
+- GlobalDataPublisher를 통한 페이지 레벨 데이터 공유
+
 ```javascript
-const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
+const { each } = fx;
 
-initPageController.call(this);
-
-function initPageController() {
-    this.eventBusHandlers = getEventBusHandlers.call(this);
-    onEventBusHandlers.call(this, this.eventBusHandlers);
-
-    this.raycastingEventType = 'click';
-    this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingEventType);
-}
-
-function getEventBusHandlers() {
-    return {
-        ['@myClickEvent']: async ({ event, targetInstance }) => {
-            // primitive 조합으로 데이터 fetch
-            const { datasetInfo } = targetInstance;
-
-            if (datasetInfo) {
-                const { datasetName, param } = datasetInfo;
-                const data = await fetchData(this, datasetName, param);
-                console.log('[@Fetched Data]', data);
-            }
-
-            console.log('[@myClickEvent]', event);
-            console.log('[@targetInstance]', targetInstance);
+// Define global data mappings
+this.globalDataMappings = [
+    {
+        topic: 'users',
+        datasetInfo: {
+            datasetName: 'myapi',
+            param: { dataType: 'users', limit: 20 }
+        }
+    },
+    {
+        topic: 'products',
+        datasetInfo: {
+            datasetName: 'myapi',
+            param: { dataType: 'products', category: 'all' }
         }
     }
-}
+];
+
+// Register and fetch data for all topics
+fx.go(
+    this.globalDataMappings,
+    each(GlobalDataPublisher.registerMapping),
+    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
+);
 ```
 
 #### before_unload
@@ -439,12 +437,17 @@ function clearThreeInstances() {
 
 ```
 [Page - before_load]
-  → GlobalDataPublisher.registerMapping()
-  → GlobalDataPublisher.fetchAndPublish()
+  → 이벤트 핸들러 등록 (onEventBusHandlers)
+  → Raycasting 초기화 (initThreeRaycasting)
 
 [Component - register]
-  → GlobalDataPublisher.subscribe()
-  → 데이터 수신 시 자동 handler 호출
+  → GlobalDataPublisher.subscribe() (구독 등록)
+  → 이벤트 바인딩 (bindEvents, bind3DEvents)
+
+[Page - loaded] (모든 컴포넌트 completed 후)
+  → GlobalDataPublisher.registerMapping()
+  → GlobalDataPublisher.fetchAndPublish()
+  → 구독자들에게 데이터 자동 전파
 
 [User Interaction]
   → DOM Event
@@ -691,7 +694,22 @@ this.datasetInfo = {
 ### 예시 1: 데이터 구독 및 시각화
 
 ```javascript
-// Page - before_load
+// Component - register (먼저 구독 등록)
+this.subscriptions = { products: ['renderChart'] };
+
+fx.go(
+  Object.entries(this.subscriptions),
+  fx.each(([topic, fnList]) =>
+    fx.each(fn => GlobalDataPublisher.subscribe(topic, this, this[fn]), fnList)
+  )
+);
+
+function renderChart(data) {
+  // 차트 렌더링 로직
+  console.log('Rendering chart with data:', data);
+}
+
+// Page - loaded (모든 컴포넌트 completed 후 데이터 발행)
 this.globalDataMappings = [
   {
     topic: 'products',
@@ -707,35 +725,13 @@ fx.go(
   fx.each(GlobalDataPublisher.registerMapping),
   fx.each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
 );
-
-// Component - register
-this.subscriptions = { products: ['renderChart'] };
-
-fx.go(
-  Object.entries(this.subscriptions),
-  fx.each(([topic, fnList]) =>
-    fx.each(fn => GlobalDataPublisher.subscribe(topic, this, this[fn]), fnList)
-  )
-);
-
-function renderChart(data) {
-  // 차트 렌더링 로직
-}
+// → 구독한 컴포넌트의 renderChart() 자동 호출됨
 ```
 
 ### 예시 2: 이벤트 기반 상호작용
 
 ```javascript
-// Component - register
-this.customEvents = {
-  click: {
-    '.product-card': '@productClicked'
-  }
-};
-
-WKit.bindEvents(this, this.customEvents);
-
-// Page - loaded
+// Page - before_load (이벤트 핸들러 먼저 등록)
 this.eventBusHandlers = {
   '@productClicked': async ({ event, targetInstance }) => {
     // primitive 조합으로 데이터 fetch
@@ -751,29 +747,53 @@ this.eventBusHandlers = {
 };
 
 WKit.onEventBusHandlers(this.eventBusHandlers);
+
+// Component - register (이벤트 바인딩)
+this.customEvents = {
+  click: {
+    '.product-card': '@productClicked'
+  }
+};
+
+WKit.bindEvents(this, this.customEvents);
 ```
 
 ### 예시 3: 3D 객체 상호작용
 
 ```javascript
-// 3D Component - register
-this.customEvents = {
-  click: '@3dObjectClicked'
-};
-
-WKit.bind3DEvents(this, this.customEvents);
-
-// Page - loaded
+// Page - before_load (Raycasting 및 이벤트 핸들러 먼저 등록)
 this.raycastingEventHandler = WKit.initThreeRaycasting(
   this.element,
   'click'
 );
 
 this.eventBusHandlers = {
-  '@3dObjectClicked': ({ event, targetInstance }) => {
+  '@3dObjectClicked': async ({ event, targetInstance }) => {
     console.log('Clicked 3D object:', event.intersects[0].object);
+
+    // 필요시 데이터 fetch
+    const { datasetInfo } = targetInstance;
+    if (datasetInfo) {
+      const { datasetName, param } = datasetInfo;
+      const data = await WKit.fetchData(this, datasetName, param);
+      console.log('3D object data:', data);
+    }
   }
 };
+
+WKit.onEventBusHandlers(this.eventBusHandlers);
+
+// 3D Component - register (이벤트 바인딩)
+this.customEvents = {
+  click: '@3dObjectClicked'
+};
+
+this.datasetInfo = {
+  datasetName: 'geometryData',
+  param: { type: '3d', id: this.id }
+};
+
+WKit.bind3DEvents(this, this.customEvents);
 ```
 
 ---
@@ -967,6 +987,9 @@ WKit.enableDebugMode({
   - 제거된 Internal: `resolveMappingInfo`, `getDataFromMapping`
   - 데이터 구조 간소화: 3D 컴포넌트의 `dataMapping` 배열 → 단일 `datasetInfo` 객체
   - 제거된 불필요 필드: `ownerId`, `visualInstanceList` (사용되지 않음)
+  - 페이지 라이프사이클 정정:
+    - before_load: 이벤트 핸들러 등록, Raycasting 초기화 (컴포넌트 생성 전)
+    - loaded: GlobalDataPublisher 데이터 발행 (모든 컴포넌트 completed 후)
   - 프레임워크는 primitive만 제공, 조합은 사용자가 직접
 - v1.0.0: 초기 문서 작성
 
