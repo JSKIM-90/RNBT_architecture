@@ -269,10 +269,14 @@ fx.go(
 );
 
 // 현재 param 상태 (동적 변경용)
-this.currentParams = {
-    users: {},
-    sales: {}
-};
+// Initialize empty params for each topic
+this.currentParams = {};
+fx.go(
+    this.globalDataMappings,
+    each(({ topic }) => {
+        this.currentParams[topic] = {};
+    })
+);
 
 // 초기 fetch
 fx.go(
@@ -282,35 +286,73 @@ fx.go(
 
 // 자동 갱신 (5초마다)
 this.refreshInterval = setInterval(() => {
-    GlobalDataPublisher.fetchAndPublish('users', this, this.currentParams.users);
-    GlobalDataPublisher.fetchAndPublish('sales', this, this.currentParams.sales);
+    fx.go(
+        this.globalDataMappings,
+        each(({ topic }) => {
+            GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
+        })
+    );
 }, 5000);
 
 // Page - before_load (필터 변경 핸들러)
 this.eventBusHandlers = {
     // 모든 topic에 적용되는 필터
     '@periodFilterChanged': ({ period }) => {
-        // 상태 업데이트
-        this.currentParams.users = { period };
-        this.currentParams.sales = { period };
+        // 1. Stop interval
+        clearInterval(this.refreshInterval);
 
-        // 즉시 갱신
-        GlobalDataPublisher.fetchAndPublish('users', this, this.currentParams.users);
-        GlobalDataPublisher.fetchAndPublish('sales', this, this.currentParams.sales);
+        // 2. Update params & fetch immediately
+        fx.go(
+            this.globalDataMappings,
+            each(({ topic }) => {
+                this.currentParams[topic] = { ...this.currentParams[topic], period };
+                GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic]);
+            })
+        );
 
-        // interval은 계속 실행되며 변경된 currentParams 사용 ✅
+        // 3. Restart interval
+        this.refreshInterval = setInterval(() => {
+            fx.go(
+                this.globalDataMappings,
+                each(({ topic }) => {
+                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
+                })
+            );
+        }, 5000);
     },
 
     // users만 해당하는 필터
     '@userLimitChanged': ({ limit }) => {
+        clearInterval(this.refreshInterval);
+
         this.currentParams.users = { ...this.currentParams.users, limit };
         GlobalDataPublisher.fetchAndPublish('users', this, this.currentParams.users);
+
+        this.refreshInterval = setInterval(() => {
+            fx.go(
+                this.globalDataMappings,
+                each(({ topic }) => {
+                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
+                })
+            );
+        }, 5000);
     },
 
     // sales만 해당하는 필터
     '@salesMetricChanged': ({ metric }) => {
+        clearInterval(this.refreshInterval);
+
         this.currentParams.sales = { ...this.currentParams.sales, metric };
         GlobalDataPublisher.fetchAndPublish('sales', this, this.currentParams.sales);
+
+        this.refreshInterval = setInterval(() => {
+            fx.go(
+                this.globalDataMappings,
+                each(({ topic }) => {
+                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
+                })
+            );
+        }, 5000);
     }
 };
 
@@ -397,17 +439,25 @@ registerMapping({ topic: 'userList', datasetInfo: {...} });  // ✅
 // 2. 초기 param은 기본값
 param: { period: 'monthly', limit: 20 }  // ✅
 
-// 3. currentParams로 상태 관리 (대시보드)
-this.currentParams = { users: {}, sales: {} };  // ✅
+// 3. currentParams 동적 초기화 (대시보드)
+this.currentParams = {};
+fx.go(
+    this.globalDataMappings,
+    each(({ topic }) => { this.currentParams[topic] = {}; })
+);  // ✅
 
-// 4. interval에서 currentParams 참조
+// 4. interval에서 globalDataMappings 순회
 setInterval(() => {
-    fetchAndPublish('users', this, this.currentParams.users);
+    fx.go(
+        this.globalDataMappings,
+        each(({ topic }) => fetchAndPublish(topic, this, this.currentParams[topic] || {}))
+    );
 }, 5000);  // ✅
 
-// 5. 필터 변경 시 상태 업데이트 + 즉시 갱신
-this.currentParams.users = { period: 'weekly' };
-fetchAndPublish('users', this, this.currentParams.users);  // ✅
+// 5. 필터 변경 시 clearInterval + 재시작
+clearInterval(this.refreshInterval);
+// update & fetch
+this.refreshInterval = setInterval(...);  // ✅
 
 // 6. before_unload에서 정리
 clearInterval(this.refreshInterval);
@@ -420,14 +470,17 @@ unregisterMapping('users');  // ✅
 // 1. 모호한 topic 이름
 registerMapping({ topic: 'data', datasetInfo: {...} });  // ❌
 
-// 2. interval마다 새로운 객체 생성
+// 2. currentParams 하드코딩
+this.currentParams = { users: {}, sales: {} };  // ❌ globalDataMappings와 불일치
 setInterval(() => {
-    fetchAndPublish('users', this, { period: 'monthly' });  // ❌ 매번 같은 객체
+    fetchAndPublish('users', this, this.currentParams.users);
+    fetchAndPublish('sales', this, this.currentParams.sales);  // ❌ 하드코딩
 }, 5000);
 
-// 3. 필터 변경 시 clearInterval + 재설정
-clearInterval(this.refreshInterval);  // ❌ 불필요
-this.refreshInterval = setInterval(...);
+// 3. 필터 변경 시 clearInterval 없이 즉시 fetch만
+this.currentParams.users = { period: 'weekly' };
+fetchAndPublish('users', this, this.currentParams.users);
+// ❌ interval과 즉시 fetch 충돌 가능
 
 // 4. mappingTable 직접 조작
 GlobalDataPublisher.mappingTable.set(...);  // ❌ private

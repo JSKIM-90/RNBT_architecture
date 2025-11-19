@@ -176,23 +176,40 @@ clearSceneBackground(scene);
 
 **핵심**:
 ```javascript
-// loaded - 상태 관리 + interval
-this.currentParams = {
-    users: {},
-    sales: {}
-};
+// loaded - 상태 관리 + interval (globalDataMappings 순회)
+this.currentParams = {};
+fx.go(
+    this.globalDataMappings,
+    each(({ topic }) => { this.currentParams[topic] = {}; })
+);
 
 this.refreshInterval = setInterval(() => {
-    fetchAndPublish('users', this, this.currentParams.users);
-    fetchAndPublish('sales', this, this.currentParams.sales);
+    fx.go(
+        this.globalDataMappings,
+        each(({ topic }) => fetchAndPublish(topic, this, this.currentParams[topic] || {}))
+    );
 }, 5000);
 
-// before_load - 필터 변경
+// before_load - 필터 변경 (clearInterval + 재시작)
 '@periodFilterChanged': ({ period }) => {
-    this.currentParams.users = { period };
-    this.currentParams.sales = { period };
-    fetchAndPublish('users', this, this.currentParams.users);
-    fetchAndPublish('sales', this, this.currentParams.sales);
+    clearInterval(this.refreshInterval);
+
+    // Update & fetch immediately
+    fx.go(
+        this.globalDataMappings,
+        each(({ topic }) => {
+            this.currentParams[topic] = { ...this.currentParams[topic], period };
+            fetchAndPublish(topic, this, this.currentParams[topic]);
+        })
+    );
+
+    // Restart interval
+    this.refreshInterval = setInterval(() => {
+        fx.go(
+            this.globalDataMappings,
+            each(({ topic }) => fetchAndPublish(topic, this, this.currentParams[topic] || {}))
+        );
+    }, 5000);
 };
 
 // before_unload - interval 정리
