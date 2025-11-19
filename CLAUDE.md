@@ -327,28 +327,6 @@ function clearSubscribe(instance) {
 }
 ```
 
-#### 컴포넌트 Completed
-
-**특정 3D 컴포넌트 트리거** (`component_2d_completed_trigger_specific_3d_component.js:1-16`)
-```javascript
-const { getInstanceByName, makeIterator, emitEvent } = WKit;
-const { targetInstanceName, eventName } = getDefaultEventTarget();
-
-// primitive 조합으로 타겟 인스턴스 찾아서 이벤트 발행
-const iter = makeIterator(wemb.mainPageComponent);
-const targetInstance = getInstanceByName(targetInstanceName, iter);
-if (targetInstance) {
-    emitEvent(eventName, targetInstance);
-}
-
-function getDefaultEventTarget() {
-    return {
-        targetInstanceName: 'DataMappedComponent',
-        eventName: '@myClickEvent'
-    }
-}
-```
-
 ### Page Script 패턴
 
 #### before_load

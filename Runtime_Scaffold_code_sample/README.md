@@ -64,21 +64,6 @@ bind3DEvents(this, this.customEvents);
 
 ---
 
-### 4. Component Completed - Trigger
-
-**파일**: `component_script/component_2d_completed_trigger_specific_3d_component.js`
-
-**용도**: 컴포넌트 초기화 후 다른 컴포넌트에 이벤트 발행
-
-**핵심 (Primitive 조합)**:
-```javascript
-const iter = makeIterator(wemb.mainPageComponent);
-const target = getInstanceByName('MyComponent', iter);
-if (target) emitEvent('@event', target);
-```
-
----
-
 ## 📄 Page Patterns
 
 ### 1. Page - before_load
@@ -258,8 +243,7 @@ Runtime_Scaffold_code_sample/
 │   ├── component_2d_register_subscribe_page.js   # 2D 구독 패턴
 │   ├── component_3d_register.js                  # 3D 이벤트
 │   ├── component_2d_destroy_default.js           # 2D cleanup
-│   ├── component_2d_destroy_unsubscribe_page.js  # 2D 구독 cleanup
-│   └── component_2d_completed_trigger_specific_3d_component.js
+│   └── component_2d_destroy_unsubscribe_page.js  # 2D 구독 cleanup
 ├── page_script/
 │   ├── page_loaded.js          # before_load (데이터 발행)
 │   ├── page_before_load.js     # loaded (이벤트 핸들러)
