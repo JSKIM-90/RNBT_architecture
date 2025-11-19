@@ -204,8 +204,8 @@ fx.go(
 
 ### Component Script 패턴
 
-#### 2D 컴포넌트 등록 (기본)
-`component_2d_register_default.js:1-23`
+#### 2D 컴포넌트 등록 (이벤트 바인딩)
+`component_2d_register_event_binding.js:1-27`
 
 ```javascript
 const { bindEvents } = WKit;
@@ -231,8 +231,8 @@ function myMethod(data) {
 }
 ```
 
-#### 2D 구독 컴포넌트
-`component_2d_register_subcribce_page.js:1-27`
+#### 공통 구독 컴포넌트 (2D/3D)
+`component_common_register_subscribe_page.js:1-33`
 
 ```javascript
 const { subscribe } = GlobalDataPublisher;
@@ -261,8 +261,8 @@ function renderTable(data) {
 }
 ```
 
-#### 3D 컴포넌트
-`component_3d_register.js:1-24`
+#### 3D 컴포넌트 (이벤트 바인딩)
+`component_3d_register_event_binding.js:1-24`
 
 ```javascript
 const { bind3DEvents } = WKit;
@@ -287,7 +287,7 @@ bind3DEvents(this, this.customEvents);
 
 #### 컴포넌트 Destroy
 
-**기본 정리** (`component_2d_destroy_default.js:1-7`)
+**이벤트 제거** (`component_2d_destroy_remove_events.js:1-11`)
 ```javascript
 const { removeCustomEvents } = WKit;
 

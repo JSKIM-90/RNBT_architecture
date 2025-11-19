@@ -12,9 +12,9 @@
 
 ## 🎯 Component Patterns
 
-### 1. 2D Component - Basic Event
+### 1. 2D Component - Event Binding
 
-**파일**: `component_script/component_2d_register_default.js`
+**파일**: `component_script/component_2d_register_event_binding.js`
 
 **용도**: DOM 이벤트 바인딩 (click, submit 등)
 
@@ -26,15 +26,15 @@ this.customEvents = {
 bindEvents(this, this.customEvents);
 ```
 
-**Cleanup**: `component_script/component_2d_destroy_default.js`
+**Cleanup**: `component_script/component_2d_destroy_remove_events.js`
 
 ---
 
-### 2. 2D Component - Subscription
+### 2. Common Component - Subscription
 
-**파일**: `component_script/component_2d_register_subscribe_page.js`
+**파일**: `component_script/component_common_register_subscribe_page.js`
 
-**용도**: GlobalDataPublisher로 페이지 데이터 구독
+**용도**: GlobalDataPublisher로 페이지 데이터 구독 (2D/3D 공통)
 
 **핵심**:
 ```javascript
@@ -48,9 +48,9 @@ subscribe(topic, this, this[fn]);
 
 ---
 
-### 3. 3D Component - Event
+### 3. 3D Component - Event Binding
 
-**파일**: `component_script/component_3d_register.js`
+**파일**: `component_script/component_3d_register_event_binding.js`
 
 **용도**: Three.js 객체 이벤트 바인딩 + 데이터 소스 선언
 
@@ -193,9 +193,9 @@ if (target) emitEvent('@event', target);
 ## 🚀 사용법
 
 ### 1. 필요한 패턴 선택
-- 2D 이벤트만? → `component_2d_register_default.js`
-- 페이지 데이터 구독? → `component_2d_register_subscribe_page.js`
-- 3D 이벤트? → `component_3d_register.js`
+- 2D 이벤트만? → `component_2d_register_event_binding.js`
+- 페이지 데이터 구독? → `component_common_register_subscribe_page.js`
+- 3D 이벤트? → `component_3d_register_event_binding.js`
 
 ### 2. 코드 복사
 ```javascript
@@ -254,11 +254,11 @@ triggerEventToTargetInstance('MyComp', '@event');  // ❌
 ```
 Runtime_Scaffold_code_sample/
 ├── component_script/
-│   ├── component_2d_register_default.js          # 2D 기본 이벤트
-│   ├── component_2d_register_subscribe_page.js   # 2D 구독 패턴
-│   ├── component_3d_register.js                  # 3D 이벤트
-│   ├── component_2d_destroy_default.js           # 2D cleanup
-│   └── component_2d_destroy_unsubscribe_page.js  # 2D 구독 cleanup
+│   ├── component_2d_register_event_binding.js        # 2D 이벤트 바인딩
+│   ├── component_common_register_subscribe_page.js   # 공통 구독 패턴 (2D/3D)
+│   ├── component_3d_register_event_binding.js        # 3D 이벤트 바인딩
+│   ├── component_2d_destroy_remove_events.js         # 2D 이벤트 cleanup
+│   └── component_2d_destroy_unsubscribe_page.js      # 구독 cleanup
 ├── page_script/
 │   ├── page_before_load.js     # before_load (이벤트 핸들러, Raycasting)
 │   ├── page_loaded.js          # loaded (데이터 발행)
