@@ -35,13 +35,20 @@ bindEvents(this, this.customEvents);
 **파일**: `component_script/component_common_register_subscribe_page.js`
 
 **용도**: GlobalDataPublisher로 페이지 데이터 구독 (2D/3D 공통)
+- 한 topic에 여러 핸들러 등록 가능 (배열)
+- 데이터 발행 시 등록된 모든 핸들러 호출
 
 **핵심**:
 ```javascript
 this.subscriptions = {
-    users: ['renderUserTable']
+    users: ['renderUserTable', 'updateUserCount']  // 여러 메서드!
 };
-subscribe(topic, this, this[fn]);
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, fnList]) =>
+        each(fn => subscribe(topic, this, this[fn]), fnList)
+    )
+);
 ```
 
 **Cleanup**: `component_script/component_2d_destroy_unsubscribe_page.js`

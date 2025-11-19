@@ -232,32 +232,44 @@ function myMethod(data) {
 ```
 
 #### 공통 구독 컴포넌트 (2D/3D)
-`component_common_register_subscribe_page.js:1-33`
+`component_common_register_subscribe_page.js:1-39`
+
+**특징**: 한 topic에 여러 핸들러 등록 가능
 
 ```javascript
 const { subscribe } = GlobalDataPublisher;
+const { each } = fx;
 
-initComponent.call(this);
+// Subscription schema (배열로 여러 핸들러 등록 가능)
+this.subscriptions = {
+    users: ['renderUserTable', 'updateUserCount'],  // 한 topic에 여러 메서드!
+    products: ['renderProductList']
+};
 
-function initComponent() {
-    this.subscriptions = getSubscriptions();
-    this.renderTable = renderTable.bind(this);
-    fx.go(
-        Object.entries(this.subscriptions),
-        fx.each(([topic, fnList]) =>
-            fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
-        )
-    );
+// Handler functions (bind to this)
+this.renderUserTable = renderUserTable.bind(this);
+this.updateUserCount = updateUserCount.bind(this);
+this.renderProductList = renderProductList.bind(this);
+
+// Subscribe to topics
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, fnList]) =>
+        each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+    )
+);
+
+// Handler functions
+function renderUserTable(data) {
+    console.log(`[Render Table] ${this.name}`, data);
 }
 
-function getSubscriptions() {
-    return {
-        users: ['renderTable'],
-    }
+function updateUserCount(data) {
+    console.log(`[Update Count] ${this.name}`, data.length);
 }
 
-function renderTable(data) {
-    console.log(`[Render Table] ${this.name}`, data, 'subscription result');
+function renderProductList(data) {
+    console.log(`[Render Products] ${this.name}`, data);
 }
 ```
 
