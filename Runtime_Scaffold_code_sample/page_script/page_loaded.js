@@ -26,3 +26,6 @@ fx.go(
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
 );
+
+// Advanced: Dynamic param updates
+// fetchAndPublish(topic, this, { limit: 50 });  // Merges with registered param

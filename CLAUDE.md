@@ -368,7 +368,7 @@ this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingE
 ```
 
 #### loaded
-`page_loaded.js:1-28`
+`page_loaded.js:1-31`
 
 **용도**: 모든 컴포넌트 completed 후 데이터 발행
 - 구독자(컴포넌트)들이 준비된 시점에 실행
@@ -401,6 +401,9 @@ fx.go(
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
 );
+
+// Advanced: Dynamic param updates
+// fetchAndPublish(topic, this, { limit: 50 });  // Merges with registered param
 ```
 
 #### before_unload
@@ -730,7 +733,7 @@ this.globalDataMappings = [
     topic: 'products',
     datasetInfo: {
       datasetName: 'api',
-      param: { endpoint: '/products' }
+      param: { category: 'all', limit: 10 }
     }
   }
 ];
@@ -741,6 +744,14 @@ fx.go(
   fx.each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
 );
 // → 구독한 컴포넌트의 renderChart() 자동 호출됨
+
+// Page - before_load (필터 변경 시)
+this.eventBusHandlers = {
+  '@categoryChanged': ({ category }) => {
+    // param 병합: category만 변경, limit은 유지
+    GlobalDataPublisher.fetchAndPublish('products', this, { category });
+  }
+};
 ```
 
 ### 예시 2: 이벤트 기반 상호작용

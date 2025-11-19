@@ -21,6 +21,11 @@ this.eventBusHandlers = {
             const data = await fetchData(this, datasetName, param);
             console.log('[Page] 3D Object clicked - Data:', data);
         }
+    },
+
+    // Example: Refresh data with updated params
+    '@refreshUsers': async ({ limit }) => {
+        GlobalDataPublisher.fetchAndPublish('users', this, { limit });
     }
 };
 

@@ -123,11 +123,16 @@ onEventBusHandlers(this.eventBusHandlers);
 this.globalDataMappings = [
     { topic: 'users', datasetInfo: {...} }
 ];
+
+// Register and fetch
 fx.go(
     this.globalDataMappings,
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
 );
+
+// Advanced: Dynamic param updates (optional)
+// fetchAndPublish('users', this, { limit: 50 });  // Merges with registered param
 ```
 
 ---
