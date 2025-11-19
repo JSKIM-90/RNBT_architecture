@@ -1,33 +1,29 @@
+/* Pattern: 3D Component - Basic Event Binding */
 
 const { bind3DEvents } = WKit;
-const { go, L } = fx;
 
-this.customEvents = getCustomEvents();
-this.dataMapping = getDataMapping.call(this);
-init.call(this);
-
-function init() {
-    bind3DEvents(this, this.customEvents);
+// Event schema for 3D
+this.customEvents = {
+    click: '@3dObjectClicked'
 };
 
-function getCustomEvents() {
-    return {
-        click: '@myClickEvent'
-    };
-};
-
-function getDataMapping() {
-    return [
-        {
-            ownerId: this.id,
-            visualInstanceList: ['ComponentDataVisualizer'],
-            datasetInfo: {
-                datasetName: 'dummyjson',
-                param: {
-                    dataType: 'carts',
-                    id: this.id
-                }
+// Data mapping (optional - if component needs data)
+this.dataMapping = [
+    {
+        ownerId: this.id,
+        visualInstanceList: ['DataVisualizer3D'],
+        datasetInfo: {
+            datasetName: 'myDataset',
+            param: {
+                type: 'geometry',
+                id: this.id
             }
-        },
-    ];
-};
+        }
+    }
+];
+
+// Bind 3D events
+bind3DEvents(this, this.customEvents);
+
+// Note: Event handler is defined in page_loaded.js
+// This component just declares what events it emits

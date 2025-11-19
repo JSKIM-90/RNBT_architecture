@@ -1,7 +1,11 @@
- const { removeCustomEvents } = WKit;
+/* Pattern: 2D Component - Cleanup (Basic) */
 
-onInstanceUnLoad.call(this);
+const { removeCustomEvents } = WKit;
 
-function onInstanceUnLoad() {
-    removeCustomEvents(this, this.customEvents);
-};
+// Remove event listeners
+removeCustomEvents(this, this.customEvents);
+
+// Clear references
+this.customEvents = null;
+this.handleButtonClick = null;
+this.handleLinkClick = null;

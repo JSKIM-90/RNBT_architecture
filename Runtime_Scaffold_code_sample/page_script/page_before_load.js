@@ -1,31 +1,28 @@
-const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
+/* Pattern: Page - before_load (GlobalDataPublisher Setup) */
 
-initPageController.call(this);
+const { each } = fx;
 
-function initPageController() {
-    this.eventBusHandlers = getEventBusHandlers.call(this);
-    onEventBusHandlers.call(this, this.eventBusHandlers);
-
-    this.raycastingEventType = 'click';
-    this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingEventType);
-};
-
-function getEventBusHandlers() {
-    return {
-        ['@myClickEvent']: async ({ event, targetInstance }) => {
-            // primitive 조합으로 데이터 fetch
-            const { dataMapping } = targetInstance;
-            let data = null;
-
-            if (dataMapping?.length) {
-                const { datasetName, param } = dataMapping[0].datasetInfo;
-                data = await fetchData(this, datasetName, param);
-            }
-
-            console.log('[@myClickEvent]', event);
-            console.log('[@targetInstance]', targetInstance);
-            console.log('[@Fetched Data]', data);
+// Define global data mappings
+this.globalDataMappings = [
+    {
+        topic: 'users',
+        datasetInfo: {
+            datasetName: 'myapi',
+            param: { dataType: 'users', limit: 20 }
+        }
+    },
+    {
+        topic: 'products',
+        datasetInfo: {
+            datasetName: 'myapi',
+            param: { dataType: 'products', category: 'all' }
         }
     }
-};
+];
 
+// Register and fetch data for all topics
+fx.go(
+    this.globalDataMappings,
+    each(GlobalDataPublisher.registerMapping),
+    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
+);

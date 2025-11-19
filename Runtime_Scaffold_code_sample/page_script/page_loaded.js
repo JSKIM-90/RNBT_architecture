@@ -1,42 +1,32 @@
-const { go, each, C } = fx
+/* Pattern: Page - loaded (EventBus Handlers & Raycasting) */
 
-initPageDataPublisher.call(this);
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
 
-function initPageDataPublisher() {
-    /* 
-    datasetInfo의 param이 변경될 수 있어야 함
-    현재 fetchAndPublish는 한 번 DataPublisher에 등록하면 param을 변경할 수가 없음.
-    호출 시점에서 고정되어야 하는 것은 맞으나, 코드 사용자 입장에서 인자를 어떻게 변경할 수 있을지 고민해야함.
-    globalDataMapping를 변경할 경우 데이터 구독과 관련된 상태가 갱신 될 수 있는 방법에 대한 고민
-    setter와 Reactivity를 활용해볼 것.
-    */
-    this.globalDataMappings = getGlobalDataMappings();
-    go(
-        this.globalDataMappings,
-        each((GlobalDataPublisher.registerMapping)),
-        each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
-    )
+// Setup event bus handlers
+this.eventBusHandlers = {
+    '@buttonClicked': async ({ event, targetInstance }) => {
+        console.log('[Page] Button clicked:', event, targetInstance);
+    },
 
+    '@linkClicked': async ({ event, targetInstance }) => {
+        console.log('[Page] Link clicked:', event, targetInstance);
+    },
+
+    '@3dObjectClicked': async ({ event, targetInstance }) => {
+        // Primitive composition for data fetching
+        const { dataMapping } = targetInstance;
+
+        if (dataMapping?.length) {
+            const { datasetName, param } = dataMapping[0].datasetInfo;
+            const data = await fetchData(this, datasetName, param);
+            console.log('[Page] 3D Object clicked - Data:', data);
+        }
+    }
 };
 
-function getGlobalDataMappings() {
-    return [
-        {
-            topic: 'users',
-            datasetInfo: {
-                datasetName: 'dummyjson',
-                param: { dataType: 'users', id: 'default' },
-            },
-        },
-        {
-            topic: 'comments',
-            datasetInfo: {
-                datasetName: 'dummyjson',
-                param: { dataType: 'comments', id: 'default' },
-            },
-        },
-    ];
-};
+// Register event handlers
+onEventBusHandlers(this.eventBusHandlers);
 
-
-
+// Setup Three.js raycasting (for 3D events)
+this.raycastingEventType = 'click';
+this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingEventType);

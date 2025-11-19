@@ -1,37 +1,31 @@
-const { go, map } = fx;
+/* Pattern: Page - before_unload (Cleanup) */
+
+const { map, each } = fx;
 const { makeIterator, dispose3DTree, clearSceneBackground, offEventBusHandlers } = WKit;
 
-onPageUnLoad.call(this);
+// 1. Clear EventBus handlers
+offEventBusHandlers(this.eventBusHandlers);
+this.eventBusHandlers = null;
 
-function onPageUnLoad() {
-    clearEventBus.call(this);
-    clearDataPublisher.call(this);
-    clearThreeInstances.call(this);
-};
+// 2. Unregister GlobalDataPublisher mappings
+fx.go(
+    this.globalDataMappings,
+    map(({ topic }) => topic),
+    each(GlobalDataPublisher.unregisterMapping)
+);
+this.globalDataMappings = null;
 
-function clearEventBus() {
-    offEventBusHandlers.call(this, this.eventBusHandlers);
-    this.eventBusHandlers = null;
-};
+// 3. Dispose 3D resources
+const { scene } = wemb.threeElements;
 
-function clearDataPublisher() {
-    go(
-        this.globalDataMappings,
-        map(({ topic }) => topic),
-        each((GlobalDataPublisher.unregisterMapping))
+fx.go(
+    makeIterator(this, 'threeLayer'),
+    map(({ appendElement }) => dispose3DTree(appendElement))
+);
 
-    )
-};
+clearSceneBackground(scene);
 
-function clearThreeInstances() {
-    const { scene } = wemb.threeElements;
-    go(
-        makeIterator(this, 'threeLayer'),
-        map(({ appendElement }) => dispose3DTree(appendElement))
-    )
-
-    clearSceneBackground(scene);
-    this.element.removeEventListener(this.raycastingEventType, this.raycastingEventHandler);
-    this.raycastingEventHandler = null;
-};
-
+// 4. Remove raycasting event listener
+this.element.removeEventListener(this.raycastingEventType, this.raycastingEventHandler);
+this.raycastingEventHandler = null;
+this.raycastingEventType = null;

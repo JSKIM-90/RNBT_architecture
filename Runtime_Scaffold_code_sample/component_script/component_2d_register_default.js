@@ -1,23 +1,27 @@
-const { go, L } = fx;
+/* Pattern: 2D Component - Basic Event Binding */
+
 const { bindEvents } = WKit;
 
-initComponent.call(this);
-
-function initComponent() {
-    this.customEvents = getCustomEvents.call(this);
-    this.myMethod = myMethod.bind(this);
-    bindEvents(this, this.customEvents);
-};
-
-function getCustomEvents() {
-    return {
-        click: {
-            [`selector`]: '@myEvent'
-        }
+// Event schema
+this.customEvents = {
+    click: {
+        '.my-button': '@buttonClicked',
+        '.my-link': '@linkClicked'
     }
 };
 
-function myMethod(data) {
-    console.log(`[myMethod] ${this.name}`, data);
-};
+// Event handlers (bind to this)
+this.handleButtonClick = handleButtonClick.bind(this);
+this.handleLinkClick = handleLinkClick.bind(this);
 
+// Bind events to DOM
+bindEvents(this, this.customEvents);
+
+// Handler functions
+function handleButtonClick(data) {
+    console.log(`[Button Clicked] ${this.name}`, data);
+}
+
+function handleLinkClick(data) {
+    console.log(`[Link Clicked] ${this.name}`, data);
+}
