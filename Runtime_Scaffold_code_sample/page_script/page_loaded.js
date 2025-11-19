@@ -29,3 +29,7 @@ fx.go(
 
 // Advanced: Dynamic param updates
 // fetchAndPublish(topic, this, { limit: 50 });  // Merges with registered param
+
+// Note: This is a basic example showing the core pattern.
+// For auto-refresh dashboards with per-dataset intervals and dynamic filter handling,
+// see the complete implementation: page_script/dashboard_example/

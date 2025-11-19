@@ -114,9 +114,10 @@ onEventBusHandlers(this.eventBusHandlers);
 
 **파일**: `page_script/page_loaded.js`
 
-**용도**: 페이지 레벨 데이터 발행 (GlobalDataPublisher 설정)
+**용도**: 페이지 레벨 데이터 발행 (기본 패턴)
 - 모든 컴포넌트가 completed된 시점에 실행
 - 구독자(컴포넌트)들이 준비된 상태에서 데이터 발행
+- **단순한 경우**: 초기 fetch만 수행 (interval 없음)
 
 **핵심**:
 ```javascript
@@ -134,6 +135,8 @@ fx.go(
 // Advanced: Dynamic param updates (optional)
 // fetchAndPublish('users', this, { limit: 50 });  // Merges with registered param
 ```
+
+**고급**: 자동 갱신이 필요한 대시보드 → [4. Dashboard Pattern](#4-page---dashboard-pattern-auto-refresh)
 
 ---
 
