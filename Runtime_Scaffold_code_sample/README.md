@@ -76,6 +76,13 @@ this.datasetInfo = {
 };
 ```
 
+**특징**:
+- 모든 3D 컴포넌트는 단일 Canvas/Scene 공유
+- 페이지 레벨 Raycasting 필요 (`initThreeRaycasting`)
+- appendElement.eventListener로 컴포넌트 식별
+
+**상세**: [`../WKIT_Document/3d_event_binding.md`](../WKIT_Document/3d_event_binding.md)
+
 ---
 
 ## 📄 Page Patterns

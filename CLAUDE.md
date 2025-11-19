@@ -94,6 +94,9 @@ WKit.bindEvents(instance, {
 #### 3D 이벤트 바인딩
 - Three.js Raycasting 기반 (`bind3DEvents`, `initThreeRaycasting`)
 - 3D 객체 클릭 이벤트 처리
+- **단일 Canvas 아키텍처**: 모든 3D 컴포넌트가 하나의 Scene 공유
+- **컴포넌트 식별**: appendElement.eventListener로 컴포넌트 구분
+- **상세 문서**: [`WKIT_Document/3d_event_binding.md`](WKIT_Document/3d_event_binding.md)
 
 #### 리소스 관리
 - 3D 객체 메모리 해제 (`dispose3DTree`)
