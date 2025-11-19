@@ -15,14 +15,19 @@ const GlobalDataPublisher = (() => {
       mappingTable.delete(topic);
     },
 
-    async fetchAndPublish(topic, page) {
+    async fetchAndPublish(topic, page, paramUpdates = null) {
       const datasetInfo = mappingTable.get(topic);
       if (!datasetInfo) {
         console.warn(`[GlobalDataPublisher] 등록되지 않은 topic: ${topic}`);
         return;
       }
 
-      const data = await WKit.fetchData(page, datasetInfo.datasetName, datasetInfo.param);
+      // paramUpdates가 있으면 기존 param과 병합 (얕은 병합)
+      const param = paramUpdates
+        ? { ...datasetInfo.param, ...paramUpdates }
+        : datasetInfo.param;
+
+      const data = await WKit.fetchData(page, datasetInfo.datasetName, param);
       const subs = subscriberTable.get(topic) || new Set();
 
       for (const { instance, handler } of subs) {
