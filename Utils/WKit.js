@@ -4,8 +4,8 @@ const WKit = {};
 WKit.bindEvents = function (instance, customEvents) {
   fx.go(
     Object.entries(customEvents),
-    fx.map(([eventName, selectorList]) => {
-      fx.map((selector) => {
+    fx.each(([eventName, selectorList]) => {
+      fx.each((selector) => {
         const handler = makeHandler(instance, selector);
         delegate(instance, eventName, selector, handler);
       }, Object.keys(selectorList));
@@ -16,8 +16,8 @@ WKit.bindEvents = function (instance, customEvents) {
 WKit.removeCustomEvents = function (instance, customEvents) {
   fx.go(
     Object.entries(customEvents),
-    fx.map(([eventName, selectorList]) => {
-      fx.map((selector) => {
+    fx.each(([eventName, selectorList]) => {
+      fx.each((selector) => {
         const handler = instance.userHandlerList?.[eventName]?.[selector];
         if (handler) {
           instance.element.removeEventListener(eventName, handler);
@@ -40,7 +40,7 @@ WKit.initThreeRaycasting = function (target, eventName) {
 
 WKit.bind3DEvents = function (instance, customEvents) {
   instance.appendElement.eventListener = {};
-  fx.map((browserEvent) => {
+  fx.each((browserEvent) => {
     const eventHandler = make3DHandler(instance);
     instance.appendElement.eventListener[browserEvent] = eventHandler;
   }, Object.keys(customEvents));
@@ -141,14 +141,14 @@ WKit.emitEvent = function (eventName, targetInstance) {
 WKit.onEventBusHandlers = function (eventBusHandlers) {
   fx.go(
     Object.entries(eventBusHandlers),
-    fx.map(([eventName, handler]) => WEventBus.on(eventName, handler))
+    fx.each(([eventName, handler]) => WEventBus.on(eventName, handler))
   );
 };
 
 WKit.offEventBusHandlers = function (eventBusHandlers) {
   fx.go(
     Object.entries(eventBusHandlers),
-    fx.map(([eventName, handler]) => WEventBus.off(eventName, handler))
+    fx.each(([eventName, handler]) => WEventBus.off(eventName, handler))
   );
 };
 
