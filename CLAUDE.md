@@ -54,8 +54,10 @@ WEventBus.on('@myClickEvent', handler)
 **주요 기능**:
 - Topic 기반 데이터 매핑 등록 (`registerMapping`)
 - 데이터 fetch 후 구독자에게 자동 전파 (`fetchAndPublish`)
+- 동적 param 업데이트 지원 (param 병합)
 - 구독 관리 (`subscribe`, `unsubscribe`)
 - 페이지 레벨 공유 데이터 관리
+- 데이터셋별 독립적인 auto-refresh 주기 설정 가능
 
 **데이터 흐름**:
 ```javascript
@@ -534,6 +536,26 @@ EventBus와 GlobalDataPublisher로 컴포넌트 독립성 보장
 ### 6. 2D/3D 통합
 DOM 이벤트와 Three.js 이벤트를 일관된 방식으로 처리
 
+### 7. 컴포넌트 정형화
+스키마 기반 템플릿으로 도메인 컴포넌트 추가 용이
+- customEvents, subscriptions 스키마만 정의
+- 5-10분이면 새 컴포넌트 추가 가능
+- 재사용 가능한 블록 단위 개발
+
+### 8. 페이지의 Orchestration 역할
+페이지는 순수한 조율 계층으로 비즈니스 로직 집중
+- 컴포넌트 간 연결 고리 정의
+- 데이터 흐름 제어 (globalDataMappings)
+- 이벤트 처리 위임 (eventBusHandlers)
+- 복잡한 도메인 로직은 컴포넌트 메소드로 위임
+
+### 9. 데이터셋별 Auto-Refresh
+각 데이터의 특성에 맞는 독립적인 갱신 주기 지원
+- 실시간 데이터(주문, 알림): 짧은 주기 (3초)
+- 통계 데이터(리포트): 긴 주기 (30초+)
+- 네트워크/서버 리소스 효율성
+- API rate limit 대응 가능
+
 ---
 
 ## 설계 철학
@@ -923,6 +945,79 @@ function onPageUnLoad() {
 }
 ```
 
+### 5. HTML dataset 활용
+
+**DO**:
+```javascript
+// Component - 동적 렌더링 시 dataset에 식별자/단순 값 저장
+this.renderUsers = function(users) {
+  return users.map((user, index) => `
+    <div class="user-card"
+         data-index="${index}"
+         data-user-id="${user.id}"
+         data-user-name="${user.name}">
+      ${user.name}
+    </div>
+  `).join('');
+}.bind(this);
+
+// Page - 이벤트 핸들러에서 dataset 활용
+'@userClicked': ({ event, targetInstance }) => {
+  const { index, userId, userName } = event.target.dataset;
+  const user = targetInstance.users[index];  // 전체 데이터 접근
+  userDetailPanel.showUserDetail(user);
+}
+```
+
+**DON'T**:
+```javascript
+// 민감 정보 저장
+data-password="secret123"  // ❌ 보안 문제
+
+// 복잡한 객체를 JSON으로 저장
+data-user='{"name":"John","age":30,...}'  // ❌ 비효율적
+
+// 컴포넌트에 추가 상태 관리
+this.userMap = new Map();  // ❌ 불필요한 복잡도
+this.userMap.set(element, userData);
+```
+
+### 6. 컴포넌트 메소드 위임
+
+**DO**:
+```javascript
+// Page - Orchestration만 집중
+'@userClicked': async ({ userId }) => {
+  const user = await fetchData(this, 'users', { id: userId });
+  userDetailPanel.showUserDetail(user);  // 위임!
+  activityLog.addLog('user.view', userId);  // 위임!
+}
+
+// Component - 도메인 로직 소유
+this.showUserDetail = function(user) {
+  const enriched = this.enrichUserData(user);
+  const filtered = this.applyPermissionFilter(enriched);
+  this.updateUI(filtered);
+}.bind(this);
+```
+
+**DON'T**:
+```javascript
+// Page가 컴포넌트 내부 로직까지 처리
+'@userClicked': async ({ userId }) => {
+  const user = await fetchData(...);
+
+  // 복잡한 데이터 변환 (50줄...)  ❌
+  const enriched = { ... };
+
+  // 컴포넌트 내부 DOM 직접 조작 (30줄...)  ❌
+  const comp = getInstanceByName('UserDetailPanel');
+  comp.element.querySelector('.name').textContent = enriched.fullName;
+  comp.element.querySelector('.role').textContent = enriched.displayRole;
+  // ...
+}
+```
+
 ---
 
 ## 트러블슈팅
@@ -1005,10 +1100,18 @@ WKit.enableDebugMode({
 
 ## 버전 정보
 
-**문서 버전**: 1.1.0
+**문서 버전**: 1.2.0
 **최종 업데이트**: 2025-11-19
 **주요 변경사항**:
-- v1.1.0: Primitive Building Blocks 원칙 적용
+- v1.2.0: 대시보드 패턴 및 아키텍처 명확화 (2025-11-19)
+  - 데이터셋별 독립적인 auto-refresh interval 패턴 추가
+  - GlobalDataPublisher 동적 param 업데이트 지원 (param 병합)
+  - 컴포넌트 정형화: 스키마 기반 템플릿으로 5-10분 내 컴포넌트 추가
+  - 페이지 Orchestration 역할 명확화: 조율 계층으로 비즈니스 로직 집중
+  - 컴포넌트 메소드 위임 패턴: 복잡한 도메인 로직은 컴포넌트가 소유
+  - HTML dataset 활용 베스트 프랙티스 추가
+  - dashboard_example 폴더로 실전 패턴 분리
+- v1.1.0: Primitive Building Blocks 원칙 적용 (2025-11-19)
   - 제거된 API: `pipeForDataMapping`, `triggerEventToTargetInstance`, `getDataMappingSchema`
   - 제거된 Internal: `resolveMappingInfo`, `getDataFromMapping`
   - 데이터 구조 간소화: 3D 컴포넌트의 `dataMapping` 배열 → 단일 `datasetInfo` 객체
