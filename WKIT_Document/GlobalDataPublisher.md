@@ -515,7 +515,7 @@ fetchAndPublish('users', this, {
 **관련 파일**:
 - `Utils/GlobalDataPublisher.js` - 구현
 - `Runtime_Scaffold_code_sample/page_script/page_loaded.js` - 기본 패턴
-- `Runtime_Scaffold_code_sample/page_script/page_loaded_dashboard.js` - 대시보드 패턴
+- `Runtime_Scaffold_code_sample/page_script/dashboard_example/page_loaded_dashboard.js` - 대시보드 패턴
 - `Runtime_Scaffold_code_sample/component_script/component_common_register_subscribe_page.js` - 구독 패턴
 
 **핵심 함수**:

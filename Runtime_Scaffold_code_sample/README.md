@@ -165,9 +165,9 @@ clearSceneBackground(scene);
 ### 4. Page - Dashboard Pattern (Auto-Refresh)
 
 **파일**:
-- `page_script/page_loaded_dashboard.js` - 자동 갱신 설정
-- `page_script/page_before_load_dashboard.js` - 동적 필터 핸들러
-- `page_script/page_before_unload_dashboard.js` - 정리 (interval 포함)
+- `page_script/dashboard_example/page_loaded_dashboard.js` - 자동 갱신 설정
+- `page_script/dashboard_example/page_before_load_dashboard.js` - 동적 필터 핸들러
+- `page_script/dashboard_example/page_before_unload_dashboard.js` - 정리 (interval 포함)
 
 **용도**: 주기적으로 데이터를 갱신하는 대시보드
 - setInterval로 자동 갱신
@@ -318,13 +318,14 @@ Runtime_Scaffold_code_sample/
 │   ├── component_2d_destroy_remove_events.js         # 2D 이벤트 cleanup
 │   └── component_2d_destroy_unsubscribe_page.js      # 구독 cleanup
 ├── page_script/
-│   ├── page_before_load.js                # before_load (이벤트 핸들러)
-│   ├── page_loaded.js                     # loaded (데이터 발행)
-│   ├── page_before_unload.js              # before_unload (cleanup)
-│   ├── page_before_load_dashboard.js      # Dashboard - 동적 필터
-│   ├── page_loaded_dashboard.js           # Dashboard - 자동 갱신
-│   └── page_before_unload_dashboard.js    # Dashboard - interval cleanup
-└── README.md                              # 이 문서
+│   ├── page_before_load.js                           # before_load (이벤트 핸들러)
+│   ├── page_loaded.js                                # loaded (데이터 발행)
+│   ├── page_before_unload.js                         # before_unload (cleanup)
+│   └── dashboard_example/                            # Dashboard 패턴 예제
+│       ├── page_before_load_dashboard.js             # 동적 필터
+│       ├── page_loaded_dashboard.js                  # 자동 갱신
+│       └── page_before_unload_dashboard.js           # interval cleanup
+└── README.md                                         # 이 문서
 ```
 
 ---
