@@ -5,10 +5,10 @@
 ## 📚 문서 목록
 
 ### 핵심 기능
-1. [pipeForDataMapping.md](./pipeForDataMapping.md) - 데이터와 시각화 컴포넌트 연결 파이프라인
-2. [bindEvents.md](./bindEvents.md) - 2D 이벤트 바인딩 (이벤트 위임)
-3. [bind3DEvents.md](./bind3DEvents.md) - 3D 이벤트 바인딩
-4. [initThreeRaycasting.md](./initThreeRaycasting.md) - Three.js Raycasting 초기화
+1. [bindEvents.md](./bindEvents.md) - 2D 이벤트 바인딩 (이벤트 위임)
+2. [bind3DEvents.md](./bind3DEvents.md) - 3D 이벤트 바인딩
+3. [initThreeRaycasting.md](./initThreeRaycasting.md) - Three.js Raycasting 초기화
+4. ~~[pipeForDataMapping.md](./pipeForDataMapping.md)~~ - **제거됨 (v1.1)** - Primitive Building Blocks 원칙 적용
 
 ### 리소스 관리
 5. [removeCustomEvents.md](./removeCustomEvents.md) - 2D 이벤트 리스너 제거
@@ -26,11 +26,7 @@
 ## 🔍 주요 발견 사항
 
 ### 심각한 버그
-1. **resolveMappingInfo 로직 오류** (`pipeForDataMapping.md`)
-   - 빈 배열 초기화 후 length 체크로 인한 무의미한 조건문
-   - 우선순위: **High**
-
-2. **delegate의 이벤트 매칭 문제** (`bindEvents.md`)
+1. **delegate의 이벤트 매칭 문제** (`bindEvents.md`)
    - 자식 요소 클릭 시 이벤트 미감지
    - `closest` 사용 필요
    - 우선순위: **High**
@@ -45,27 +41,19 @@
    - 우선순위: **High**
 
 ### 설계 개선 필요
-5. **불필요한 Promise 래핑** (`pipeForDataMapping.md`)
-   - `fx.go`가 이미 Promise 반환하는데 추가 래핑
-   - 우선순위: **Medium**
-
-6. **fx.map 오용** (여러 파일)
+5. **fx.map 오용** (여러 파일)
    - 부수효과만 발생하는데 `fx.map` 사용
    - `fx.each` 사용 권장
    - 우선순위: **Medium**
-
-7. **triggerEventToTargetInstance의 fx.range(1)** (`event_functions.md`)
-   - 불필요한 더미 값 생성
-   - 우선순위: **High**
 
 ---
 
 ## 📊 API 분류
 
 ### 데이터 관련
-- `pipeForDataMapping` - 데이터 매핑 파이프라인 ⭐⭐⭐⭐⭐
-- `fetchData` - 데이터 fetch ⭐⭐⭐⭐⭐
-- `getDataMappingSchema` - 데이터 매핑 스키마 예제 ⭐⭐⭐
+- `fetchData` - 데이터 fetch primitive ⭐⭐⭐⭐⭐
+- ~~`pipeForDataMapping`~~ - **제거됨 (v1.1)** - primitive 조합으로 대체
+- ~~`getDataMappingSchema`~~ - **제거됨 (v1.1)** - 불확실한 필요성
 - `getGlobalMappingSchema` - 글로벌 매핑 스키마 예제 ⭐⭐⭐
 
 ### 2D 이벤트
@@ -81,8 +69,8 @@
 - `getCustomEventsSchemaFor3D` - 3D 이벤트 스키마 예제 ⭐⭐⭐
 
 ### EventBus 통합
-- `emitEvent` - 이벤트 발행 ⭐⭐⭐
-- `triggerEventToTargetInstance` - 인스턴스 찾아 이벤트 발행 ⭐⭐⭐⭐
+- `emitEvent` - 이벤트 발행 primitive ⭐⭐⭐⭐⭐
+- ~~`triggerEventToTargetInstance`~~ - **제거됨 (v1.1)** - primitive 조합으로 대체
 - `onEventBusHandlers` - 핸들러 일괄 등록 ⭐⭐⭐⭐⭐
 - `offEventBusHandlers` - 핸들러 일괄 제거 ⭐⭐⭐⭐⭐
 
@@ -97,21 +85,17 @@
 ## 🎯 개선 우선순위 요약
 
 ### 🔴 High (즉시 수정 필요)
-1. `resolveMappingInfo` 로직 버그 수정
-2. `delegate`에 `closest` 적용
-3. `removeCustomEvents`에서 userHandlerList 정리
-4. `dispose3DTree`에서 Texture 중복 dispose 방지
-5. `triggerEventToTargetInstance`의 fx.range(1) 제거
-6. `initThreeRaycasting`에서 getBoundingClientRect 사용
-7. `fetchData`에 page.dataService 존재 확인
+1. `delegate`에 `closest` 적용
+2. `removeCustomEvents`에서 userHandlerList 정리
+3. `dispose3DTree`에서 Texture 중복 dispose 방지
+4. `initThreeRaycasting`에서 getBoundingClientRect 사용
+5. `fetchData`에 page.dataService 존재 확인
 
 ### 🟡 Medium (개선 권장)
-1. 불필요한 Promise 래핑 제거
-2. fx.map을 fx.each로 변경 (부수효과 명시)
-3. getDataFromMapping의 this 의존성 제거
-4. 중복 이벤트 등록 방지
-5. scene.environment 정리 추가
-6. wemb 의존성 제거 (파라미터로 전달)
+1. fx.map을 fx.each로 변경 (부수효과 명시)
+2. 중복 이벤트 등록 방지
+3. scene.environment 정리 추가
+4. wemb 의존성 제거 (파라미터로 전달)
 
 ### 🟢 Low (선택적 개선)
 1. 타입 검증 추가
@@ -237,6 +221,12 @@ WKit.bind3DEvents(this, this.customEvents);
 
 ## 📝 변경 이력
 
+### v1.1.0 (2025-11-19)
+- Primitive Building Blocks 원칙 적용
+- 제거된 API: `pipeForDataMapping`, `triggerEventToTargetInstance`, `getDataMappingSchema`
+- 제거된 Internal: `resolveMappingInfo`, `getDataFromMapping`
+- 프레임워크는 primitive만 제공, 조합은 사용자가 직접
+
 ### v1.0.0 (2025-11-16)
 - 초기 분석 완료
 - 모든 Public API 문서화
@@ -266,5 +256,6 @@ WKit.bind3DEvents(this, this.customEvents);
 WKit 관련 질문이나 버그 리포트는 프로젝트 관리자에게 문의하세요.
 
 **작성일**: 2025-11-16
+**최종 업데이트**: 2025-11-19
 **작성자**: Claude Code Analysis
-**버전**: 1.0.0
+**버전**: 1.1.0

@@ -1,19 +1,5 @@
 const WKit = {};
 
-/* Public API: data mapping */
-WKit.pipeForDataMapping = function (targetInstance) {
-  const currentPage = wemb.isPage(targetInstance) ? targetInstance : targetInstance.page;
-  /* 
-  getDataFromMapping에서 사용할 데이터셋 param을 변경하려면 
-  미리 targetInstance에서 param을 변경해야함 --> 최선?
-  targetInstance에서 데이터 매핑 정보를 변경할 떄의 setter가 필요해보이고, 
-  setter가 변경되었을 때, 상태 변경이 필요한 모든 곳에 reactivity하게 변경되도록 해볼 것.
-  */
-  return fx.go(
-      resolveMappingInfo(targetInstance), 
-      fx.map(getDataFromMapping.bind(currentPage)))
-};
-
 /* Public API: 2D event binding */
 WKit.bindEvents = function (instance, customEvents) {
   fx.go(
@@ -151,18 +137,6 @@ WKit.emitEvent = function (eventName, targetInstance) {
   });
 };
 
-WKit.triggerEventToTargetInstance = function (
-  targetInstanceName,
-  eventName,
-  iter = WKit.makeIterator(wemb.mainPageComponent)
-) {
-  fx.go(
-    fx.range(1),
-    (_) => WKit.getInstanceByName(targetInstanceName, iter),
-    fx.curry(WKit.emitEvent)(eventName)
-  );
-};
-
 /* Public API: event bus on / off */
 WKit.onEventBusHandlers = function (eventBusHandlers) {
   fx.go(
@@ -179,22 +153,6 @@ WKit.offEventBusHandlers = function (eventBusHandlers) {
 };
 
 /* Public API: schema utility  */
-WKit.getDataMappingSchema = function () {
-  return [
-    {
-      ownerId: 'ownerId',
-      visualInstanceList: ['Chart_for_specific_model'],
-      datasetInfo: {
-        datasetName: 'dummyjson',
-        param: {
-          dataType: 'carts',
-          id: 'ownerId',
-        },
-      },
-    },
-  ];
-};
-
 WKit.getGlobalMappingSchema = function () {
   return [
     {
@@ -239,37 +197,6 @@ WKit.getSubscriptionSchema = function () {
     comments: ['method3', 'method4'],
   };
 };
-
-/*Internal only: utils for data mapping */
-async function getDataFromMapping({
-  ownerId,
-  visualInstanceList,
-  datasetInfo: { datasetName, param },
-}) {
-  return {
-    ownerId,
-    visualInstanceList: fx.map(
-      (visualInstanceName) => WKit.getInstanceByName(visualInstanceName, WKit.makeIterator(this)),
-      visualInstanceList
-    ),
-    data: await WKit.fetchData(this, datasetName, param).catch((err) => (console.error(err), [])),
-  };
-}
-
-function resolveMappingInfo(targetInstance) {
-  let dataMapping = [];
-
-  if (!dataMapping.length && targetInstance.dataMapping) {
-    dataMapping = targetInstance.dataMapping;
-    console.info('[Fallback] instance.dataMapping 사용됨');
-  }
-
-  if (!dataMapping.length) {
-    throw new Error(`매핑 정보가 없습니다. instanceId: ${targetInstance.id}`);
-  }
-
-  return dataMapping;
-}
 
 /*Internal only: utils for 2D event */
 

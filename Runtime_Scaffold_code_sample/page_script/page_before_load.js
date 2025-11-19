@@ -1,4 +1,4 @@
-const { onEventBusHandlers, initThreeRaycasting, pipeForDataMapping } = WKit;
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
 
 initPageController.call(this);
 
@@ -13,10 +13,18 @@ function initPageController() {
 function getEventBusHandlers() {
     return {
         ['@myClickEvent']: async ({ event, targetInstance }) => {
-            const dataFromMapping = await pipeForDataMapping(targetInstance);
+            // primitive 조합으로 데이터 fetch
+            const { dataMapping } = targetInstance;
+            let data = null;
+
+            if (dataMapping?.length) {
+                const { datasetName, param } = dataMapping[0].datasetInfo;
+                data = await fetchData(this, datasetName, param);
+            }
+
             console.log('[@myClickEvent]', event);
-            console.log('[@targetInstance]', targetInstance)
-            console.log('[@Data From Mapping]', dataFromMapping)
+            console.log('[@targetInstance]', targetInstance);
+            console.log('[@Fetched Data]', data);
         }
     }
 };

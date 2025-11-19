@@ -88,10 +88,19 @@ WKit.emitEvent = function (eventName, targetInstance, additionalData = {}) {
 
 ---
 
-## WKit.triggerEventToTargetInstance
+## ~~WKit.triggerEventToTargetInstance~~ (DEPRECATED)
+
+> **⚠️ 이 API는 v1.1.0에서 제거되었습니다**
+>
+> **제거 이유**: Primitive Building Blocks 원칙 적용
+> - 단순히 `getInstanceByName` + `emitEvent` 조합
+> - 사용자가 2-3줄로 직접 작성 가능
+> - fx.range(1) 안티패턴 포함
+>
+> **대안**: 아래 "제거 후 사용 방법" 참고
 
 ### 위치
-`WKit.js:150-160`
+~~`WKit.js:150-160`~~ - **제거됨**
 
 ### 시그니처
 ```javascript
@@ -102,11 +111,48 @@ WKit.triggerEventToTargetInstance(
 ): void
 ```
 
-### 역할
+### 역할 (제거 전)
 이름으로 인스턴스를 찾아 이벤트를 발행합니다. `getInstanceByName` + `emitEvent`를 결합한 유틸리티.
 
-### 필요성
-⭐⭐⭐⭐ 자주 사용
+### 제거 이유
+
+1. **단순 조합**: primitive 2개만 조합 (`getInstanceByName` + `emitEvent`)
+2. **불필요한 래핑**: 사용자가 직접 작성하면 2-3줄
+3. **fx.range(1) 안티패턴**: 불필요한 더미 값 생성
+4. **명확성**: 직접 작성이 오히려 더 읽기 쉬움
+
+### 제거 후 사용 방법
+
+**Before (제거 전)**:
+```javascript
+const { triggerEventToTargetInstance } = WKit;
+triggerEventToTargetInstance('DataMappedComponent', '@myClickEvent');
+```
+
+**After (제거 후)**:
+```javascript
+const { getInstanceByName, makeIterator, emitEvent } = WKit;
+
+// primitive 조합으로 명확함
+const iter = makeIterator(wemb.mainPageComponent);
+const targetInstance = getInstanceByName('DataMappedComponent', iter);
+if (targetInstance) {
+    emitEvent('@myClickEvent', targetInstance);
+}
+```
+
+**장점**:
+- ✅ 코드 흐름이 명확함
+- ✅ 인스턴스 찾지 못했을 때 처리 가능
+- ✅ fx.range(1) 안티패턴 제거됨
+- ✅ 디버깅 용이
+
+---
+
+## 과거 평가 (참고용)
+
+### 필요성 (제거 전)
+⭐⭐⭐⭐ 자주 사용 → **불필요** ❌
 
 ### 사용 예시
 ```javascript

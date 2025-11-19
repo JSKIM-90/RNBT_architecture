@@ -18,17 +18,67 @@
 
 ---
 
-## WKit.getDataMappingSchema
+## ~~WKit.getDataMappingSchema~~ (DEPRECATED)
+
+> **⚠️ 이 API는 v1.1.0에서 제거되었습니다**
+>
+> **제거 이유**: Primitive Building Blocks 원칙 적용
+> - 불확실한 필요성: 구독 패턴 외에는 일괄 처리가 필요한 영역이 불확실
+> - 스키마 예제의 한계: 실제 사용 사례마다 구조가 다름
+> - 오해 소지: "이 구조를 따라야 한다"는 잘못된 신호
+>
+> **대안**: 사용자가 필요한 구조를 직접 정의
 
 ### 위치
-`WKit.js:178-192`
+~~`WKit.js:178-192`~~ - **제거됨**
 
 ### 시그니처
 ```javascript
 WKit.getDataMappingSchema(): DataMappingSchema[]
 ```
 
-### 반환값
+### 제거 이유
+
+1. **불확실한 필요성**: 일괄 처리가 필요한 영역이 구독 패턴 외에는 불확실
+2. **스키마 예제의 한계**: 실제 사용 사례마다 구조가 다름
+3. **오해 소지**: "이 구조를 따라야 한다"는 잘못된 신호를 줌
+
+### 제거 후 사용 방법
+
+**Before (제거 전)**:
+```javascript
+const schema = WKit.getDataMappingSchema();
+// 하드코딩된 예제 반환
+```
+
+**After (제거 후)**:
+```javascript
+// 사용자가 필요한 구조를 직접 정의
+this.dataMapping = [
+    {
+        ownerId: this.id,
+        visualInstanceList: ['ChartComponent'],
+        datasetInfo: {
+            datasetName: 'myDataset',
+            param: {
+                dataType: 'sales',
+                period: 'monthly'
+            }
+        }
+    }
+];
+```
+
+**장점**:
+- ✅ 유연성: 필요한 구조를 자유롭게 정의
+- ✅ 명확성: "예제"가 아닌 "실제" 구조
+- ✅ 오해 방지: 강제된 구조가 아님
+
+---
+
+## 과거 내용 (참고용)
+
+### 반환값 (제거 전)
 ```javascript
 [
   {
@@ -45,7 +95,7 @@ WKit.getDataMappingSchema(): DataMappingSchema[]
 ]
 ```
 
-### 사용 예시
+### 사용 예시 (제거 전)
 ```javascript
 // 개발자가 스키마 참고
 const schema = WKit.getDataMappingSchema();

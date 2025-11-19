@@ -95,10 +95,6 @@ WKit.bindEvents(instance, {
 - Three.js Raycasting 기반 (`bind3DEvents`, `initThreeRaycasting`)
 - 3D 객체 클릭 이벤트 처리
 
-#### 데이터 매핑
-- 비동기 데이터 파이프라인 (`pipeForDataMapping`)
-- 시각화 컴포넌트에 데이터 자동 바인딩
-
 #### 리소스 관리
 - 3D 객체 메모리 해제 (`dispose3DTree`)
 - Geometry, Material, Texture 자동 dispose
@@ -107,7 +103,7 @@ WKit.bindEvents(instance, {
 - Iterator 생성 (`makeIterator`)
 - 인스턴스 검색 (`getInstanceByName`, `getInstanceById`)
 - 데이터 fetch (`fetchData`)
-- 이벤트 트리거 (`triggerEventToTargetInstance`)
+- 이벤트 발행 (`emitEvent`)
 
 ---
 
@@ -136,7 +132,10 @@ WEventBus.emit('@myClickEvent', { event, targetInstance })
 
 // 구독자
 WEventBus.on('@myClickEvent', async ({ event, targetInstance }) => {
-  const data = await pipeForDataMapping(targetInstance)
+  // primitive 조합으로 처리
+  const { dataMapping } = targetInstance;
+  const { datasetName, param } = dataMapping[0].datasetInfo;
+  const data = await WKit.fetchData(page, datasetName, param);
   // 처리 로직
 })
 ```
@@ -330,12 +329,17 @@ function clearSubscribe(instance) {
 
 #### 컴포넌트 Completed
 
-**특정 3D 컴포넌트 트리거** (`component_2d_completed_trigger_specific_3d_component.js:1-11`)
+**특정 3D 컴포넌트 트리거** (`component_2d_completed_trigger_specific_3d_component.js:1-16`)
 ```javascript
-const { triggerEventToTargetInstance } = WKit;
+const { getInstanceByName, makeIterator, emitEvent } = WKit;
 const { targetInstanceName, eventName } = getDefaultEventTarget();
 
-triggerEventToTargetInstance(targetInstanceName, eventName);
+// primitive 조합으로 타겟 인스턴스 찾아서 이벤트 발행
+const iter = makeIterator(wemb.mainPageComponent);
+const targetInstance = getInstanceByName(targetInstanceName, iter);
+if (targetInstance) {
+    emitEvent(eventName, targetInstance);
+}
 
 function getDefaultEventTarget() {
     return {
@@ -385,10 +389,10 @@ function getGlobalDataMappings() {
 ```
 
 #### loaded
-`page_loaded.js:1-24`
+`page_loaded.js:1-28`
 
 ```javascript
-const { onEventBusHandlers, initThreeRaycasting, pipeForDataMapping } = WKit;
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
 
 initPageController.call(this);
 
@@ -403,10 +407,14 @@ function initPageController() {
 function getEventBusHandlers() {
     return {
         ['@myClickEvent']: async ({ event, targetInstance }) => {
-            const dataFromMapping = await pipeForDataMapping(targetInstance);
+            // primitive 조합으로 데이터 fetch
+            const { dataMapping } = targetInstance;
+            const { datasetName, param } = dataMapping[0].datasetInfo;
+            const data = await fetchData(this, datasetName, param);
+
             console.log('[@myClickEvent]', event);
-            console.log('[@targetInstance]', targetInstance)
-            console.log('[@Data From Mapping]', dataFromMapping)
+            console.log('[@targetInstance]', targetInstance);
+            console.log('[@Fetched Data]', data);
         }
     }
 }
@@ -472,32 +480,32 @@ function clearThreeInstances() {
   → DOM Event
   → delegate() → WEventBus.emit()
   → Page EventBus Handler
-  → pipeForDataMapping() → 데이터 처리
+  → WKit.fetchData() → 데이터 처리 (primitive 조합)
 ```
 
-### 데이터 매핑 파이프라인
+### 데이터 fetch 패턴
 
 ```javascript
-// WKit.js:4-11
-WKit.pipeForDataMapping = function (targetInstance) {
-  const currentPage = wemb.isPage(targetInstance) ? targetInstance : targetInstance.page;
-  return new Promise((res, rej) => {
-    fx.go(
-      resolveMappingInfo(targetInstance),
-      fx.map(getDataFromMapping.bind(currentPage))
-    )
-    .then(res)
-    .catch(rej);
-  });
+// 이벤트 핸들러에서 직접 primitive 조합
+this.eventBusHandlers = {
+  '@myClickEvent': async ({ event, targetInstance }) => {
+    const { dataMapping } = targetInstance;
+    const { datasetName, param } = dataMapping[0].datasetInfo;
+
+    // WKit이 제공하는 primitive 사용
+    const data = await WKit.fetchData(this, datasetName, param);
+
+    // 데이터 처리
+    console.log('Fetched data:', data);
+  }
 };
 ```
 
 **처리 과정**:
-1. `resolveMappingInfo()` - 인스턴스의 dataMapping 정보 추출
-2. `getDataFromMapping()` - 각 매핑에 대해:
-   - `WKit.fetchData()` - 데이터셋에서 데이터 fetch
-   - `WKit.getInstanceByName()` - 시각화 컴포넌트 인스턴스 찾기
-   - 데이터와 인스턴스 매칭 결과 반환
+1. targetInstance에서 dataMapping 정보 추출
+2. `WKit.fetchData()` - 데이터셋에서 데이터 fetch
+3. 필요시 `WKit.getInstanceByName()` - 다른 인스턴스 찾기
+4. 사용자가 직접 로직 조합
 
 ---
 
@@ -536,12 +544,116 @@ DOM 이벤트와 Three.js 이벤트를 일관된 방식으로 처리
 
 ## 설계 철학
 
+### Primitive Building Blocks 원칙
+
+**프레임워크는 최소한의 primitive만 제공하고, 조합은 사용자에게 맡긴다**
+
+#### 철학
+- ✅ **DO**: 범용적이고 재사용 가능한 primitive 제공
+  - `WKit.fetchData(page, datasetName, param)` - 데이터 fetch
+  - `WKit.getInstanceByName(name, iter)` - 인스턴스 검색
+  - `WKit.makeIterator(page, ...layers)` - iterator 생성
+
+- ❌ **DON'T**: 특정 비즈니스 로직을 조합한 고수준 함수 제공
+  - ~~`pipeForDataMapping(targetInstance)`~~ - **제거됨 (v1.1)**
+  - ~~`triggerEventToTargetInstance(name, eventName)`~~ - **제거됨 (v1.1)**
+  - ~~`getDataMappingSchema()`~~ - **제거됨 (v1.1)**
+
+#### 제거된 API들
+
+##### 1. pipeForDataMapping
+
+**제거 이유**:
+1. **비즈니스 로직의 조합**: 프레임워크가 "어떻게 조합할지"를 강제
+2. **불필요한 추상화**: visualInstanceList 매핑 기능이 실제로 사용되지 않음
+3. **명확성 저하**: 내부에서 여러 primitive를 숨김 (fetchData, getInstanceByName, makeIterator)
+4. **유연성 부족**: 사용자가 필요한 부분만 선택적으로 사용 불가
+
+**Before (제거 전)**:
+```javascript
+// 내부 로직이 숨겨져 있음
+const results = await WKit.pipeForDataMapping(targetInstance);
+console.log(results[0].data);
+```
+
+**After (제거 후)**:
+```javascript
+// primitive 조합으로 명확한 흐름
+const { dataMapping } = targetInstance;
+const { datasetName, param } = dataMapping[0].datasetInfo;
+const data = await WKit.fetchData(this, datasetName, param);
+console.log(data);
+```
+
+**장점**:
+- 코드 흐름이 명확해짐
+- 사용자가 필요한 만큼만 사용
+- 디버깅 용이
+- 프레임워크 API 표면 최소화
+
+##### 2. triggerEventToTargetInstance
+
+**제거 이유**:
+1. **단순 조합**: `getInstanceByName` + `emitEvent`만 조합
+2. **불필요한 래핑**: 사용자가 2줄로 직접 작성 가능
+3. **fx.range(1) 안티패턴**: 내부에서 더미 값 생성
+
+**Before (제거 전)**:
+```javascript
+WKit.triggerEventToTargetInstance('MyComponent', '@myEvent');
+```
+
+**After (제거 후)**:
+```javascript
+// primitive 조합으로 명확함
+const iter = WKit.makeIterator(wemb.mainPageComponent);
+const targetInstance = WKit.getInstanceByName('MyComponent', iter);
+if (targetInstance) {
+    WKit.emitEvent('@myEvent', targetInstance);
+}
+```
+
+##### 3. getDataMappingSchema
+
+**제거 이유**:
+1. **불확실한 필요성**: 일괄 처리가 필요한 영역이 구독 패턴 외에는 불확실
+2. **스키마 예제의 한계**: 실제 사용 사례마다 구조가 다름
+3. **오해 소지**: "이 구조를 따라야 한다"는 잘못된 신호
+
+**Before (제거 전)**:
+```javascript
+const schema = WKit.getDataMappingSchema();
+// 하드코딩된 예제 반환
+```
+
+**After (제거 후)**:
+```javascript
+// 사용자가 필요한 구조를 직접 정의
+this.dataMapping = [
+    {
+        ownerId: this.id,
+        visualInstanceList: ['ChartComponent'],
+        datasetInfo: {
+            datasetName: 'myDataset',
+            param: { ... }
+        }
+    }
+];
+```
+
+**남은 스키마 함수들** (유지):
+- `getCustomEventsSchema()` - 이벤트 바인딩 패턴 (명확한 구조)
+- `getGlobalMappingSchema()` - GlobalDataPublisher 패턴 (명확한 구조)
+- `getSubscriptionSchema()` - 구독 패턴 (명확한 구조)
+
+---
+
 ### 코드 생성 친화적
 스키마 함수들로 코드 자동 생성 지원:
-- `WKit.getCustomEventsSchema()`
-- `WKit.getDataMappingSchema()`
-- `WKit.getGlobalMappingSchema()`
-- `WKit.getSubscriptionSchema()`
+- `WKit.getCustomEventsSchema()` - 이벤트 바인딩 패턴
+- `WKit.getGlobalMappingSchema()` - 글로벌 데이터 매핑 패턴
+- `WKit.getSubscriptionSchema()` - 구독 패턴
+- ~~`WKit.getDataMappingSchema()`~~ - **제거됨 (v1.1)** - 불확실한 필요성
 
 ### 런타임 안전성
 동적 스크립트 실행 시 메모리 누수 방지:
@@ -646,8 +758,14 @@ WKit.bindEvents(this, this.customEvents);
 // Page - loaded
 this.eventBusHandlers = {
   '@productClicked': async ({ event, targetInstance }) => {
-    const data = await WKit.pipeForDataMapping(targetInstance);
-    // 상세 페이지로 이동 또는 모달 표시
+    // primitive 조합으로 데이터 fetch
+    const { dataMapping } = targetInstance;
+    if (dataMapping?.length) {
+      const { datasetName, param } = dataMapping[0].datasetInfo;
+      const data = await WKit.fetchData(this, datasetName, param);
+      // 상세 페이지로 이동 또는 모달 표시
+      console.log('Product data:', data);
+    }
   }
 };
 
@@ -831,16 +949,24 @@ WKit.enableDebugMode({
 - `Runtime_Scaffold_code_sample/` - 런타임 스크립트 예제
 
 ### 핵심 함수 참조
-- `WKit.bindEvents` - 2D 이벤트 바인딩 (`WKit.js:14-24`)
-- `WKit.bind3DEvents` - 3D 이벤트 바인딩 (`WKit.js:51-57`)
-- `WKit.pipeForDataMapping` - 데이터 매핑 파이프라인 (`WKit.js:4-11`)
-- `WKit.dispose3DTree` - 3D 리소스 정리 (`WKit.js:60-98`)
-- `GlobalDataPublisher.fetchAndPublish` - 데이터 fetch & 발행 (`GlobalDataPublisher.js:18-31`)
+- `WKit.bindEvents` - 2D 이벤트 바인딩
+- `WKit.bind3DEvents` - 3D 이벤트 바인딩
+- `WKit.fetchData` - 데이터 fetch primitive
+- `WKit.getInstanceByName` - 인스턴스 검색 primitive
+- `WKit.dispose3DTree` - 3D 리소스 정리
+- `GlobalDataPublisher.fetchAndPublish` - 데이터 fetch & 발행
 
 ---
 
 ## 버전 정보
 
-**문서 버전**: 1.0.0
-**최종 업데이트**: 2025-11-16
+**문서 버전**: 1.1.0
+**최종 업데이트**: 2025-11-19
+**주요 변경사항**:
+- v1.1.0: Primitive Building Blocks 원칙 적용
+  - 제거된 API: `pipeForDataMapping`, `triggerEventToTargetInstance`, `getDataMappingSchema`
+  - 제거된 Internal: `resolveMappingInfo`, `getDataFromMapping`
+  - 프레임워크는 primitive만 제공, 조합은 사용자가 직접
+- v1.0.0: 초기 문서 작성
+
 **작성자**: Claude Code Analysis
