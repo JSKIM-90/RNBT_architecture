@@ -170,31 +170,44 @@ clearSceneBackground(scene);
 - `page_script/dashboard_example/page_before_unload_dashboard.js` - 정리 (interval 포함)
 
 **용도**: 주기적으로 데이터를 갱신하는 대시보드
-- setInterval로 자동 갱신
+- 데이터셋별 interval (각 데이터 특성에 맞는 갱신 주기)
 - 필터 변경 시 즉시 갱신
 - param 동적 변경
 
 **핵심**:
 ```javascript
-// loaded - 상태 관리 + interval (globalDataMappings 순회)
-this.currentParams = {};
-fx.go(
-    this.globalDataMappings,
-    each(({ topic }) => { this.currentParams[topic] = {}; })
-);
+// loaded - 데이터셋별 interval 설정
+this.globalDataMappings = [
+    { topic: 'users', refreshInterval: 30000, datasetInfo: {...} },  // 30초
+    { topic: 'sales', refreshInterval: 3000, datasetInfo: {...} }    // 3초
+];
 
-this.refreshInterval = setInterval(() => {
+// Helper functions
+this.startAllIntervals = () => {
+    this.refreshIntervals = {};
     fx.go(
         this.globalDataMappings,
-        each(({ topic }) => fetchAndPublish(topic, this, this.currentParams[topic] || {}))
+        each(({ topic, refreshInterval = 5000 }) => {
+            this.refreshIntervals[topic] = setInterval(() => {
+                fetchAndPublish(topic, this, this.currentParams[topic] || {});
+            }, refreshInterval);
+        })
     );
-}, 5000);
+};
 
-// before_load - 필터 변경 (clearInterval + 재시작)
+this.stopAllIntervals = () => {
+    fx.go(
+        Object.values(this.refreshIntervals),
+        each(interval => clearInterval(interval))
+    );
+};
+
+this.startAllIntervals();
+
+// before_load - 필터 변경 (stop → update → start)
 '@periodFilterChanged': ({ period }) => {
-    clearInterval(this.refreshInterval);
+    this.stopAllIntervals();
 
-    // Update & fetch immediately
     fx.go(
         this.globalDataMappings,
         each(({ topic }) => {
@@ -203,17 +216,11 @@ this.refreshInterval = setInterval(() => {
         })
     );
 
-    // Restart interval
-    this.refreshInterval = setInterval(() => {
-        fx.go(
-            this.globalDataMappings,
-            each(({ topic }) => fetchAndPublish(topic, this, this.currentParams[topic] || {}))
-        );
-    }, 5000);
+    this.startAllIntervals();
 };
 
 // before_unload - interval 정리
-clearInterval(this.refreshInterval);
+this.stopAllIntervals();
 ```
 
 ---

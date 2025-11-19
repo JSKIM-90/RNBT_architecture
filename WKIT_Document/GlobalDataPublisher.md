@@ -237,9 +237,9 @@ fx.go(
 ## 대시보드 패턴 (동적 param + 자동 갱신)
 
 ### 시나리오
-- 주기적으로 데이터 갱신 (setInterval)
+- 데이터셋별 interval (각 데이터 특성에 맞는 갱신 주기)
 - 필터 변경 시 즉시 갱신
-- clearInterval 없이 param만 변경
+- 헬퍼 함수로 interval 관리 간소화
 
 ### 구현
 
@@ -248,6 +248,7 @@ fx.go(
 this.globalDataMappings = [
     {
         topic: 'users',
+        refreshInterval: 30000,  // 30 seconds (slower changing data)
         datasetInfo: {
             datasetName: 'myapi',
             param: { period: 'monthly', limit: 20 }
@@ -255,6 +256,7 @@ this.globalDataMappings = [
     },
     {
         topic: 'sales',
+        refreshInterval: 3000,   // 3 seconds (real-time critical data)
         datasetInfo: {
             datasetName: 'myapi',
             param: { period: 'monthly', metric: 'revenue' }
@@ -269,7 +271,6 @@ fx.go(
 );
 
 // 현재 param 상태 (동적 변경용)
-// Initialize empty params for each topic
 this.currentParams = {};
 fx.go(
     this.globalDataMappings,
@@ -284,22 +285,36 @@ fx.go(
     each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
 );
 
-// 자동 갱신 (5초마다)
-this.refreshInterval = setInterval(() => {
+// Helper: Start all intervals (each topic has its own interval)
+this.startAllIntervals = () => {
+    this.refreshIntervals = {};
     fx.go(
         this.globalDataMappings,
-        each(({ topic }) => {
-            GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
+        each(({ topic, refreshInterval = 5000 }) => {
+            this.refreshIntervals[topic] = setInterval(() => {
+                GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
+            }, refreshInterval);
         })
     );
-}, 5000);
+};
+
+// Helper: Stop all intervals
+this.stopAllIntervals = () => {
+    fx.go(
+        Object.values(this.refreshIntervals),
+        each(interval => clearInterval(interval))
+    );
+};
+
+// Start auto-refresh for all topics
+this.startAllIntervals();
 
 // Page - before_load (필터 변경 핸들러)
 this.eventBusHandlers = {
     // 모든 topic에 적용되는 필터
     '@periodFilterChanged': ({ period }) => {
-        // 1. Stop interval
-        clearInterval(this.refreshInterval);
+        // 1. Stop all intervals
+        this.stopAllIntervals();
 
         // 2. Update params & fetch immediately
         fx.go(
@@ -310,57 +325,36 @@ this.eventBusHandlers = {
             })
         );
 
-        // 3. Restart interval
-        this.refreshInterval = setInterval(() => {
-            fx.go(
-                this.globalDataMappings,
-                each(({ topic }) => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
-                })
-            );
-        }, 5000);
+        // 3. Restart all intervals (with their own refresh rates)
+        this.startAllIntervals();
     },
 
     // users만 해당하는 필터
     '@userLimitChanged': ({ limit }) => {
-        clearInterval(this.refreshInterval);
+        this.stopAllIntervals();
 
         this.currentParams.users = { ...this.currentParams.users, limit };
         GlobalDataPublisher.fetchAndPublish('users', this, this.currentParams.users);
 
-        this.refreshInterval = setInterval(() => {
-            fx.go(
-                this.globalDataMappings,
-                each(({ topic }) => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
-                })
-            );
-        }, 5000);
+        this.startAllIntervals();
     },
 
     // sales만 해당하는 필터
     '@salesMetricChanged': ({ metric }) => {
-        clearInterval(this.refreshInterval);
+        this.stopAllIntervals();
 
         this.currentParams.sales = { ...this.currentParams.sales, metric };
         GlobalDataPublisher.fetchAndPublish('sales', this, this.currentParams.sales);
 
-        this.refreshInterval = setInterval(() => {
-            fx.go(
-                this.globalDataMappings,
-                each(({ topic }) => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
-                })
-            );
-        }, 5000);
+        this.startAllIntervals();
     }
 };
 
 onEventBusHandlers(this.eventBusHandlers);
 
 // Page - before_unload
-clearInterval(this.refreshInterval);
-this.refreshInterval = null;
+this.stopAllIntervals();
+this.refreshIntervals = null;
 this.currentParams = null;
 
 fx.go(
@@ -446,21 +440,20 @@ fx.go(
     each(({ topic }) => { this.currentParams[topic] = {}; })
 );  // ✅
 
-// 4. interval에서 globalDataMappings 순회
-setInterval(() => {
-    fx.go(
-        this.globalDataMappings,
-        each(({ topic }) => fetchAndPublish(topic, this, this.currentParams[topic] || {}))
-    );
-}, 5000);  // ✅
+// 4. 데이터셋별 interval (헬퍼 함수 사용)
+this.globalDataMappings = [
+    { topic: 'users', refreshInterval: 30000, ... },
+    { topic: 'sales', refreshInterval: 3000, ... }
+];
+this.startAllIntervals();  // ✅
 
-// 5. 필터 변경 시 clearInterval + 재시작
-clearInterval(this.refreshInterval);
+// 5. 필터 변경 시 stop → update → start
+this.stopAllIntervals();
 // update & fetch
-this.refreshInterval = setInterval(...);  // ✅
+this.startAllIntervals();  // ✅
 
 // 6. before_unload에서 정리
-clearInterval(this.refreshInterval);
+this.stopAllIntervals();
 unregisterMapping('users');  // ✅
 ```
 
@@ -470,17 +463,16 @@ unregisterMapping('users');  // ✅
 // 1. 모호한 topic 이름
 registerMapping({ topic: 'data', datasetInfo: {...} });  // ❌
 
-// 2. currentParams 하드코딩
-this.currentParams = { users: {}, sales: {} };  // ❌ globalDataMappings와 불일치
+// 2. 모든 데이터를 같은 주기로 갱신
 setInterval(() => {
-    fetchAndPublish('users', this, this.currentParams.users);
-    fetchAndPublish('sales', this, this.currentParams.sales);  // ❌ 하드코딩
-}, 5000);
+    fetchAndPublish('users', this, ...);   // ❌ 30초면 충분한데 5초
+    fetchAndPublish('sales', this, ...);   // ❌ 3초가 필요한데 5초
+}, 5000);  // ❌ 하드코딩된 단일 주기
 
-// 3. 필터 변경 시 clearInterval 없이 즉시 fetch만
+// 3. 필터 변경 시 stopAllIntervals 없이 즉시 fetch만
 this.currentParams.users = { period: 'weekly' };
 fetchAndPublish('users', this, this.currentParams.users);
-// ❌ interval과 즉시 fetch 충돌 가능
+// ❌ interval과 즉시 fetch 충돌 가능 (타이밍 예측 불가)
 
 // 4. mappingTable 직접 조작
 GlobalDataPublisher.mappingTable.set(...);  // ❌ private

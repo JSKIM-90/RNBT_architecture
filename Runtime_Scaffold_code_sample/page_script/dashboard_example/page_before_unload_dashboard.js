@@ -7,9 +7,9 @@ const { makeIterator, dispose3DTree, clearSceneBackground, offEventBusHandlers }
 offEventBusHandlers(this.eventBusHandlers);
 this.eventBusHandlers = null;
 
-// 2. Clear auto-refresh interval
-clearInterval(this.refreshInterval);
-this.refreshInterval = null;
+// 2. Clear all auto-refresh intervals
+this.stopAllIntervals();
+this.refreshIntervals = null;
 
 // 3. Clear current params state
 this.currentParams = null;

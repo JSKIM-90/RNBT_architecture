@@ -8,8 +8,8 @@ this.eventBusHandlers = {
     '@periodFilterChanged': ({ period }) => {
         console.log('[Dashboard] Period filter changed:', period);
 
-        // 1. Stop interval
-        clearInterval(this.refreshInterval);
+        // 1. Stop all intervals
+        this.stopAllIntervals();
 
         // 2. Update params & fetch immediately
         fx.go(
@@ -20,67 +20,46 @@ this.eventBusHandlers = {
             })
         );
 
-        // 3. Restart interval
-        this.refreshInterval = setInterval(() => {
-            fx.go(
-                this.globalDataMappings,
-                each(({ topic }) => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
-                })
-            );
-        }, 5000);
+        // 3. Restart all intervals (with their own refresh rates)
+        this.startAllIntervals();
     },
 
     // User-specific filter (limit changed)
     '@userLimitChanged': ({ limit }) => {
         console.log('[Dashboard] User limit changed:', limit);
 
-        // 1. Stop interval
-        clearInterval(this.refreshInterval);
+        // 1. Stop all intervals
+        this.stopAllIntervals();
 
         // 2. Update only users param & fetch immediately
         this.currentParams.users = { ...this.currentParams.users, limit };
         GlobalDataPublisher.fetchAndPublish('users', this, this.currentParams.users);
 
-        // 3. Restart interval
-        this.refreshInterval = setInterval(() => {
-            fx.go(
-                this.globalDataMappings,
-                each(({ topic }) => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
-                })
-            );
-        }, 5000);
+        // 3. Restart all intervals
+        this.startAllIntervals();
     },
 
     // Sales-specific filter (metric changed)
     '@salesMetricChanged': ({ metric }) => {
         console.log('[Dashboard] Sales metric changed:', metric);
 
-        // 1. Stop interval
-        clearInterval(this.refreshInterval);
+        // 1. Stop all intervals
+        this.stopAllIntervals();
 
         // 2. Update only sales param & fetch immediately
         this.currentParams.sales = { ...this.currentParams.sales, metric };
         GlobalDataPublisher.fetchAndPublish('sales', this, this.currentParams.sales);
 
-        // 3. Restart interval
-        this.refreshInterval = setInterval(() => {
-            fx.go(
-                this.globalDataMappings,
-                each(({ topic }) => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
-                })
-            );
-        }, 5000);
+        // 3. Restart all intervals
+        this.startAllIntervals();
     },
 
     // Refresh all data manually
     '@refreshAllData': () => {
         console.log('[Dashboard] Manual refresh triggered');
 
-        // 1. Stop interval
-        clearInterval(this.refreshInterval);
+        // 1. Stop all intervals
+        this.stopAllIntervals();
 
         // 2. Fetch all topics immediately
         fx.go(
@@ -90,15 +69,8 @@ this.eventBusHandlers = {
             })
         );
 
-        // 3. Restart interval
-        this.refreshInterval = setInterval(() => {
-            fx.go(
-                this.globalDataMappings,
-                each(({ topic }) => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
-                })
-            );
-        }, 5000);
+        // 3. Restart all intervals
+        this.startAllIntervals();
     }
 };
 
