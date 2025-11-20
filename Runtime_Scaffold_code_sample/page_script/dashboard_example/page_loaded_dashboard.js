@@ -22,26 +22,14 @@ this.globalDataMappings = [
     }
 ];
 
-// Register mappings
-fx.go(
-    this.globalDataMappings,
-    each(GlobalDataPublisher.registerMapping)
-);
-
-// Current param state (for dynamic filtering)
-// Initialize empty params for each topic
+// Initialize and setup all topics (chaining pattern)
 this.currentParams = {};
-fx.go(
-    this.globalDataMappings,
-    each(({ topic }) => {
-        this.currentParams[topic] = {};
-    })
-);
 
-// Initial fetch
 fx.go(
     this.globalDataMappings,
-    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
+    each(GlobalDataPublisher.registerMapping),           // 1. Register
+    each(({ topic }) => this.currentParams[topic] = {}), // 2. Init params
+    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this)) // 3. Fetch
 );
 
 // Helper: Start all intervals (each topic has its own interval)
