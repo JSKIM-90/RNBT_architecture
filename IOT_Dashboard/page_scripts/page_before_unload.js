@@ -50,13 +50,13 @@ function clearDataPublisher() {
 
 function clearThree() {
     const canvas = this.element.querySelector('canvas');
+    if (!canvas) return;
 
-    if (canvas && this.raycastingEvents) {
+    // Raycasting event cleanup
+    if (this.raycastingEvents) {
         go(
             this.raycastingEvents,
-            each(({ type, handler }) => {
-                canvas.removeEventListener(type, handler);
-            })
+            each(({ type, handler }) => canvas.removeEventListener(type, handler))
         );
         this.raycastingEvents = null;
     }
