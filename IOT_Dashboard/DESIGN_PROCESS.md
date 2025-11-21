@@ -853,6 +853,319 @@ this.renderSystemStatus = null;
 
 ---
 
+### 6.6. 이벤트 위임 패턴 상세
+
+#### 왜 이벤트 위임을 사용하는가?
+
+##### ❌ 직접 바인딩의 문제점
+
+```javascript
+// 나쁜 예: 각 버튼에 직접 바인딩
+const buttons = document.querySelectorAll('.my-button');
+buttons.forEach(button => {
+    button.addEventListener('click', handler);
+});
+```
+
+**문제**:
+1. **동적 요소 처리 불가**: 나중에 추가된 버튼은 이벤트 없음
+   ```javascript
+   // 이미 바인딩 완료 후...
+   container.innerHTML += '<button class="my-button">New</button>';
+   // ❌ 새 버튼은 클릭해도 반응 없음!
+   ```
+
+2. **메모리 낭비**: 버튼 100개면 리스너 100개
+   ```javascript
+   // 100개 버튼 → 100개 리스너 → 메모리 100배 사용
+   ```
+
+3. **정리 복잡**: 요소 제거 시 리스너도 수동으로 제거해야 함
+   ```javascript
+   buttons.forEach(button => {
+       button.removeEventListener('click', handler);  // 일일이 제거
+   });
+   ```
+
+---
+
+##### ✅ 이벤트 위임의 장점
+
+```javascript
+// 좋은 예: 부모에 한 번만 바인딩
+container.addEventListener('click', (event) => {
+    const button = event.target.closest('.my-button');
+    if (button) {
+        handler.call(button, event);
+    }
+});
+```
+
+**장점**:
+1. **동적 요소 자동 처리**: 나중에 추가된 요소도 자동으로 동작
+   ```javascript
+   container.innerHTML += '<button class="my-button">New</button>';
+   // ✅ 클릭하면 자동으로 동작!
+   ```
+
+2. **메모리 효율**: 버튼 100개여도 리스너는 1개
+   ```javascript
+   // 100개 버튼 → 1개 리스너 → 메모리 1배만 사용
+   ```
+
+3. **간단한 정리**: 부모의 리스너만 제거하면 됨
+   ```javascript
+   container.removeEventListener('click', handler);  // 한 번만!
+   ```
+
+---
+
+#### 어떻게 동작하는가?
+
+##### 1. 이벤트 버블링 메커니즘
+
+```html
+<div class="container">              <!-- 3. 최종 도착 -->
+    <button class="my-button">       <!-- 2. 버블링 -->
+        <span>Click me</span>        <!-- 1. 클릭 시작 -->
+    </button>
+</div>
+```
+
+**버블링 과정**:
+```
+사용자가 <span> 클릭
+    ↓
+1. event.target = span
+2. span → button → container로 이벤트 버블링
+3. container의 리스너가 이벤트 포착
+4. closest('.my-button')로 버튼 찾기
+5. 버튼을 찾으면 핸들러 실행
+```
+
+---
+
+##### 2. WKit의 delegate 함수 동작 원리
+
+**코드 분석**:
+```javascript
+function delegate(instance, eventName, selector, handler) {
+  const emitEvent = (event) => {
+    // Step 1: 버블링 중 매칭되는 요소 찾기
+    const target = event.target.closest(selector);
+
+    // Step 2: 요소가 존재하고 컴포넌트 범위 내인지 확인
+    if (target && instance.element.contains(target)) {
+      // Step 3: 찾은 요소를 this로 하여 핸들러 실행
+      return handler.call(target, event);
+    }
+  };
+
+  // Step 4: 컴포넌트 root에 리스너 등록 (위임!)
+  instance.element.addEventListener(eventName, emitEvent);
+}
+```
+
+**단계별 설명**:
+
+**Step 1: `closest(selector)`**
+```javascript
+// 클릭된 요소부터 시작해서 부모로 올라가며 selector 매칭 검색
+const target = event.target.closest('.my-button');
+
+// 예시:
+// <button class="my-button">
+//   <span>Text</span>  <!-- 여기 클릭 -->
+// </button>
+
+// event.target = span
+// span.closest('.my-button') = button ✅
+```
+
+**Step 2: 범위 체크**
+```javascript
+// 찾은 요소가 컴포넌트 내부에 있는지 확인
+instance.element.contains(target)
+
+// 다른 컴포넌트의 버튼은 무시
+```
+
+**Step 3: 컨텍스트 유지**
+```javascript
+handler.call(target, event);
+
+// this = target (매칭된 버튼)
+// event.target = 실제 클릭된 요소 (span 등)
+```
+
+**Step 4: 한 곳에만 등록**
+```javascript
+// instance.element (컴포넌트 root)에만 등록
+// 내부의 모든 자식 요소 클릭 포착
+```
+
+---
+
+##### 3. bindEvents의 역할
+
+```javascript
+WKit.bindEvents = function (instance, customEvents) {
+  fx.each(([browserEvent, selectorMap]) => {
+    fx.each(([selector, customEventName]) => {
+      const handler = (event) => {
+        console.log('@eventHandler', customEventName);
+        WEventBus.emit(customEventName, {
+          event,
+          targetInstance: instance,
+        });
+      };
+
+      // delegate로 위임 설정
+      delegate(instance, browserEvent, selector, handler);
+    }, Object.entries(selectorMap));
+  }, Object.entries(customEvents));
+};
+```
+
+**전체 흐름**:
+```
+1. bindEvents 호출
+   ↓
+2. customEvents 순회
+   {
+     click: {
+       '.button1': '@event1',
+       '.button2': '@event2'
+     }
+   }
+   ↓
+3. 각 selector마다 delegate 호출
+   → instance.element에 리스너 등록 (한 번만!)
+   ↓
+4. 사용자 클릭
+   ↓
+5. closest로 매칭되는 요소 찾기
+   ↓
+6. WEventBus.emit으로 커스텀 이벤트 발행
+   ↓
+7. 페이지의 eventBusHandlers 실행
+```
+
+---
+
+#### 실전 예시
+
+##### 동적 리스트 렌더링
+
+```javascript
+// Component register
+this.customEvents = {
+    click: {
+        '.delete-button': '@itemDeleted'
+    }
+};
+bindEvents(this, this.customEvents);
+
+// 동적으로 아이템 추가
+function renderItems(data) {
+    const html = data.map(item => `
+        <div class="item">
+            ${item.name}
+            <button class="delete-button" data-id="${item.id}">Delete</button>
+        </div>
+    `).join('');
+
+    container.innerHTML = html;  // 새로 렌더링
+}
+
+// ✅ 새로 추가된 delete-button도 자동으로 클릭 가능!
+// ✅ 리스너는 단 1개! (instance.element에만)
+```
+
+##### 중첩된 요소 처리
+
+```html
+<button class="status-item" data-status="online">
+    <span class="icon">●</span>
+    <span class="label">Online: 5</span>
+</button>
+```
+
+```javascript
+// 아이콘이나 라벨 클릭해도 버튼 이벤트 발생
+this.customEvents = {
+    click: {
+        '.status-item': '@statusClicked'
+    }
+};
+
+// closest가 .status-item을 찾아줌
+// event.target.dataset.status로 데이터 접근 가능
+```
+
+---
+
+#### Edge Cases
+
+##### 1. 중첩된 매칭 요소
+
+```html
+<div class="button outer">
+  <div class="button inner">
+    <span>Click</span>
+  </div>
+</div>
+```
+
+**동작**:
+- `closest('.button')` → 가장 가까운 `.button.inner` 반환 ✅
+- 한 번만 처리됨 (의도된 동작) ✅
+
+##### 2. Root 자체가 selector
+
+```javascript
+// instance.element에 class="my-component"
+this.customEvents = {
+  click: { '.my-component': '@clicked' }
+};
+```
+
+**동작**:
+- `closest('.my-component')` → instance.element 반환 ✅
+- `contains(target)` → true (자기 자신 포함) ✅
+
+##### 3. 여러 컴포넌트가 같은 selector
+
+```javascript
+// Component A, B 모두 '.button' 사용
+```
+
+**동작**:
+- 각각 독립적인 instance.element에 리스너 등록 ✅
+- `contains()` 체크로 자신의 범위만 처리 ✅
+
+---
+
+#### 핵심 정리
+
+| 항목 | 직접 바인딩 | 이벤트 위임 |
+|------|------------|------------|
+| **리스너 개수** | 요소마다 1개 | 부모에 1개 |
+| **동적 요소** | ❌ 처리 불가 | ✅ 자동 처리 |
+| **메모리** | 요소 수만큼 | 항상 1개 |
+| **정리** | 각각 제거 필요 | 부모만 제거 |
+| **버블링 필요** | 불필요 | 필수 |
+
+**WKit의 이벤트 위임 = 효율성 + 동적 처리 + 간단한 정리**
+
+**구현 검증**: ✅ 올바르게 구현됨
+- `closest()` 사용으로 버블링 정확히 활용
+- `contains()` 체크로 범위 격리
+- 동적 요소 자동 처리
+- 메모리 효율적
+
+---
+
 ## 완전한 라이프사이클 흐름
 
 ### 전체 흐름 요약
