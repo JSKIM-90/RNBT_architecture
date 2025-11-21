@@ -192,7 +192,32 @@ this.eventBusHandlers = {
 };
 
 onEventBusHandlers(this.eventBusHandlers);
+
+// 3D Raycasting 설정 (선택적)
+const canvas = this.element.querySelector('canvas');
+if (canvas) {
+    this.raycastingEvents = [
+        { type: 'click' }
+        // { type: 'mousemove' },  // Add more events as needed
+        // { type: 'dblclick' }
+    ];
+
+    fx.go(
+        this.raycastingEvents,
+        fx.each(event => {
+            event.handler = initThreeRaycasting(canvas, event.type);
+        })
+    );
+}
 ```
+
+**3D Raycasting 패턴**:
+- `raycastingEvents` 배열로 여러 이벤트 타입 관리 (globalDataMappings와 동일한 패턴)
+- Canvas 요소를 직접 선택하여 정확한 좌표 계산
+- `fx.go` 파이프라인으로 각 이벤트에 handler 등록
+- 필요시 mousemove, dblclick 등 추가 가능
+
+**주의**: 3D 이벤트도 결국 `WEventBus`를 통해 전달되므로, 핸들러 구조는 2D와 동일합니다.
 
 ---
 
@@ -304,9 +329,10 @@ this.startAllIntervals();  // 실행
 
 ```javascript
 function onPageUnLoad() {
-    stopAllIntervals.call(this);     // 1. Interval 먼저 중단 (새 요청 방지)
-    clearEventBus.call(this);        // 2. EventBus 정리
-    clearDataPublisher.call(this);   // 3. DataPublisher 정리
+    stopAllIntervals.call(this);        // 1. Interval 먼저 중단 (새 요청 방지)
+    clearEventBus.call(this);           // 2. EventBus 정리
+    clearDataPublisher.call(this);      // 3. DataPublisher 정리
+    clearThreeRaycasting.call(this);    // 4. Three.js Raycasting 정리
 }
 ```
 
@@ -344,6 +370,29 @@ function clearDataPublisher() {
 }
 ```
 
+#### 4. Three.js Raycasting 정리
+
+```javascript
+function clearThreeRaycasting() {
+    const canvas = this.element.querySelector('canvas');
+
+    if (canvas && this.raycastingEvents) {
+        go(
+            this.raycastingEvents,
+            each(({ type, handler }) => {
+                canvas.removeEventListener(type, handler);
+            })
+        );
+        this.raycastingEvents = null;
+    }
+}
+```
+
+**패턴**:
+- Canvas 요소를 다시 선택
+- `fx.go` 파이프라인으로 모든 이벤트 리스너 제거
+- globalDataMappings 정리와 동일한 구조
+
 #### 생성/정리 매칭 테이블
 
 | 생성 (before_load / loaded) | 정리 (before_unload) |
@@ -355,6 +404,8 @@ function clearDataPublisher() {
 | `this.refreshIntervals = {}` | `this.refreshIntervals = null` |
 | `GlobalDataPublisher.registerMapping(...)` | `GlobalDataPublisher.unregisterMapping(...)` |
 | `setInterval(...)` | `clearInterval(...)` |
+| `this.raycastingEvents = [...]` | `this.raycastingEvents = null` |
+| `canvas.addEventListener(...)` | `canvas.removeEventListener(...)` |
 
 **1:1 매칭 확인**: ✅ 모든 생성된 리소스가 정리됨
 
