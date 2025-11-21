@@ -89,5 +89,18 @@ onEventBusHandlers(this.eventBusHandlers);
 // ======================
 
 // Uncomment if your dashboard uses 3D components
-// this.raycastingEventType = 'click';
-// this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingEventType);
+const canvas = this.element.querySelector('canvas');
+if (canvas) {
+    this.raycastingEvents = [
+        { type: 'click' }
+        // { type: 'mousemove' },  // Add more events as needed
+        // { type: 'dblclick' }
+    ];
+
+    fx.go(
+        this.raycastingEvents,
+        fx.each(event => {
+            event.handler = initThreeRaycasting(canvas, event.type);
+        })
+    );
+}

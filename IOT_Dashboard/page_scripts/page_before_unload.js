@@ -7,6 +7,7 @@ function onPageUnLoad() {
     stopAllIntervals.call(this);
     clearEventBus.call(this);
     clearDataPublisher.call(this);
+    clearThreeRaycasting.call(this);
 }
 
 // ======================
@@ -41,4 +42,22 @@ function clearDataPublisher() {
 
     this.globalDataMappings = null;
     this.currentParams = null;
+}
+
+// ======================
+// THREE.JS RAYCASTING CLEANUP
+// ======================
+
+function clearThreeRaycasting() {
+    const canvas = this.element.querySelector('canvas');
+
+    if (canvas && this.raycastingEvents) {
+        go(
+            this.raycastingEvents,
+            each(({ type, handler }) => {
+                canvas.removeEventListener(type, handler);
+            })
+        );
+        this.raycastingEvents = null;
+    }
 }
