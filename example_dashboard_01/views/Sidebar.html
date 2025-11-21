@@ -1,0 +1,46 @@
+<!-- Sidebar Component -->
+<!-- Note: This HTML should be placed inside a container div with unique ID -->
+<!-- Container structure: <div id="component-123" class="component-container" style="...">...</div> -->
+<!-- CSS: Replace #component-id with your actual component ID (e.g., #sidebar-456) -->
+<div class="dashboard-sidebar">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+        <h2 class="sidebar-title">Menu</h2>
+    </div>
+
+    <!-- Navigation Menu (will be rendered dynamically) -->
+    <nav class="sidebar-nav">
+        <ul class="nav-list" id="nav-menu-list">
+            <!-- Navigation items will be rendered here using template -->
+        </ul>
+    </nav>
+
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <div class="sidebar-footer-item">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zM7 11V7h2v4H7zm0-6V3h2v2H7z"/>
+            </svg>
+            <span>Help & Support</span>
+        </div>
+    </div>
+</div>
+
+<!-- Template: Navigation Item -->
+<template id="nav-item-template">
+    <li class="nav-item" data-page="">
+        <div class="nav-link">
+            <span class="nav-icon"></span>
+            <span class="nav-label"></span>
+            <span class="nav-badge" style="display: none;"></span>
+        </div>
+    </li>
+</template>
+
+<!-- Template: Navigation Separator -->
+<template id="nav-separator-template">
+    <li class="nav-separator">
+        <span class="separator-label"></span>
+    </li>
+</template>
+

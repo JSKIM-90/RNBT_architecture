@@ -1,0 +1,107 @@
+<!-- ProductList Component -->
+<!-- Note: This HTML should be placed inside a container div with unique ID -->
+<!-- Container structure: <div id="component-123" class="component-container" style="...">...</div> -->
+<!-- CSS: Replace #component-id with your actual component ID (e.g., #sidebar-456) -->
+<div class="product-list-widget">
+    <!-- Widget Header -->
+    <div class="widget-header">
+        <div class="widget-title-group">
+            <h3 class="widget-title">Product List</h3>
+            <p class="widget-subtitle">
+                Total: <span class="product-count">0</span> products
+            </p>
+        </div>
+        <div class="widget-actions">
+            <input
+                type="search"
+                class="search-input"
+                placeholder="Search products..."
+                aria-label="Search products"
+            />
+            <button class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 2v12M2 8h12"/>
+                </svg>
+                Add Product
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody class="product-table-body">
+                <!-- Product rows will be rendered here using template -->
+            </tbody>
+        </table>
+
+        <!-- Loading State -->
+        <div class="table-loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading products...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div class="table-empty" style="display: none;">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                <rect x="12" y="16" width="40" height="32" stroke="#d1d5db" stroke-width="2" rx="2"/>
+                <path d="M12 24h40M12 32h40M12 40h40" stroke="#d1d5db" stroke-width="2"/>
+            </svg>
+            <p>No products found</p>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="table-pagination">
+        <div class="pagination-info">
+            Showing <span class="page-start">0</span> to <span class="page-end">0</span> of <span class="page-total">0</span>
+        </div>
+        <div class="pagination-controls">
+            <button class="btn-pagination" data-action="prev" disabled>Previous</button>
+            <button class="btn-pagination" data-action="next" disabled>Next</button>
+        </div>
+    </div>
+</div>
+
+<!-- Template: Product Row -->
+<template id="product-row-template">
+    <tr class="product-row" data-index="" data-product-id="">
+        <td class="product-id"></td>
+        <td class="product-name">
+            <div class="product-name-cell">
+                <div class="product-image-placeholder"></div>
+                <span class="product-name-text"></span>
+            </div>
+        </td>
+        <td class="product-category"></td>
+        <td class="product-price"></td>
+        <td class="product-stock"></td>
+        <td class="product-status">
+            <span class="status-badge"></span>
+        </td>
+        <td class="product-actions">
+            <button class="btn-action btn-edit" title="Edit" data-action="edit">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                    <path d="M11 0l3 3-8 8H3v-3L11 0zM0 14h14v-2H0v2z"/>
+                </svg>
+            </button>
+            <button class="btn-action btn-delete product-delete-btn" title="Delete" data-action="delete">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                    <path d="M1 3h12M5 3V1h4v2M3 3v10h8V3"/>
+                </svg>
+            </button>
+        </td>
+    </tr>
+</template>
+

@@ -1,0 +1,255 @@
+#component-id .product-list-widget {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#component-id .widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+#component-id .widget-title-group {
+    flex: 1;
+}
+
+#component-id .widget-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.25rem 0;
+}
+
+#component-id .widget-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+#component-id .product-count {
+    font-weight: 600;
+    color: #4f46e5;
+}
+
+#component-id .widget-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+#component-id .search-input {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    width: 200px;
+}
+
+#component-id .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#component-id .btn-primary:hover {
+    background: #4338ca;
+}
+
+#component-id .table-container {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+    position: relative;
+}
+
+#component-id .product-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+#component-id .product-table thead {
+    background: #f9fafb;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#component-id .product-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+#component-id .product-table tbody tr {
+    border-bottom: 1px solid #e5e7eb;
+    transition: background 0.2s;
+}
+
+#component-id .product-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+#component-id .product-table td {
+    padding: 0.75rem 1rem;
+}
+
+#component-id .product-name-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#component-id .product-image-placeholder {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 0.375rem;
+    flex-shrink: 0;
+}
+
+#component-id .product-name-text {
+    font-weight: 500;
+    color: #111827;
+}
+
+#component-id .product-category {
+    color: #6b7280;
+}
+
+#component-id .product-price {
+    font-weight: 600;
+    color: #059669;
+}
+
+#component-id .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+#component-id .status-badge.in-stock {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+#component-id .status-badge.low-stock {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+#component-id .status-badge.out-of-stock {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+#component-id .product-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#component-id .btn-action {
+    padding: 0.375rem;
+    background: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+#component-id .btn-action:hover {
+    background: #f3f4f6;
+}
+
+#component-id .btn-edit:hover {
+    color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+#component-id .btn-delete:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+#component-id .table-loading,
+#component-id .table-empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: #6b7280;
+}
+
+#component-id .spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid #e5e7eb;
+    border-top-color: #4f46e5;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+#component-id .table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+#component-id .pagination-info {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+#component-id .pagination-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#component-id .btn-pagination {
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#component-id .btn-pagination:hover:not(:disabled) {
+    background: #f3f4f6;
+}
+
+#component-id .btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
