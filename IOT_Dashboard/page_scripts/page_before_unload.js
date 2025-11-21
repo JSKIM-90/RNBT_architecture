@@ -1,5 +1,5 @@
 const { go, each } = fx;
-const { offEventBusHandlers } = WKit;
+const { offEventBusHandlers, disposeAllThreeResources } = WKit;
 
 onPageUnLoad.call(this);
 
@@ -7,7 +7,7 @@ function onPageUnLoad() {
     stopAllIntervals.call(this);
     clearEventBus.call(this);
     clearDataPublisher.call(this);
-    clearThreeRaycasting.call(this);
+    clearThree.call(this);
 }
 
 // ======================
@@ -45,10 +45,10 @@ function clearDataPublisher() {
 }
 
 // ======================
-// THREE.JS RAYCASTING CLEANUP
+// THREE.JS CLEANUP
 // ======================
 
-function clearThreeRaycasting() {
+function clearThree() {
     const canvas = this.element.querySelector('canvas');
 
     if (canvas && this.raycastingEvents) {
@@ -60,4 +60,7 @@ function clearThreeRaycasting() {
         );
         this.raycastingEvents = null;
     }
+
+    // Dispose all 3D resources (components + scene background)
+    disposeAllThreeResources(this);
 }

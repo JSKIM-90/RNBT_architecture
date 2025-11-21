@@ -332,7 +332,7 @@ function onPageUnLoad() {
     stopAllIntervals.call(this);        // 1. Interval 먼저 중단 (새 요청 방지)
     clearEventBus.call(this);           // 2. EventBus 정리
     clearDataPublisher.call(this);      // 3. DataPublisher 정리
-    clearThreeRaycasting.call(this);    // 4. Three.js Raycasting 정리
+    clearThree.call(this);              // 4. Three.js 정리 (raycasting + 3D resources)
 }
 ```
 
@@ -370,10 +370,10 @@ function clearDataPublisher() {
 }
 ```
 
-#### 4. Three.js Raycasting 정리
+#### 4. Three.js 정리
 
 ```javascript
-function clearThreeRaycasting() {
+function clearThree() {
     const canvas = this.element.querySelector('canvas');
 
     if (canvas && this.raycastingEvents) {
@@ -385,13 +385,18 @@ function clearThreeRaycasting() {
         );
         this.raycastingEvents = null;
     }
+
+    // Dispose all 3D resources (components + scene background)
+    disposeAllThreeResources(this);
 }
 ```
 
 **패턴**:
-- Canvas 요소를 다시 선택
-- `fx.go` 파이프라인으로 모든 이벤트 리스너 제거
-- globalDataMappings 정리와 동일한 구조
+- **Raycasting 이벤트 정리**: Canvas의 모든 raycasting 이벤트 리스너 제거
+- **3D 리소스 정리**: `WKit.disposeAllThreeResources(page)` 호출
+  - 모든 3D 컴포넌트의 geometry, material, texture 정리
+  - Scene background 정리
+  - 한 줄로 모든 3D 리소스 정리 가능
 
 #### 생성/정리 매칭 테이블
 
@@ -406,6 +411,7 @@ function clearThreeRaycasting() {
 | `setInterval(...)` | `clearInterval(...)` |
 | `this.raycastingEvents = [...]` | `this.raycastingEvents = null` |
 | `canvas.addEventListener(...)` | `canvas.removeEventListener(...)` |
+| 3D 컴포넌트 리소스 (컴포넌트가 생성) | `disposeAllThreeResources(this)` |
 
 **1:1 매칭 확인**: ✅ 모든 생성된 리소스가 정리됨
 

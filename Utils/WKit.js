@@ -97,6 +97,17 @@ WKit.clearSceneBackground = function (scene) {
   scene.background = null;
 };
 
+WKit.disposeAllThreeResources = function (page) {
+  const { scene } = wemb.threeElements;
+
+  fx.go(
+    WKit.makeIterator(page, 'threeLayer'),
+    fx.map(({ appendElement }) => WKit.dispose3DTree(appendElement))
+  );
+
+  WKit.clearSceneBackground(scene);
+};
+
 /* Public API: helper */
 WKit.makeIterator = function (page, ...layerList) {
   layerList = layerList.length ? layerList : ['masterLayer', 'twoLayer', 'threeLayer'];
