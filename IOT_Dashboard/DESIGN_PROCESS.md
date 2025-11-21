@@ -432,6 +432,80 @@ this.refreshIntervals[topic] = setInterval(() => {
 
 ---
 
+### 3.6. page_before_unload.js
+
+**역할**: 페이지 종료 시 모든 리소스 정리
+
+**핵심 논리**:
+> 페이지에서 생성한 모든 리소스는 before_unload 시점에 정리되어야 합니다.
+> 메모리 누수를 방지하고, 브라우저 리소스를 확보하기 위함입니다.
+> 생성된 것과 1:1 매칭되어 정리되어야 합니다.
+
+**정리 대상**:
+
+#### 1. Interval 정리
+```javascript
+function stopAllIntervals() {
+    if (this.stopAllIntervals) {
+        this.stopAllIntervals();  // page_loaded.js에서 정의한 메서드 호출
+    }
+    this.refreshIntervals = null;  // 참조 제거
+}
+```
+- `this.stopAllIntervals()`: 모든 topic의 interval clearInterval
+- `this.refreshIntervals = null`: interval ID 저장 객체 정리
+
+#### 2. EventBus 정리
+```javascript
+function clearEventBus() {
+    offEventBusHandlers.call(this, this.eventBusHandlers);
+    this.eventBusHandlers = null;
+}
+```
+- `offEventBusHandlers`: page_before_load.js에서 등록한 핸들러 제거
+- `this.eventBusHandlers = null`: 핸들러 객체 정리
+
+#### 3. DataPublisher 정리
+```javascript
+function clearDataPublisher() {
+    go(
+        this.globalDataMappings,
+        each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
+    );
+
+    this.globalDataMappings = null;
+    this.currentParams = null;
+}
+```
+- `unregisterMapping`: 각 topic 매핑 해제
+- `this.globalDataMappings = null`: 데이터 매핑 정보 정리
+- `this.currentParams = null`: param 저장 객체 정리
+
+**실행 순서**:
+```javascript
+function onPageUnLoad() {
+    stopAllIntervals.call(this);     // 1. Interval 먼저 중단 (새 요청 방지)
+    clearEventBus.call(this);        // 2. 이벤트 핸들러 제거
+    clearDataPublisher.call(this);   // 3. 데이터 매핑 해제
+}
+```
+
+**생성/정리 매칭**:
+
+| 생성 (page_before_load / loaded) | 정리 (page_before_unload) |
+|-----------------------------------|---------------------------|
+| `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
+| `onEventBusHandlers(...)` | `offEventBusHandlers(...)` |
+| `this.globalDataMappings = [...]` | `this.globalDataMappings = null` |
+| `this.currentParams = {}` | `this.currentParams = null` |
+| `this.refreshIntervals = {}` | `this.refreshIntervals = null` |
+| `GlobalDataPublisher.registerMapping(...)` | `GlobalDataPublisher.unregisterMapping(...)` |
+| `setInterval(...)` | `clearInterval(...)` |
+
+**1:1 매칭 확인**: ✅ 모든 생성된 리소스가 정리됨
+
+---
+
 ## 중간 점검: 전체 흐름 정리
 
 ### 핵심 흐름 요약
@@ -564,15 +638,38 @@ this.startAllIntervals();
 #### 6. before_unload: 정리
 
 ```javascript
-this.stopAllIntervals = () => {
-    fx.go(
-        Object.values(this.refreshIntervals || {}),
-        each(interval => clearInterval(interval))
+function onPageUnLoad() {
+    stopAllIntervals.call(this);     // 1. Interval 중단
+    clearEventBus.call(this);        // 2. EventBus 정리
+    clearDataPublisher.call(this);   // 3. DataPublisher 정리
+}
+
+function stopAllIntervals() {
+    if (this.stopAllIntervals) {
+        this.stopAllIntervals();  // loaded에서 정의한 메서드 호출
+    }
+    this.refreshIntervals = null;
+}
+
+function clearEventBus() {
+    offEventBusHandlers.call(this, this.eventBusHandlers);
+    this.eventBusHandlers = null;
+}
+
+function clearDataPublisher() {
+    go(
+        this.globalDataMappings,
+        each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
     );
-};
+    this.globalDataMappings = null;
+    this.currentParams = null;
+}
 ```
-- 모든 interval 종료
-- 메모리 누수 방지
+- 모든 interval 종료 (clearInterval)
+- EventBus 핸들러 제거 (offEventBusHandlers)
+- GlobalDataPublisher 매핑 해제 (unregisterMapping)
+- 모든 참조 제거 (null 할당)
+- 생성/정리 1:1 매칭으로 메모리 누수 방지
 
 ---
 
@@ -1396,12 +1493,13 @@ document.addEventListener('visibilitychange', () => {
   - Interval 관리 (startAllIntervals, stopAllIntervals)
   - Param 관리 (currentParams)
   - Topic별 독립적 갱신 주기
+- [x] page_before_unload.js 템플릿
+  - Interval 정리 (stopAllIntervals, refreshIntervals = null)
+  - EventBus 정리 (offEventBusHandlers, eventBusHandlers = null)
+  - DataPublisher 정리 (unregisterMapping, globalDataMappings = null, currentParams = null)
+  - 생성/정리 1:1 매칭 완료
 
 ### ⏳ 다음 단계 (즉시 진행 필요)
-- [ ] page_before_unload.js 템플릿 (5분)
-  - stopAllIntervals 호출
-  - GlobalDataPublisher 매핑 해제
-  - 이벤트 핸들러 정리
 - [ ] 컴포넌트 템플릿 1개 작성 (10-15분)
   - Subscribe 패턴
   - 데이터 렌더링
@@ -1571,7 +1669,7 @@ if (datasetInfo) {
 **실용적 완성도**: 아직 낮음, 하지만 통합 검증 임박
 
 **다음 행동**:
-1. before_unload 빠르게 완성
+1. ✅ ~~before_unload 빠르게 완성~~ (완료)
 2. 컴포넌트 1개 최소 구현
 3. **즉시 통합 검증** ← 가장 중요
 4. 문제 발견 시 수정
@@ -1580,4 +1678,4 @@ if (datasetInfo) {
 ---
 
 **작성 일시**: 2025-11-21
-**최종 업데이트**: Param 관리 패턴 추가, 현재 구현 수준 평가 추가
+**최종 업데이트**: page_before_unload.js 완성, 리소스 정리 패턴 추가
