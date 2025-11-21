@@ -10,6 +10,7 @@
 - 페이지 라이프사이클 관리
 - 자동 리소스 정리
 - 데이터셋별 독립적인 auto-refresh
+- **ECharts 통합** (Line/Bar 차트)
 
 ---
 
@@ -112,23 +113,45 @@ example_dashboard_01/
 ### 페이지 컴포넌트
 
 #### 3. SalesChart
-**패턴**: 2D Component + GlobalDataPublisher Subscription
+**패턴**: 2D Component + GlobalDataPublisher Subscription + ECharts
 
 **기능**:
-- 판매 데이터 차트 렌더링
-- 차트 제목 업데이트
+- 판매 데이터 Line 차트 렌더링 (ECharts)
+- 차트 제목 및 타임스탬프 업데이트
+- Refresh 버튼 이벤트
 
 **구독**:
 - Topic: `salesData`
 - Handlers:
-  - `renderChart` - 차트 렌더링
-  - `updateChartTitle` - 차트 제목 업데이트
+  - `renderChart` - ECharts로 Line 차트 렌더링
+  - `updateTimestamp` - 차트 업데이트 시간 표시
+
+**이벤트**:
+- `@refreshChartClicked` - 차트 수동 갱신
+
+**ECharts 통합**:
+```javascript
+// 초기화
+const targetElement = this.element.querySelector('#echarts');
+this.chartInstance = echarts.init(targetElement);
+
+// 옵션 설정
+const option = {
+  xAxis: { type: 'category', data: dates },
+  yAxis: { type: 'value' },
+  series: [{ data: values, type: 'line', smooth: true }]
+};
+this.chartInstance.setOption(option);
+
+// 정리
+this.chartInstance.dispose();
+```
 
 **Auto-Refresh**: 5초마다 자동 갱신
 
 **스크립트**:
-- `SalesChart_register.js` - 구독 등록, 핸들러 바인딩
-- `SalesChart_destroy.js` - 구독 해제, 참조 정리
+- `SalesChart_register.js` - 구독 등록, ECharts 초기화, 이벤트 바인딩
+- `SalesChart_destroy.js` - 구독 해제, ECharts dispose, 참조 정리
 
 ---
 
@@ -162,23 +185,45 @@ example_dashboard_01/
 ---
 
 #### 5. SalesStats
-**패턴**: 2D Component + GlobalDataPublisher Subscription
+**패턴**: 2D Component + GlobalDataPublisher Subscription + ECharts
 
 **기능**:
-- 통계 카드 표시 (총 매출 / 주문 수 / 평균 주문액)
-- 트렌드 인디케이터 (증감률)
+- 카테고리별 판매 통계 Bar 차트 렌더링 (ECharts)
+- 차트 타임스탬프 업데이트
+- Refresh 버튼 이벤트
 
 **구독**:
 - Topic: `salesStats`
 - Handlers:
-  - `updateStatsCards` - 통계 숫자 업데이트
-  - `updateTrends` - 트렌드 화살표 및 퍼센트 업데이트
+  - `renderChart` - ECharts로 Bar 차트 렌더링
+  - `updateTimestamp` - 차트 업데이트 시간 표시
+
+**이벤트**:
+- `@refreshStatsClicked` - 차트 수동 갱신
+
+**ECharts 통합**:
+```javascript
+// 초기화
+const targetElement = this.element.querySelector('#echarts');
+this.chartInstance = echarts.init(targetElement);
+
+// 옵션 설정 (Bar 차트)
+const option = {
+  xAxis: { type: 'category', data: categories },
+  yAxis: { type: 'value' },
+  series: [{ data: values, type: 'bar', barWidth: '60%' }]
+};
+this.chartInstance.setOption(option);
+
+// 정리
+this.chartInstance.dispose();
+```
 
 **Auto-Refresh**: 15초마다 자동 갱신
 
 **스크립트**:
-- `SalesStats_register.js` - 구독 등록, 핸들러 바인딩
-- `SalesStats_destroy.js` - 구독 해제, 참조 정리
+- `SalesStats_register.js` - 구독 등록, ECharts 초기화, 이벤트 바인딩
+- `SalesStats_destroy.js` - 구독 해제, ECharts dispose, 참조 정리
 
 ---
 
@@ -691,9 +736,9 @@ param: { id: 'hardcoded-id' }  // ❌
 |------|------|------|
 | `Header.css` | 3.5KB | Header 컴포넌트 스타일 (헤더, 알림, 사용자 프로필) |
 | `Sidebar.css` | 2.4KB | Sidebar 컴포넌트 스타일 (네비게이션 메뉴) |
-| `SalesChart.css` | 2.0KB | SalesChart 위젯 스타일 (차트 컨테이너, 범례) |
+| `SalesChart.css` | 1.6KB | SalesChart 위젯 스타일 (ECharts 컨테이너, 헤더) |
 | `ProductList.css` | 4.2KB | ProductList 테이블 스타일 (테이블, 행, 액션 버튼) |
-| `SalesStats.css` | 2.4KB | SalesStats 카드 스타일 (통계 카드, 트렌드) |
+| `SalesStats.css` | 1.6KB | SalesStats 위젯 스타일 (ECharts 컨테이너, 헤더) |
 | `Product3DViewer.css` | 4.4KB | 3D 뷰어 스타일 (캔버스, 썸네일, 컨트롤) |
 
 ### HTML과 CSS 연결
@@ -986,9 +1031,13 @@ products.forEach(p => {
 
 ---
 
-**버전**: 1.4.0
+**버전**: 1.5.0
 **작성일**: 2025-11-21
 **업데이트**:
+- v1.5.0: **ECharts 통합** (SalesChart: Line chart, SalesStats: Bar chart)
+  - `echarts.init()` / `setOption()` / `dispose()` 패턴
+  - `<div id="echarts">` 구조로 HTML 간소화
+  - CSS 간소화 (ECharts 컨테이너 전용 스타일)
 - v1.4.0: Component ID 스코프 추가 (모든 CSS에 #component-id 접두사)
 - v1.3.0: Container 구조 추가 (런타임 애플리케이션 대응, CONTAINER_STYLES.md)
 - v1.2.0: CSS 파일 분리 (styles 폴더, 컴포넌트별 독립 스타일)
