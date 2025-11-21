@@ -417,6 +417,442 @@ function clearThree() {
 
 ---
 
+## 컴포넌트 라이프사이클 패턴
+
+컴포넌트는 **register**와 **destroy** 두 개의 라이프사이클 단계를 가집니다.
+Runtime_Scaffold의 템플릿 패턴을 기반으로 빠르게 컴포넌트를 작성할 수 있습니다.
+
+### 6.1. Register 패턴
+
+#### 패턴 1: 2D 이벤트 바인딩
+
+**용도**: 버튼 클릭, 폼 제출 등 일반적인 DOM 이벤트 처리
+
+**코드 예시**:
+```javascript
+const { bindEvents } = WKit;
+
+// Event schema - 셀렉터와 이벤트명 매핑
+this.customEvents = {
+    click: {
+        '.my-button': '@buttonClicked',
+        '.my-link': '@linkClicked'
+    }
+};
+
+// Handler 메서드 바인딩 (optional - 페이지에서 처리하는 경우)
+this.handleButtonClick = handleButtonClick.bind(this);
+this.handleLinkClick = handleLinkClick.bind(this);
+
+// 이벤트 바인딩
+bindEvents(this, this.customEvents);
+
+// Handler functions (optional)
+function handleButtonClick(data) {
+    console.log(`[Button Clicked] ${this.name}`, data);
+}
+
+function handleLinkClick(data) {
+    console.log(`[Link Clicked] ${this.name}`, data);
+}
+```
+
+**핵심 포인트**:
+- ✅ **이벤트 위임 패턴**: 동적으로 생성되는 요소도 처리 가능
+- ✅ **`@` 접두사**: 커스텀 이벤트 구분
+- ✅ **페이지 핸들러**: 실제 처리 로직은 `page_before_load.js`의 `eventBusHandlers`에 정의
+- ✅ **컴포넌트 독립성**: 컴포넌트는 이벤트 발행만, 처리는 페이지가 담당
+
+---
+
+#### 패턴 2: 3D 이벤트 바인딩
+
+**용도**: Three.js 3D 객체 클릭, 호버 등 3D 인터랙션
+
+**코드 예시**:
+```javascript
+const { bind3DEvents } = WKit;
+
+// Event schema - 간단함!
+this.customEvents = {
+    click: '@3dObjectClicked'
+};
+
+// Data source info (선택사항 - 상호작용 시 데이터 필요한 경우)
+this.datasetInfo = {
+    datasetName: 'myDataset',
+    param: {
+        type: 'geometry',
+        id: this.id  // 동적 ID
+    }
+};
+
+// 3D 이벤트 바인딩
+bind3DEvents(this, this.customEvents);
+```
+
+**핵심 포인트**:
+- ✅ **Raycasting 자동**: 페이지의 `initThreeRaycasting`이 처리
+- ✅ **appendElement.eventListener**: 컴포넌트 식별 메커니즘
+- ✅ **datasetInfo 활용**: 페이지 핸들러에서 `WKit.fetchData`로 데이터 fetch 가능
+- ✅ **단일 Canvas**: 모든 3D 컴포넌트가 하나의 Scene 공유
+
+**2D vs 3D 비교**:
+| 항목 | 2D 이벤트 | 3D 이벤트 |
+|------|----------|----------|
+| 바인딩 함수 | `bindEvents` | `bind3DEvents` |
+| 이벤트 스키마 | `{ click: { '.selector': '@event' } }` | `{ click: '@event' }` |
+| 타겟 식별 | CSS 셀렉터 | appendElement.eventListener |
+| 데이터 소스 | datasetInfo (선택) | datasetInfo (선택) |
+
+---
+
+#### 패턴 3: GlobalDataPublisher 구독
+
+**용도**: 페이지 레벨에서 발행하는 데이터를 구독하여 렌더링
+
+**코드 예시**:
+```javascript
+const { subscribe } = GlobalDataPublisher;
+const { each } = fx;
+
+// Subscription schema - topic별 핸들러 배열
+this.subscriptions = {
+    users: ['renderUserTable', 'updateUserCount'],  // 한 topic에 여러 메서드!
+    products: ['renderProductList']
+};
+
+// Handler 메서드 바인딩
+this.renderUserTable = renderUserTable.bind(this);
+this.updateUserCount = updateUserCount.bind(this);
+this.renderProductList = renderProductList.bind(this);
+
+// Subscribe to topics
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, fnList]) =>
+        each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+    )
+);
+
+// Handler functions
+function renderUserTable(data) {
+    console.log(`[Render Table] ${this.name}`, data);
+
+    // Template 활용 렌더링
+    const template = this.element.querySelector('#user-table-template');
+    const container = this.element.querySelector('[data-table-container]');
+
+    // data를 반복하여 렌더링...
+}
+
+function updateUserCount(data) {
+    console.log(`[Update Count] ${this.name}`, data.length);
+
+    // 뱃지 업데이트
+    const badge = this.element.querySelector('[data-user-count]');
+    if (badge) {
+        badge.textContent = data.length;
+        badge.dataset.count = data.length;
+    }
+}
+
+function renderProductList(data) {
+    console.log(`[Render Products] ${this.name}`, data);
+    // Product list 렌더링...
+}
+```
+
+**핵심 포인트**:
+- ✅ **한 topic에 여러 핸들러**: 같은 데이터로 테이블 + 카운트 동시 업데이트
+- ✅ **자동 업데이트**: 페이지의 interval이 데이터 발행하면 자동으로 핸들러 호출
+- ✅ **독립성**: 컴포넌트는 데이터 출처를 몰라도 됨
+- ✅ **재사용성**: 다른 페이지에서도 같은 topic 이름만 사용하면 동작
+
+---
+
+#### 패턴 조합: 이벤트 + 구독
+
+**시나리오**: 사용자가 필터를 변경하면 새 데이터를 구독
+
+```javascript
+const { bindEvents } = WKit;
+const { subscribe } = GlobalDataPublisher;
+const { each } = fx;
+
+// 1. 이벤트 바인딩
+this.customEvents = {
+    change: {
+        '.filter-select': '@filterChanged'
+    }
+};
+bindEvents(this, this.customEvents);
+
+// 2. 구독 설정
+this.subscriptions = {
+    filteredData: ['renderData']
+};
+
+this.renderData = renderData.bind(this);
+
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, fnList]) =>
+        each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+    )
+);
+
+// 3. 핸들러
+function renderData(data) {
+    // 필터된 데이터로 렌더링
+}
+```
+
+**페이지 연동**:
+```javascript
+// page_before_load.js
+'@filterChanged': ({ event }) => {
+    const filter = event.target.value;
+    this.currentParams['filteredData'] = { filter };
+    GlobalDataPublisher.fetchAndPublish('filteredData', this, this.currentParams['filteredData']);
+}
+```
+
+---
+
+### 6.2. Destroy 패턴
+
+#### 패턴 1: 이벤트만 제거
+
+**용도**: 이벤트 바인딩만 사용한 컴포넌트
+
+**코드 예시**:
+```javascript
+const { removeCustomEvents } = WKit;
+
+// 이벤트 리스너 제거
+removeCustomEvents(this, this.customEvents);
+
+// 참조 제거
+this.customEvents = null;
+this.handleButtonClick = null;
+this.handleLinkClick = null;
+```
+
+**핵심 포인트**:
+- ✅ **단순함**: `removeCustomEvents` 한 줄로 모든 이벤트 제거
+- ✅ **메모리 정리**: 핸들러 메서드 참조도 null 처리
+
+---
+
+#### 패턴 2: 구독 해제
+
+**용도**: GlobalDataPublisher 구독을 사용한 컴포넌트
+
+**코드 예시**:
+```javascript
+const { unsubscribe } = GlobalDataPublisher;
+const { each } = fx;
+
+// 모든 topic에서 구독 해제
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, _]) => unsubscribe(topic, this))
+);
+
+// 참조 제거
+this.subscriptions = null;
+this.renderUserTable = null;
+this.updateUserCount = null;
+this.renderProductList = null;
+```
+
+**핵심 포인트**:
+- ✅ **자동 순회**: `fx.go`로 모든 topic 자동 처리
+- ✅ **메모리 정리**: 모든 핸들러 메서드 null 처리
+- ✅ **완벽한 정리**: 페이지가 데이터 발행해도 이 컴포넌트는 더 이상 받지 않음
+
+---
+
+#### 패턴 3: 이벤트 + 구독 모두 정리
+
+**코드 예시**:
+```javascript
+const { removeCustomEvents } = WKit;
+const { unsubscribe } = GlobalDataPublisher;
+const { each } = fx;
+
+// 1. 이벤트 제거
+removeCustomEvents(this, this.customEvents);
+this.customEvents = null;
+
+// 2. 구독 해제
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, _]) => unsubscribe(topic, this))
+);
+this.subscriptions = null;
+
+// 3. 모든 핸들러 참조 제거
+this.renderUserTable = null;
+this.updateUserCount = null;
+this.handleButtonClick = null;
+```
+
+---
+
+### 6.3. 생성/정리 매칭 (컴포넌트)
+
+| 생성 (register) | 정리 (destroy) |
+|-----------------|----------------|
+| `this.customEvents = {...}` | `this.customEvents = null` |
+| `bindEvents(this, customEvents)` | `removeCustomEvents(this, customEvents)` |
+| `this.subscriptions = {...}` | `this.subscriptions = null` |
+| `subscribe(topic, this, handler)` | `unsubscribe(topic, this)` |
+| `this.myMethod = myMethod.bind(this)` | `this.myMethod = null` |
+| `bind3DEvents(this, customEvents)` | (페이지 unload에서 일괄 정리) |
+
+**1:1 매칭 확인**: ✅ 모든 생성된 리소스가 정리됨
+
+---
+
+### 6.4. 베스트 프랙티스
+
+#### ✅ DO
+
+**구독 스키마 활용**:
+```javascript
+this.subscriptions = {
+    topic1: ['handler1', 'handler2'],
+    topic2: ['handler3']
+};
+```
+- 한눈에 어떤 topic을 구독하는지 파악
+- 핸들러 추가/제거 용이
+
+**data-attribute 활용**:
+```javascript
+function renderData(data) {
+    const clone = template.content.cloneNode(true);
+    const item = clone.querySelector('[data-item]');
+    item.dataset.id = data.id;
+    item.dataset.name = data.name;
+}
+```
+- 이벤트 발생 시 context 전달
+- 페이지 핸들러에서 `event.target.dataset` 활용
+
+**Template 재사용**:
+```javascript
+// 여러 데이터 항목을 반복 렌더링
+data.forEach(item => {
+    const clone = template.content.cloneNode(true);
+    // clone 수정...
+    container.appendChild(clone);
+});
+```
+
+#### ❌ DON'T
+
+**컴포넌트에서 직접 데이터 fetch**:
+```javascript
+// ❌ 컴포넌트가 데이터 소스를 알아야 함 - 결합도 증가
+async function myHandler() {
+    const data = await fetch('/api/data');
+    // ...
+}
+```
+→ 대신 GlobalDataPublisher 구독 사용
+
+**복잡한 비즈니스 로직**:
+```javascript
+// ❌ 컴포넌트가 너무 많은 책임
+function renderData(data) {
+    const processed = complexBusinessLogic(data);  // 50줄...
+    const filtered = applyFilters(processed);      // 30줄...
+    const sorted = applySorting(filtered);         // 20줄...
+    // ...
+}
+```
+→ 대신 페이지나 별도 유틸리티 함수로 분리
+
+**정리 누락**:
+```javascript
+// ❌ 구독만 하고 해제 안 함 - 메모리 누수
+// destroy.js가 없거나 비어있음
+```
+→ 반드시 1:1 매칭으로 정리
+
+---
+
+### 6.5. 실전 예시: Header 컴포넌트
+
+실제 구현한 Header 컴포넌트를 살펴보겠습니다.
+
+**register.js**:
+```javascript
+const { subscribe } = GlobalDataPublisher;
+const { each } = fx;
+
+// 구독 설정
+this.subscriptions = {
+    deviceStatus: ['renderSystemStatus']
+};
+
+this.renderSystemStatus = renderSystemStatus.bind(this);
+
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, fnList]) =>
+        each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+    )
+);
+
+// 핸들러 - Template 활용
+function renderSystemStatus(data) {
+    if (!data || !Array.isArray(data)) return;
+
+    const onlineDevices = data.filter(d => d.status === 'online').length;
+    const offlineDevices = data.filter(d => d.status === 'offline').length;
+    const totalDevices = data.length;
+
+    const template = this.element.querySelector('#status-template');
+    const container = this.element.querySelector('[data-status-container]');
+
+    const clone = template.content.cloneNode(true);
+
+    // data-attribute 업데이트
+    clone.querySelector('[data-status-type="total"]').textContent = `Total: ${totalDevices}`;
+    clone.querySelector('[data-status-type="online"]').textContent = `Online: ${onlineDevices}`;
+    clone.querySelector('[data-status-type="offline"]').textContent = `Offline: ${offlineDevices}`;
+
+    container.innerHTML = '';
+    container.appendChild(clone);
+}
+```
+
+**destroy.js**:
+```javascript
+const { unsubscribe } = GlobalDataPublisher;
+const { each } = fx;
+
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, _]) => unsubscribe(topic, this))
+);
+
+this.subscriptions = null;
+this.renderSystemStatus = null;
+```
+
+**특징**:
+- ✅ Template 기반 렌더링
+- ✅ data-attribute로 상태 저장
+- ✅ 구독/해제 1:1 매칭
+- ✅ 5분 내 작성 가능한 간결함
+
+---
+
 ## 완전한 라이프사이클 흐름
 
 ### 전체 흐름 요약
