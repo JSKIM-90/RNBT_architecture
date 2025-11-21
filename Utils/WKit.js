@@ -306,11 +306,12 @@ function qsAll(selector, scope = document) {
 
 function delegate(instance, eventName, selector, handler) {
   const emitEvent = (event) => {
-    const potentialElements = qsAll(selector, instance.element);
-    for (const potentialElement of potentialElements) {
-      if (potentialElement === event.target) {
-        return handler.call(event.target, event);
-      }
+    // Use closest to handle bubbling from child elements
+    const target = event.target.closest(selector);
+
+    // Ensure target exists and is within instance.element
+    if (target && instance.element.contains(target)) {
+      return handler.call(target, event);
     }
   };
 
