@@ -27,11 +27,17 @@ const GlobalDataPublisher = (() => {
         ? { ...datasetInfo.param, ...paramUpdates }
         : datasetInfo.param;
 
-      const data = await WKit.fetchData(page, datasetInfo.datasetName, param);
       const subs = subscriberTable.get(topic) || new Set();
 
-      for (const { instance, handler } of subs) {
-        handler.call(instance, data);
+      try {
+        const data = await WKit.fetchData(page, datasetInfo.datasetName, param);
+
+        for (const { instance, handler } of subs) {
+          handler.call(instance, data);
+        }
+      } catch (error) {
+        console.error(`[GlobalDataPublisher] ${topic} fetch 실패:`, error);
+        throw error;
       }
     },
 
