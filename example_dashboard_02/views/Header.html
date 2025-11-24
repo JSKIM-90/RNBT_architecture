@@ -1,0 +1,49 @@
+<div class="dashboard-header">
+    <!-- Left: Logo & Title -->
+    <div class="header-left">
+        <div class="logo">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+                <path d="M10 16L14 20L22 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <h1 class="header-title">Dashboard</h1>
+    </div>
+
+    <!-- Center: Filter -->
+    <div class="header-center">
+        <div class="filter-group">
+            <label for="period-select">Period:</label>
+            <select id="period-select" class="period-select">
+                <option value="7days">Last 7 Days</option>
+                <option value="30days" selected>Last 30 Days</option>
+                <option value="90days">Last 90 Days</option>
+                <option value="year">This Year</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Right: Notifications & User Profile -->
+    <div class="header-right">
+        <!-- Notification (simplified - no dropdown) -->
+        <div class="notification-wrapper">
+            <button class="notification-icon" aria-label="Notifications">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                </svg>
+            </button>
+            <span class="notification-badge">3</span>
+        </div>
+
+        <!-- User Profile -->
+        <div class="user-profile">
+            <div class="user-avatar">
+                <div class="avatar-placeholder"></div>
+            </div>
+            <div class="user-info">
+                <div class="user-name">John Doe</div>
+                <div class="user-role">Administrator</div>
+            </div>
+        </div>
+    </div>
+</div>

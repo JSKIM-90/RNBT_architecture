@@ -1,0 +1,150 @@
+#component-id .sales-stats-widget {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+#component-id .widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+#component-id .widget-title-group {
+    flex: 1;
+}
+
+#component-id .widget-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 0.25rem 0;
+}
+
+#component-id .widget-subtitle {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+#component-id .widget-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#component-id .btn-refresh {
+    padding: 0.5rem;
+    background: none;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+#component-id .btn-refresh:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+/* Stats Grid - Normal Flow with CSS Grid */
+#component-id .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+/* Stat Card */
+#component-id .stat-card {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.2s;
+}
+
+#component-id .stat-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Stat Icon */
+#component-id .stat-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+#component-id .stat-icon.revenue {
+    background: #dbeafe;
+    color: #3b82f6;
+}
+
+#component-id .stat-icon.orders {
+    background: #d1fae5;
+    color: #10b981;
+}
+
+#component-id .stat-icon.customers {
+    background: #fef3c7;
+    color: #f59e0b;
+}
+
+#component-id .stat-icon.conversion {
+    background: #e9d5ff;
+    color: #a855f7;
+}
+
+/* Stat Content */
+#component-id .stat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#component-id .stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+#component-id .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+#component-id .stat-change {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+#component-id .stat-change.positive {
+    color: #10b981;
+}
+
+#component-id .stat-change.negative {
+    color: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #component-id .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
