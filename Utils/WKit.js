@@ -298,12 +298,6 @@ function* combineIterators(iterables) {
   }
 }
 
-function qsAll(selector, scope = document) {
-  if (!selector) throw 'no selector';
-
-  return Array.from(scope.querySelectorAll(selector));
-}
-
 function delegate(instance, eventName, selector, handler) {
   const emitEvent = (event) => {
     // Use closest to handle bubbling from child elements

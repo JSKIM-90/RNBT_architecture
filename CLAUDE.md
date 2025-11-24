@@ -170,16 +170,22 @@ WEventBus.on('@myClickEvent', async ({ event, targetInstance }) => {
 동적으로 생성되는 DOM 요소에 대한 효율적인 이벤트 처리
 
 ```javascript
-// WKit.js:365-380
+// WKit.js:301-317
 function delegate(instance, eventName, selector, handler) {
   const emitEvent = (event) => {
-    const potentialElements = qsAll(selector, instance.element);
-    for (const potentialElement of potentialElements) {
-      if (potentialElement === event.target) {
-        return handler.call(event.target, event);
-      }
+    // Use closest to handle bubbling from child elements
+    const target = event.target.closest(selector);
+
+    // Ensure target exists and is within instance.element
+    if (target && instance.element.contains(target)) {
+      return handler.call(target, event);
     }
   };
+
+  instance.userHandlerList = instance.userHandlerList || {};
+  instance.userHandlerList[eventName] = instance.userHandlerList[eventName] || {};
+  instance.userHandlerList[eventName][selector] = emitEvent;
+
   instance.element.addEventListener(eventName, emitEvent);
 }
 ```
