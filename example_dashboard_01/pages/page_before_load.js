@@ -1,8 +1,8 @@
 /* Page Lifecycle: before_load
- * Purpose: Setup event handlers and Three.js raycasting before components are created
+ * Purpose: Setup event handlers before components are created
  */
 
-const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
+const { onEventBusHandlers, fetchData } = WKit;
 
 // ======================
 // EVENT BUS HANDLERS
@@ -70,11 +70,10 @@ this.eventBusHandlers = {
         console.log('[Page] Product selected:', productId);
 
         // Fetch product details
-        const productDetails = await fetchData(this, 'productDetails', { id: productId });
+        const productDetails = await fetchData(this, 'productDetailsApi', { id: productId });
         console.log('[Page] Product details fetched:', productDetails);
 
         // Show product detail panel or navigate to detail page
-        // Example: Update 3D viewer to highlight the selected product
     },
 
     // ProductList: Product delete clicked
@@ -85,57 +84,8 @@ this.eventBusHandlers = {
 
         // Show confirmation dialog
         // If confirmed, delete product via API
-    },
-
-    // Product3DViewer: 3D object clicked
-    '@product3DClicked': async ({ event, targetInstance }) => {
-        console.log('[Page] 3D product clicked:', event);
-
-        // Primitive composition: Extract datasetInfo from component
-        const { datasetInfo } = targetInstance;
-
-        if (datasetInfo) {
-            const { datasetName, param } = datasetInfo;
-
-            // Get clicked object info from raycasting event
-            const intersect = event.intersects?.[0];
-            if (intersect) {
-                const productId = intersect.object.userData.productId;
-
-                // Fetch product details using WKit primitive
-                const productData = await fetchData(this, datasetName, {
-                    ...param,
-                    productId
-                });
-
-                console.log('[Page] 3D product data fetched:', productData);
-
-                // Show product detail panel
-                // Update other components with selected product
-            }
-        }
     }
 };
 
 // Register event handlers
 onEventBusHandlers(this.eventBusHandlers);
-
-// ======================
-// THREE.JS RAYCASTING (for 3D components)
-// ======================
-
-const canvas = this.element.querySelector('canvas');
-if (canvas) {
-    this.raycastingEvents = [
-        { type: 'click' }
-        // { type: 'mousemove' },  // Add more events as needed
-        // { type: 'dblclick' }
-    ];
-
-    fx.go(
-        this.raycastingEvents,
-        fx.each(event => {
-            event.handler = initThreeRaycasting(canvas, event.type);
-        })
-    );
-}

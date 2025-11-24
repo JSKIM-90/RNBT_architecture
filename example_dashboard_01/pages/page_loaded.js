@@ -18,7 +18,6 @@ this.globalDataMappings = [
         datasetInfo: {
             datasetName: 'salesapi',
             param: {
-                endpoint: '/api/sales/realtime',
                 period: '24h'
             }
         },
@@ -29,9 +28,8 @@ this.globalDataMappings = [
     {
         topic: 'salesStats',
         datasetInfo: {
-            datasetName: 'salesapi',
+            datasetName: 'salesStatsApi',
             param: {
-                endpoint: '/api/sales/stats',
                 period: '24h'
             }
         },
@@ -44,9 +42,38 @@ this.globalDataMappings = [
         datasetInfo: {
             datasetName: 'productapi',
             param: {
-                endpoint: '/api/products/list',
                 limit: 50
             }
+        }
+        // No refreshInterval - static data, fetch once only
+    },
+
+    // User information (refresh every 60 seconds)
+    {
+        topic: 'userInfo',
+        datasetInfo: {
+            datasetName: 'userInfoApi',
+            param: {}
+        },
+        refreshInterval: 60000  // 60 seconds
+    },
+
+    // Notifications (refresh every 30 seconds)
+    {
+        topic: 'notifications',
+        datasetInfo: {
+            datasetName: 'notificationApi',
+            param: {}
+        },
+        refreshInterval: 30000  // 30 seconds
+    },
+
+    // Navigation menu (static data - fetch once)
+    {
+        topic: 'navigationMenu',
+        datasetInfo: {
+            datasetName: 'navigationApi',
+            param: {}
         }
         // No refreshInterval - static data, fetch once only
     }

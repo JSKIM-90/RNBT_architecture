@@ -5,7 +5,13 @@
       "datasource": "",
       "mode": "0",
       "delivery_type": "0",
-      "param_info": [],
+      "param_info": [
+        {
+          "param_name": "period",
+          "param_type": "string",
+          "default_value": "24h"
+        }
+      ],
       "data_type": "1",
       "interval": "0",
       "page_id": "GLOBAL",
@@ -14,13 +20,19 @@
       "description": "Real-time sales data API",
       "dataset_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
       "name": "salesapi",
-      "rest_api": "{\"url\":\"http://localhost:3000/api/sales/realtime\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3000/api/sales/realtime?period=#{period}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
       "mode": "0",
       "delivery_type": "0",
-      "param_info": [],
+      "param_info": [
+        {
+          "param_name": "period",
+          "param_type": "string",
+          "default_value": "24h"
+        }
+      ],
       "data_type": "1",
       "interval": "0",
       "page_id": "GLOBAL",
@@ -29,13 +41,29 @@
       "description": "Sales statistics API",
       "dataset_id": "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
       "name": "salesStatsApi",
-      "rest_api": "{\"url\":\"http://localhost:3000/api/sales/stats\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3000/api/sales/stats?period=#{period}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
       "mode": "0",
       "delivery_type": "0",
-      "param_info": [],
+      "param_info": [
+        {
+          "param_name": "limit",
+          "param_type": "number",
+          "default_value": "50"
+        },
+        {
+          "param_name": "category",
+          "param_type": "string",
+          "default_value": "all"
+        },
+        {
+          "param_name": "status",
+          "param_type": "string",
+          "default_value": "all"
+        }
+      ],
       "data_type": "1",
       "interval": "0",
       "page_id": "GLOBAL",
@@ -44,7 +72,7 @@
       "description": "Product list API",
       "dataset_id": "c3d4e5f6-a7b8-4c9d-0e1f-2a3b4c5d6e7f",
       "name": "productapi",
-      "rest_api": "{\"url\":\"http://localhost:3000/api/products/list\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3000/api/products/list?limit=#{limit}&category=#{category}&status=#{status}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -95,7 +123,13 @@
       "datasource": "",
       "mode": "0",
       "delivery_type": "0",
-      "param_info": [],
+      "param_info": [
+        {
+          "param_name": "id",
+          "param_type": "string",
+          "default_value": "PROD-0001"
+        }
+      ],
       "data_type": "1",
       "interval": "0",
       "page_id": "GLOBAL",
@@ -104,7 +138,7 @@
       "description": "Product details API",
       "dataset_id": "a7b8c9d0-e1f2-4a3b-4c5d-6e7f8a9b0c1d",
       "name": "productDetailsApi",
-      "rest_api": "{\"url\":\"http://localhost:3000/api/products/details\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3000/api/products/details?id=#{id}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
   ],
   "datasource": []

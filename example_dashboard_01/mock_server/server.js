@@ -1,8 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const os = require('os');
 
 const app = express();
 const PORT = 3000;
+const HOST = '0.0.0.0';  // Listen on all network interfaces
 
 // ===========================
 // MIDDLEWARE
@@ -246,13 +248,13 @@ app.get('/api/products/list', (req, res) => {
   const { limit = 50, category, status } = req.query;
   let products = generateProductList(parseInt(limit));
 
-  // Filter by category
-  if (category) {
+  // Filter by category (skip if 'all' or empty)
+  if (category && category !== 'all' && category !== '') {
     products = products.filter(p => p.category === category);
   }
 
-  // Filter by status
-  if (status) {
+  // Filter by status (skip if 'all' or empty)
+  if (status && status !== 'all' && status !== '') {
     products = products.filter(p => p.status === status);
   }
 
@@ -337,13 +339,46 @@ app.use((err, req, res, next) => {
 // START SERVER
 // ===========================
 
-app.listen(PORT, () => {
+// Get network IP addresses
+function getNetworkIPs() {
+  const interfaces = os.networkInterfaces();
+  const addresses = [];
+
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      // Skip internal (loopback) and non-IPv4 addresses
+      if (iface.family === 'IPv4' && !iface.internal) {
+        addresses.push(iface.address);
+      }
+    }
+  }
+
+  return addresses;
+}
+
+app.listen(PORT, HOST, () => {
+  const networkIPs = getNetworkIPs();
+
   console.log(`
 ╔════════════════════════════════════════════╗
 ║   Dashboard Mock API Server                ║
-║   Running on http://localhost:${PORT}       ║
+║   Port: ${PORT}                                 ║
 ╚════════════════════════════════════════════╝
 
+Server URLs:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Local:    http://localhost:${PORT}
+  Local:    http://127.0.0.1:${PORT}`);
+
+  if (networkIPs.length > 0) {
+    networkIPs.forEach(ip => {
+      console.log(`  Network:  http://${ip}:${PORT}`);
+    });
+  } else {
+    console.log(`  Network:  (No network interface found)`);
+  }
+
+  console.log(`
 Available Endpoints:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   GET /api/sales/realtime       - Real-time sales data

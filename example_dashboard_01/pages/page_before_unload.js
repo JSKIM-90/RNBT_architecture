@@ -1,9 +1,9 @@
 /* Page Lifecycle: before_unload
- * Purpose: Cleanup all page resources (intervals, event bus, data publisher, Three.js)
+ * Purpose: Cleanup all page resources (intervals, event bus, data publisher)
  */
 
 const { go, each } = fx;
-const { offEventBusHandlers, disposeAllThreeResources } = WKit;
+const { offEventBusHandlers } = WKit;
 
 onPageUnLoad.call(this);
 
@@ -11,7 +11,6 @@ function onPageUnLoad() {
     stopAllIntervals.call(this);
     clearEventBus.call(this);
     clearDataPublisher.call(this);
-    clearThree.call(this);
 }
 
 // ======================
@@ -49,27 +48,4 @@ function clearDataPublisher() {
     this.globalDataMappings = null;
     this.currentParams = null;
     console.log('[Page] Data publisher cleaned up');
-}
-
-// ======================
-// THREE.JS CLEANUP
-// ======================
-
-function clearThree() {
-    const canvas = this.element.querySelector('canvas');
-    if (!canvas) return;
-
-    // Raycasting event cleanup
-    if (this.raycastingEvents) {
-        go(
-            this.raycastingEvents,
-            each(({ type, handler }) => canvas.removeEventListener(type, handler))
-        );
-        this.raycastingEvents = null;
-    }
-
-    // Dispose all 3D resources (components + scene background)
-    disposeAllThreeResources(this);
-
-    console.log('[Page] Three.js resources cleaned up');
 }
