@@ -1,27 +1,81 @@
 {
-    "iotSensors": {
-        "url": "http://localhost:3000/api/iot/realtime/sensors/current",
-        "method": "GET",
-        "description": "Current sensor readings (refresh: 5s)"
+  "version": "3.2.0",
+  "data": [
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "5000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Current sensor readings (refresh: 5s)",
+      "dataset_id": "iot-sensors-001",
+      "name": "iotSensors",
+      "rest_api": "{\"url\":\"http://localhost:3000/api/iot/realtime/sensors/current\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
-    "iotAlerts": {
-        "url": "http://localhost:3000/api/iot/realtime/alerts/active",
-        "method": "GET",
-        "description": "Active alerts (refresh: 5s)"
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "5000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Active alerts (refresh: 5s)",
+      "dataset_id": "iot-alerts-001",
+      "name": "iotAlerts",
+      "rest_api": "{\"url\":\"http://localhost:3000/api/iot/realtime/alerts/active\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
-    "iotDeviceStatus": {
-        "url": "http://localhost:3000/api/iot/shortterm/devices/status",
-        "method": "GET",
-        "description": "Device status (refresh: 15s)"
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "15000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Device status (refresh: 15s)",
+      "dataset_id": "iot-device-001",
+      "name": "iotDeviceStatus",
+      "rest_api": "{\"url\":\"http://localhost:3000/api/iot/shortterm/devices/status\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
-    "iotTrend": {
-        "url": "http://localhost:3000/api/iot/midterm/sensors/trend/24h",
-        "method": "GET",
-        "description": "24-hour trend data (refresh: 60s)"
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "60000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "24-hour trend data (refresh: 60s)",
+      "dataset_id": "iot-trend-001",
+      "name": "iotTrend",
+      "rest_api": "{\"url\":\"http://localhost:3000/api/iot/midterm/sensors/trend/24h\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
-    "iotZones": {
-        "url": "http://localhost:3000/api/iot/midterm/zones/statistics",
-        "method": "GET",
-        "description": "Zone statistics (refresh: 60s)"
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "60000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Zone statistics (refresh: 60s)",
+      "dataset_id": "iot-zones-001",
+      "name": "iotZones",
+      "rest_api": "{\"url\":\"http://localhost:3000/api/iot/midterm/zones/statistics\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
+  ],
+  "datasource": []
 }
