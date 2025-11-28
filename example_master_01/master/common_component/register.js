@@ -17,7 +17,17 @@ const { onEventBusHandlers, fetchData } = WKit;
 this.eventBusHandlers = {
     // Header: User menu clicked
     '@userMenuClicked': ({ event, targetInstance }) => {
-        console.log('[Master] User menu clicked:', event.target.dataset);
+        console.log('[Master] User menu clicked');
+        // Example: Toggle dropdown menu
+    },
+
+    // Header: Nav item clicked
+    '@navItemClicked': ({ event, targetInstance }) => {
+        const navItem = event.target.closest('.nav-item');
+        const { menuId } = navItem?.dataset || {};
+        console.log('[Master] Nav item clicked:', menuId);
+
+        // Example: Navigate, update active state, etc.
     },
 
     // Sidebar: Notification clicked
