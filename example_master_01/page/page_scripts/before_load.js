@@ -29,6 +29,11 @@ this.eventBusHandlers = {
     // StatsPanel: Refresh clicked
     '@statsRefreshClicked': () => {
         GlobalDataPublisher.fetchAndPublish('stats', this, this.currentParams['stats'] || {});
+    },
+
+    // VisitorChart: Refresh clicked
+    '@chartRefreshClicked': () => {
+        GlobalDataPublisher.fetchAndPublish('chartData', this, this.currentParams['chartData'] || {});
     }
 };
 

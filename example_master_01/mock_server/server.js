@@ -77,6 +77,28 @@ function generateMenu() {
   ];
 }
 
+// Chart data (for Page - VisitorChart)
+function generateChartData(period = '24h') {
+  const points = period === '24h' ? 24 : period === '7d' ? 7 : 30;
+  const labels = [];
+  const visitors = [];
+  const pageViews = [];
+
+  for (let i = points - 1; i >= 0; i--) {
+    if (period === '24h') {
+      const hour = new Date(Date.now() - i * 3600000);
+      labels.push(hour.getHours() + ':00');
+    } else {
+      const date = new Date(Date.now() - i * 86400000);
+      labels.push((date.getMonth() + 1) + '/' + date.getDate());
+    }
+    visitors.push(Math.floor(Math.random() * 100) + 20);
+    pageViews.push(Math.floor(Math.random() * 300) + 50);
+  }
+
+  return { labels, visitors, pageViews };
+}
+
 // ===========================
 // API ENDPOINTS
 // ===========================
@@ -115,6 +137,15 @@ app.get('/api/menu', (req, res) => {
   });
 });
 
+// Page - VisitorChart: Chart data
+app.get('/api/chart', (req, res) => {
+  const { period = '24h' } = req.query;
+  res.json({
+    success: true,
+    data: generateChartData(period)
+  });
+});
+
 // 404
 app.use((req, res) => {
   res.status(404).json({ success: false, error: 'Not found' });
@@ -150,6 +181,7 @@ Endpoints:
   GET /api/menu              - Navigation menu (Master/Header)
   GET /api/notifications     - Notifications (Master/Sidebar)
   GET /api/stats?period=24h  - Stats (Page/StatsPanel)
+  GET /api/chart?period=24h  - Chart data (Page/VisitorChart)
 
 URLs:
   Local:   http://localhost:${PORT}

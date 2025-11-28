@@ -72,6 +72,27 @@
       "dataset_id": "stats-001",
       "name": "statsapi",
       "rest_api": "{\"url\":\"http://localhost:3001/api/stats?period=#{period}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "period",
+          "param_type": "string",
+          "default_value": "24h"
+        }
+      ],
+      "data_type": "1",
+      "interval": "15000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Chart data API (Page/VisitorChart) - refresh every 15s",
+      "dataset_id": "chart-001",
+      "name": "chartapi",
+      "rest_api": "{\"url\":\"http://localhost:3001/api/chart?period=#{period}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
   ],
   "datasource": []

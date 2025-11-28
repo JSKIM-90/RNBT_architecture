@@ -4,10 +4,14 @@
  *
  * Page layer - below Master layer
  * Uses padding to avoid overlap with Master's Header/Sidebar
+ *
+ * Layout: 50% height (shared with VisitorChart below)
+ * Container controls actual height allocation
  */
 
 #component-id .stats-panel {
     height: 100%;
+    min-height: 280px;
     display: flex;
     flex-direction: column;
     padding: 1.5rem;

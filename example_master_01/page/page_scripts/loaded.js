@@ -23,6 +23,16 @@ this.globalDataMappings = [
             param: { period: '24h' }
         },
         refreshInterval: 10000
+    },
+
+    // Chart data (refresh: 15s)
+    {
+        topic: 'chartData',
+        datasetInfo: {
+            datasetName: 'chartapi',
+            param: { period: '24h' }
+        },
+        refreshInterval: 15000
     }
 ];
 
