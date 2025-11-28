@@ -22,7 +22,8 @@ this.eventBusHandlers = {
 
     // Sidebar: Notification clicked
     '@notificationClicked': async ({ event, targetInstance }) => {
-        const { notificationId } = event.target.dataset;
+        const item = event.target.closest('.notification-item');
+        const { notificationId } = item?.dataset || {};
         console.log('[Master] Notification clicked:', notificationId);
 
         // Example: Mark as read, navigate, etc.
