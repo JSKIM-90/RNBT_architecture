@@ -221,6 +221,50 @@ function renderChart(response) {
 
 **주의**: `event.target.dataset`은 클릭된 자식 요소의 dataset을 반환합니다.
 
+### delegate와 event.target의 관계
+
+**delegate의 역할 = 게이트키퍼 (판단자)**
+
+```
+[사용자 클릭]
+     │
+     ▼
+[event.target = 실제 클릭된 요소 (예: span, icon)]
+     │
+     ▼
+[delegate: closest(selector)로 판단]
+     │
+     ├─ 매칭 안됨 → 무시
+     │
+     └─ 매칭됨 → WEventBus.emit('@event', { event, targetInstance })
+                                              │
+                                              └─ event는 원본 그대로 전달
+```
+
+delegate 함수 (WKit.js):
+```javascript
+function delegate(instance, eventName, selector, handler) {
+  const emitEvent = (event) => {
+    // closest로 셀렉터에 맞는 요소를 찾음
+    const target = event.target.closest(selector);
+
+    if (target && instance.element.contains(target)) {
+      return handler.call(target, event);  // event는 원본 그대로 전달
+    }
+  };
+  // ...
+}
+```
+
+**관심사 분리**:
+- **delegate**: "이 클릭이 `.notification-item` 영역 내에서 발생했는가?" 판단만 수행
+- **이벤트 핸들러**: 비즈니스 로직 (어떤 데이터가 필요한지는 핸들러가 결정)
+
+**왜 event.target을 수정하지 않는가**:
+1. `event` 객체는 브라우저 네이티브 객체 - 수정은 안티패턴
+2. WEventBus로 emit 시 원본 event 전달 - 유연성 유지
+3. 핸들러가 필요한 정보를 직접 추출하도록 위임
+
 ---
 
 ## Mock Server
