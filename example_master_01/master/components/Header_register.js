@@ -45,49 +45,45 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderUserInfo(response) {
-    try {
-        const { data } = response;
-        console.log(`[Header] renderUserInfo:`, data);
+    const { data } = response;
+    console.log(`[Header] renderUserInfo:`, data);
 
-        const avatarEl = this.element.querySelector('.user-avatar');
-        const nameEl = this.element.querySelector('.user-name');
+    if (!data) return;
 
-        if (avatarEl) avatarEl.src = data.avatar;
-        if (nameEl) nameEl.textContent = data.name;
-    } catch (error) {
-        console.error('[Header] renderUserInfo error:', error);
-    }
+    const avatarEl = this.element.querySelector('.user-avatar');
+    const nameEl = this.element.querySelector('.user-name');
+
+    if (avatarEl) avatarEl.src = data.avatar;
+    if (nameEl) nameEl.textContent = data.name;
 }
 
 function renderMenu(response) {
-    try {
-        const { items } = response;
-        console.log(`[Header] renderMenu:`, items);
+    const { items } = response;
+    console.log(`[Header] renderMenu:`, items);
 
-        const template = this.element.querySelector('#nav-item-template');
-        const container = this.element.querySelector('.nav-list');
+    if (!items) return;
 
-        if (!template || !container) return;
+    const template = this.element.querySelector('#nav-item-template');
+    const container = this.element.querySelector('.nav-list');
 
-        container.innerHTML = '';
+    if (!template || !container) return;
 
-        items.forEach(item => {
-            const clone = template.content.cloneNode(true);
-            const li = clone.querySelector('.nav-item');
-            const link = clone.querySelector('.nav-link');
-            const icon = clone.querySelector('.nav-icon');
-            const label = clone.querySelector('.nav-label');
+    container.innerHTML = '';
 
-            li.dataset.menuId = item.id;
-            if (item.active) li.classList.add('active');
+    items.forEach(item => {
+        const clone = template.content.cloneNode(true);
+        const li = clone.querySelector('.nav-item');
+        const link = clone.querySelector('.nav-link');
+        const icon = clone.querySelector('.nav-icon');
+        const label = clone.querySelector('.nav-label');
 
-            link.href = item.href;
-            icon.textContent = item.icon;
-            label.textContent = item.label;
+        li.dataset.menuId = item.id;
+        if (item.active) li.classList.add('active');
 
-            container.appendChild(clone);
-        });
-    } catch (error) {
-        console.error('[Header] renderMenu error:', error);
-    }
+        link.href = item.href;
+        icon.textContent = item.icon;
+        label.textContent = item.label;
+
+        container.appendChild(clone);
+    });
 }

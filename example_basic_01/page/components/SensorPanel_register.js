@@ -42,47 +42,43 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderSensors(response) {
-    try {
-        const { sensors } = response;
-        console.log(`[SensorPanel] renderSensors: ${sensors?.length || 0} sensors`);
+    const { sensors } = response;
+    console.log(`[SensorPanel] renderSensors: ${sensors?.length || 0} sensors`);
 
-        if (!sensors) return;
+    if (!sensors) return;
 
-        const template = this.element.querySelector('#sensor-card-template');
-        const container = this.element.querySelector('.sensor-grid');
+    const template = this.element.querySelector('#sensor-card-template');
+    const container = this.element.querySelector('.sensor-grid');
 
-        if (!template || !container) return;
+    if (!template || !container) return;
 
-        container.innerHTML = '';
+    container.innerHTML = '';
 
-        const icons = {
-            temperature: '🌡️',
-            humidity: '💧',
-            pressure: '📊',
-            co2: '💨'
-        };
+    const icons = {
+        temperature: '🌡️',
+        humidity: '💧',
+        pressure: '📊',
+        co2: '💨'
+    };
 
-        sensors.forEach(sensor => {
-            const clone = template.content.cloneNode(true);
-            const card = clone.querySelector('.sensor-card');
+    sensors.forEach(sensor => {
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.sensor-card');
 
-            card.dataset.sensorId = sensor.id;
-            card.dataset.sensorType = sensor.type;
-            card.dataset.status = sensor.status;
+        card.dataset.sensorId = sensor.id;
+        card.dataset.sensorType = sensor.type;
+        card.dataset.status = sensor.status;
 
-            clone.querySelector('.sensor-icon').textContent = icons[sensor.type] || '📡';
-            clone.querySelector('.sensor-zone').textContent = sensor.zone;
-            clone.querySelector('.sensor-value').textContent = sensor.value;
-            clone.querySelector('.sensor-unit').textContent = sensor.unit;
-            clone.querySelector('.sensor-type-label').textContent = sensor.type;
+        clone.querySelector('.sensor-icon').textContent = icons[sensor.type] || '📡';
+        clone.querySelector('.sensor-zone').textContent = sensor.zone;
+        clone.querySelector('.sensor-value').textContent = sensor.value;
+        clone.querySelector('.sensor-unit').textContent = sensor.unit;
+        clone.querySelector('.sensor-type-label').textContent = sensor.type;
 
-            const statusEl = clone.querySelector('.sensor-status');
-            statusEl.textContent = sensor.status;
-            statusEl.classList.add(sensor.status);
+        const statusEl = clone.querySelector('.sensor-status');
+        statusEl.textContent = sensor.status;
+        statusEl.classList.add(sensor.status);
 
-            container.appendChild(clone);
-        });
-    } catch (error) {
-        console.error('[SensorPanel] renderSensors error:', error);
-    }
+        container.appendChild(clone);
+    });
 }

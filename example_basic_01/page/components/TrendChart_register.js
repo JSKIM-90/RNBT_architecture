@@ -58,99 +58,99 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderChart(response) {
-    try {
-        const { trends } = response;
-        console.log(`[TrendChart] renderChart`);
+    const { trends } = response;
+    console.log(`[TrendChart] renderChart`);
 
-        if (!trends || !trends.temperature) return;
+    if (!trends || !trends.temperature) return;
 
-        // Prepare series data for temperature sensors
-        const series = trends.temperature.map((sensor, index) => {
-            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
-            return {
-                name: sensor.deviceId,
-                type: 'line',
-                smooth: true,
-                symbol: 'none',
-                data: sensor.data.map(d => [d.timestamp, d.value]),
-                lineStyle: {
-                    width: 2,
-                    color: colors[index % colors.length]
-                },
-                itemStyle: {
-                    color: colors[index % colors.length]
-                }
-            };
-        });
+    // Prepare series data for temperature sensors
+    const series = trends.temperature.map((sensor, index) => {
+        const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+        return {
+            name: sensor.deviceId,
+            type: 'line',
+            smooth: true,
+            symbol: 'none',
+            data: sensor.data.map(d => [d.timestamp, d.value]),
+            lineStyle: {
+                width: 2,
+                color: colors[index % colors.length]
+            },
+            itemStyle: {
+                color: colors[index % colors.length]
+            }
+        };
+    });
 
-        const option = {
-            tooltip: {
-                trigger: 'axis',
-                axisPointer: {
-                    type: 'cross'
-                },
-                formatter: function(params) {
-                    const time = new Date(params[0].axisValue).toLocaleTimeString([], {
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'cross'
+            },
+            formatter: function(params) {
+                const time = new Date(params[0].axisValue).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                let result = `<strong>${time}</strong><br/>`;
+                params.forEach(p => {
+                    result += `${p.marker} ${p.seriesName}: ${p.value[1]}°C<br/>`;
+                });
+                return result;
+            }
+        },
+        legend: {
+            data: trends.temperature.map(s => s.deviceId),
+            top: 0,
+            textStyle: {
+                fontSize: 10
+            }
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            top: '15%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'time',
+            axisLabel: {
+                fontSize: 10,
+                formatter: function(value) {
+                    return new Date(value).toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
                     });
-                    let result = `<strong>${time}</strong><br/>`;
-                    params.forEach(p => {
-                        result += `${p.marker} ${p.seriesName}: ${p.value[1]}°C<br/>`;
-                    });
-                    return result;
                 }
             },
-            legend: {
-                data: trends.temperature.map(s => s.deviceId),
-                top: 0,
-                textStyle: {
-                    fontSize: 10
+            splitLine: {
+                show: false
+            }
+        },
+        yAxis: {
+            type: 'value',
+            name: '°C',
+            nameTextStyle: {
+                fontSize: 10
+            },
+            axisLabel: {
+                fontSize: 10
+            },
+            splitLine: {
+                lineStyle: {
+                    type: 'dashed',
+                    color: '#e2e8f0'
                 }
-            },
-            grid: {
-                left: '3%',
-                right: '4%',
-                bottom: '3%',
-                top: '15%',
-                containLabel: true
-            },
-            xAxis: {
-                type: 'time',
-                axisLabel: {
-                    fontSize: 10,
-                    formatter: function(value) {
-                        return new Date(value).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    }
-                },
-                splitLine: {
-                    show: false
-                }
-            },
-            yAxis: {
-                type: 'value',
-                name: '°C',
-                nameTextStyle: {
-                    fontSize: 10
-                },
-                axisLabel: {
-                    fontSize: 10
-                },
-                splitLine: {
-                    lineStyle: {
-                        type: 'dashed',
-                        color: '#e2e8f0'
-                    }
-                }
-            },
-            series: series
-        };
+            }
+        },
+        series: series
+    };
 
+    try {
         this.chartInstance.setOption(option);
     } catch (error) {
-        console.error('[TrendChart] renderChart error:', error);
+        console.error('[TrendChart] ECharts setOption error:', error);
     }
 }

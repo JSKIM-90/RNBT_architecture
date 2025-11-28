@@ -45,40 +45,36 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderStats(response) {
-    try {
-        const { data } = response;
-        console.log(`[StatsPanel] renderStats:`, data);
+    const { data } = response;
+    console.log(`[StatsPanel] renderStats:`, data);
 
-        const template = this.element.querySelector('#stat-card-template');
-        const container = this.element.querySelector('.stats-grid');
+    const template = this.element.querySelector('#stat-card-template');
+    const container = this.element.querySelector('.stats-grid');
 
-        if (!template || !container || !data) return;
+    if (!template || !container || !data) return;
 
-        container.innerHTML = '';
+    container.innerHTML = '';
 
-        // Stats configuration
-        const statsConfig = [
-            { key: 'visitors', label: 'Visitors', icon: '👥', format: v => v.toLocaleString() },
-            { key: 'pageViews', label: 'Page Views', icon: '📄', format: v => v.toLocaleString() },
-            { key: 'sessions', label: 'Sessions', icon: '🔗', format: v => v.toLocaleString() },
-            { key: 'bounceRate', label: 'Bounce Rate', icon: '↩️', format: v => `${v}%` }
-        ];
+    // Stats configuration
+    const statsConfig = [
+        { key: 'visitors', label: 'Visitors', icon: '👥', format: v => v.toLocaleString() },
+        { key: 'pageViews', label: 'Page Views', icon: '📄', format: v => v.toLocaleString() },
+        { key: 'sessions', label: 'Sessions', icon: '🔗', format: v => v.toLocaleString() },
+        { key: 'bounceRate', label: 'Bounce Rate', icon: '↩️', format: v => `${v}%` }
+    ];
 
-        statsConfig.forEach(config => {
-            const clone = template.content.cloneNode(true);
-            const card = clone.querySelector('.stat-card');
-            const icon = clone.querySelector('.stat-icon');
-            const label = clone.querySelector('.stat-label');
-            const value = clone.querySelector('.stat-value');
+    statsConfig.forEach(config => {
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.stat-card');
+        const icon = clone.querySelector('.stat-icon');
+        const label = clone.querySelector('.stat-label');
+        const value = clone.querySelector('.stat-value');
 
-            card.dataset.statKey = config.key;
-            icon.textContent = config.icon;
-            label.textContent = config.label;
-            value.textContent = config.format(data[config.key]);
+        card.dataset.statKey = config.key;
+        icon.textContent = config.icon;
+        label.textContent = config.label;
+        value.textContent = config.format(data[config.key]);
 
-            container.appendChild(clone);
-        });
-    } catch (error) {
-        console.error('[StatsPanel] renderStats error:', error);
-    }
+        container.appendChild(clone);
+    });
 }
