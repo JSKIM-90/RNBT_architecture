@@ -1,0 +1,33 @@
+<div class="alert-list-panel">
+    <!-- Header -->
+    <div class="panel-header">
+        <div class="panel-title-group">
+            <h3 class="panel-title">Active Alerts</h3>
+            <span class="alert-count">0</span>
+        </div>
+    </div>
+
+    <!-- Alert List -->
+    <div class="alert-list"></div>
+
+    <!-- Empty State -->
+    <div class="alert-empty" style="display: none;">
+        <span class="empty-icon">✓</span>
+        <p class="empty-text">No active alerts</p>
+    </div>
+
+    <!-- Template -->
+    <template id="alert-item-template">
+        <div class="alert-item" data-alert-id="" data-severity="">
+            <div class="alert-indicator"></div>
+            <div class="alert-content">
+                <p class="alert-message"></p>
+                <div class="alert-meta">
+                    <span class="alert-zone"></span>
+                    <span class="alert-time"></span>
+                </div>
+            </div>
+            <button class="alert-dismiss">×</button>
+        </div>
+    </template>
+</div>

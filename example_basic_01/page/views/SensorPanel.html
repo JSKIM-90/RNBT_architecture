@@ -1,0 +1,33 @@
+<div class="sensor-panel">
+    <!-- Header -->
+    <div class="panel-header">
+        <div class="panel-title-group">
+            <h3 class="panel-title">Real-time Sensors</h3>
+            <p class="panel-subtitle">Live sensor readings across all zones</p>
+        </div>
+        <div class="panel-actions">
+            <button class="btn-refresh sensor-refresh-btn">Refresh</button>
+        </div>
+    </div>
+
+    <!-- Sensor Grid -->
+    <div class="sensor-grid"></div>
+
+    <!-- Template -->
+    <template id="sensor-card-template">
+        <div class="sensor-card" data-sensor-id="" data-sensor-type="">
+            <div class="sensor-header">
+                <span class="sensor-icon"></span>
+                <span class="sensor-zone"></span>
+            </div>
+            <div class="sensor-body">
+                <span class="sensor-value"></span>
+                <span class="sensor-unit"></span>
+            </div>
+            <div class="sensor-footer">
+                <span class="sensor-type-label"></span>
+                <span class="sensor-status"></span>
+            </div>
+        </div>
+    </template>
+</div>

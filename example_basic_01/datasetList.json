@@ -1,0 +1,27 @@
+{
+    "iotSensors": {
+        "url": "http://localhost:3000/api/iot/realtime/sensors/current",
+        "method": "GET",
+        "description": "Current sensor readings (refresh: 5s)"
+    },
+    "iotAlerts": {
+        "url": "http://localhost:3000/api/iot/realtime/alerts/active",
+        "method": "GET",
+        "description": "Active alerts (refresh: 5s)"
+    },
+    "iotDeviceStatus": {
+        "url": "http://localhost:3000/api/iot/shortterm/devices/status",
+        "method": "GET",
+        "description": "Device status (refresh: 15s)"
+    },
+    "iotTrend": {
+        "url": "http://localhost:3000/api/iot/midterm/sensors/trend/24h",
+        "method": "GET",
+        "description": "24-hour trend data (refresh: 60s)"
+    },
+    "iotZones": {
+        "url": "http://localhost:3000/api/iot/midterm/zones/statistics",
+        "method": "GET",
+        "description": "Zone statistics (refresh: 60s)"
+    }
+}

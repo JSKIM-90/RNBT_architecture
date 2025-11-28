@@ -1,5 +1,15 @@
+/*
+ * Page - before_unload
+ * Basic single page structure (no Master layer)
+ *
+ * Responsibilities:
+ * - Stop all intervals
+ * - Clear event bus handlers
+ * - Unregister data mappings
+ */
+
 const { go, each } = fx;
-const { offEventBusHandlers, disposeAllThreeResources } = WKit;
+const { offEventBusHandlers } = WKit;
 
 onPageUnLoad.call(this);
 
@@ -7,7 +17,6 @@ function onPageUnLoad() {
     stopAllIntervals.call(this);
     clearEventBus.call(this);
     clearDataPublisher.call(this);
-    clearThree.call(this);
 }
 
 // ======================
@@ -44,23 +53,4 @@ function clearDataPublisher() {
     this.currentParams = null;
 }
 
-// ======================
-// THREE.JS CLEANUP
-// ======================
-
-function clearThree() {
-    const canvas = this.element.querySelector('canvas');
-    if (!canvas) return;
-
-    // Raycasting event cleanup
-    if (this.raycastingEvents) {
-        go(
-            this.raycastingEvents,
-            each(({ type, handler }) => canvas.removeEventListener(type, handler))
-        );
-        this.raycastingEvents = null;
-    }
-
-    // Dispose all 3D resources (components + scene background)
-    disposeAllThreeResources(this);
-}
+console.log('[Page] before_unload - cleanup completed');
