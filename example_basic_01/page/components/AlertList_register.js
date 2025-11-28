@@ -43,44 +43,48 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderAlerts(response) {
-    const { alerts } = response;
-    console.log(`[AlertList] renderAlerts: ${alerts?.length || 0} alerts`);
+    try {
+        const { alerts } = response;
+        console.log(`[AlertList] renderAlerts: ${alerts?.length || 0} alerts`);
 
-    const template = this.element.querySelector('#alert-item-template');
-    const container = this.element.querySelector('.alert-list');
-    const emptyState = this.element.querySelector('.alert-empty');
-    const countBadge = this.element.querySelector('.alert-count');
+        const template = this.element.querySelector('#alert-item-template');
+        const container = this.element.querySelector('.alert-list');
+        const emptyState = this.element.querySelector('.alert-empty');
+        const countBadge = this.element.querySelector('.alert-count');
 
-    if (!template || !container) return;
+        if (!template || !container) return;
 
-    // Update count badge
-    if (countBadge) {
-        countBadge.textContent = alerts?.length || 0;
-        countBadge.classList.toggle('empty', !alerts?.length);
+        // Update count badge
+        if (countBadge) {
+            countBadge.textContent = alerts?.length || 0;
+            countBadge.classList.toggle('empty', !alerts?.length);
+        }
+
+        // Show/hide empty state
+        if (emptyState) {
+            emptyState.style.display = alerts?.length ? 'none' : 'flex';
+        }
+
+        container.innerHTML = '';
+
+        if (!alerts?.length) return;
+
+        alerts.forEach(alert => {
+            const clone = template.content.cloneNode(true);
+            const item = clone.querySelector('.alert-item');
+
+            item.dataset.alertId = alert.id;
+            item.dataset.severity = alert.type;
+
+            clone.querySelector('.alert-message').textContent = alert.message;
+            clone.querySelector('.alert-zone').textContent = alert.zone;
+            clone.querySelector('.alert-time').textContent = formatTime(alert.timestamp);
+
+            container.appendChild(clone);
+        });
+    } catch (error) {
+        console.error('[AlertList] renderAlerts error:', error);
     }
-
-    // Show/hide empty state
-    if (emptyState) {
-        emptyState.style.display = alerts?.length ? 'none' : 'flex';
-    }
-
-    container.innerHTML = '';
-
-    if (!alerts?.length) return;
-
-    alerts.forEach(alert => {
-        const clone = template.content.cloneNode(true);
-        const item = clone.querySelector('.alert-item');
-
-        item.dataset.alertId = alert.id;
-        item.dataset.severity = alert.type;
-
-        clone.querySelector('.alert-message').textContent = alert.message;
-        clone.querySelector('.alert-zone').textContent = alert.zone;
-        clone.querySelector('.alert-time').textContent = formatTime(alert.timestamp);
-
-        container.appendChild(clone);
-    });
 }
 
 function formatTime(isoString) {

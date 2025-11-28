@@ -55,77 +55,81 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderChart(response) {
-    const { data } = response;
-    console.log(`[VisitorChart] renderChart:`, data);
+    try {
+        const { data } = response;
+        console.log(`[VisitorChart] renderChart:`, data);
 
-    if (!data || !data.labels) return;
+        if (!data || !data.labels) return;
 
-    const option = {
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'cross'
-            }
-        },
-        legend: {
-            data: ['Visitors', 'Page Views'],
-            top: 0
-        },
-        grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            top: '15%',
-            containLabel: true
-        },
-        xAxis: {
-            type: 'category',
-            boundaryGap: false,
-            data: data.labels,
-            axisLabel: {
-                fontSize: 10
-            }
-        },
-        yAxis: {
-            type: 'value'
-        },
-        series: [
-            {
-                name: 'Visitors',
-                type: 'line',
-                smooth: true,
-                data: data.visitors,
-                itemStyle: { color: '#4f46e5' },
-                areaStyle: {
-                    color: {
-                        type: 'linear',
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: 'rgba(79, 70, 229, 0.3)' },
-                            { offset: 1, color: 'rgba(79, 70, 229, 0.05)' }
-                        ]
-                    }
+        const option = {
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross'
                 }
             },
-            {
-                name: 'Page Views',
-                type: 'line',
-                smooth: true,
-                data: data.pageViews,
-                itemStyle: { color: '#10b981' },
-                areaStyle: {
-                    color: {
-                        type: 'linear',
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
-                            { offset: 1, color: 'rgba(16, 185, 129, 0.05)' }
-                        ]
+            legend: {
+                data: ['Visitors', 'Page Views'],
+                top: 0
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '15%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: data.labels,
+                axisLabel: {
+                    fontSize: 10
+                }
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {
+                    name: 'Visitors',
+                    type: 'line',
+                    smooth: true,
+                    data: data.visitors,
+                    itemStyle: { color: '#4f46e5' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(79, 70, 229, 0.3)' },
+                                { offset: 1, color: 'rgba(79, 70, 229, 0.05)' }
+                            ]
+                        }
+                    }
+                },
+                {
+                    name: 'Page Views',
+                    type: 'line',
+                    smooth: true,
+                    data: data.pageViews,
+                    itemStyle: { color: '#10b981' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
+                                { offset: 1, color: 'rgba(16, 185, 129, 0.05)' }
+                            ]
+                        }
                     }
                 }
-            }
-        ]
-    };
+            ]
+        };
 
-    this.chartInstance.setOption(option);
+        this.chartInstance.setOption(option);
+    } catch (error) {
+        console.error('[VisitorChart] renderChart error:', error);
+    }
 }

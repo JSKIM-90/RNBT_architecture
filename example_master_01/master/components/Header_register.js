@@ -45,41 +45,49 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderUserInfo(response) {
-    const { data } = response;
-    console.log(`[Header] renderUserInfo:`, data);
+    try {
+        const { data } = response;
+        console.log(`[Header] renderUserInfo:`, data);
 
-    const avatarEl = this.element.querySelector('.user-avatar');
-    const nameEl = this.element.querySelector('.user-name');
+        const avatarEl = this.element.querySelector('.user-avatar');
+        const nameEl = this.element.querySelector('.user-name');
 
-    if (avatarEl) avatarEl.src = data.avatar;
-    if (nameEl) nameEl.textContent = data.name;
+        if (avatarEl) avatarEl.src = data.avatar;
+        if (nameEl) nameEl.textContent = data.name;
+    } catch (error) {
+        console.error('[Header] renderUserInfo error:', error);
+    }
 }
 
 function renderMenu(response) {
-    const { items } = response;
-    console.log(`[Header] renderMenu:`, items);
+    try {
+        const { items } = response;
+        console.log(`[Header] renderMenu:`, items);
 
-    const template = this.element.querySelector('#nav-item-template');
-    const container = this.element.querySelector('.nav-list');
+        const template = this.element.querySelector('#nav-item-template');
+        const container = this.element.querySelector('.nav-list');
 
-    if (!template || !container) return;
+        if (!template || !container) return;
 
-    container.innerHTML = '';
+        container.innerHTML = '';
 
-    items.forEach(item => {
-        const clone = template.content.cloneNode(true);
-        const li = clone.querySelector('.nav-item');
-        const link = clone.querySelector('.nav-link');
-        const icon = clone.querySelector('.nav-icon');
-        const label = clone.querySelector('.nav-label');
+        items.forEach(item => {
+            const clone = template.content.cloneNode(true);
+            const li = clone.querySelector('.nav-item');
+            const link = clone.querySelector('.nav-link');
+            const icon = clone.querySelector('.nav-icon');
+            const label = clone.querySelector('.nav-label');
 
-        li.dataset.menuId = item.id;
-        if (item.active) li.classList.add('active');
+            li.dataset.menuId = item.id;
+            if (item.active) li.classList.add('active');
 
-        link.href = item.href;
-        icon.textContent = item.icon;
-        label.textContent = item.label;
+            link.href = item.href;
+            icon.textContent = item.icon;
+            label.textContent = item.label;
 
-        container.appendChild(clone);
-    });
+            container.appendChild(clone);
+        });
+    } catch (error) {
+        console.error('[Header] renderMenu error:', error);
+    }
 }

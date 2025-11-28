@@ -46,46 +46,54 @@ bindEvents(this, this.customEvents);
 // ======================
 
 function renderNotifications(response) {
-    const { items } = response;
-    console.log(`[Sidebar] renderNotifications: ${items.length} items`);
+    try {
+        const { items } = response;
+        console.log(`[Sidebar] renderNotifications: ${items?.length || 0} items`);
 
-    const template = this.element.querySelector('#notification-item-template');
-    const container = this.element.querySelector('.notification-list');
+        const template = this.element.querySelector('#notification-item-template');
+        const container = this.element.querySelector('.notification-list');
 
-    if (!template || !container) return;
+        if (!template || !container || !items) return;
 
-    container.innerHTML = '';
+        container.innerHTML = '';
 
-    items.forEach(item => {
-        const clone = template.content.cloneNode(true);
-        const div = clone.querySelector('.notification-item');
-        const icon = clone.querySelector('.notification-icon');
-        const message = clone.querySelector('.notification-message');
-        const time = clone.querySelector('.notification-time');
+        items.forEach(item => {
+            const clone = template.content.cloneNode(true);
+            const div = clone.querySelector('.notification-item');
+            const icon = clone.querySelector('.notification-icon');
+            const message = clone.querySelector('.notification-message');
+            const time = clone.querySelector('.notification-time');
 
-        div.dataset.notificationId = item.id;
-        div.dataset.type = item.type;
-        if (!item.read) div.classList.add('unread');
+            div.dataset.notificationId = item.id;
+            div.dataset.type = item.type;
+            if (!item.read) div.classList.add('unread');
 
-        // Icon based on type
-        const icons = { info: 'i', warning: '!', success: '✓' };
-        icon.textContent = icons[item.type] || 'i';
+            // Icon based on type
+            const icons = { info: 'i', warning: '!', success: '✓' };
+            icon.textContent = icons[item.type] || 'i';
 
-        message.textContent = item.message;
-        time.textContent = formatTime(item.time);
+            message.textContent = item.message;
+            time.textContent = formatTime(item.time);
 
-        container.appendChild(clone);
-    });
+            container.appendChild(clone);
+        });
+    } catch (error) {
+        console.error('[Sidebar] renderNotifications error:', error);
+    }
 }
 
 function updateBadge(response) {
-    const { unreadCount } = response;
-    console.log(`[Sidebar] updateBadge: ${unreadCount} unread`);
+    try {
+        const { unreadCount } = response;
+        console.log(`[Sidebar] updateBadge: ${unreadCount} unread`);
 
-    const badge = this.element.querySelector('.notification-badge');
-    if (badge) {
-        badge.textContent = unreadCount;
-        badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        const badge = this.element.querySelector('.notification-badge');
+        if (badge) {
+            badge.textContent = unreadCount;
+            badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+        }
+    } catch (error) {
+        console.error('[Sidebar] updateBadge error:', error);
     }
 }
 
