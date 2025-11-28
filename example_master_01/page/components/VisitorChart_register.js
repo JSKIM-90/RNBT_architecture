@@ -32,9 +32,11 @@ fx.go(
 const chartContainer = this.element.querySelector('#echarts');
 this.chartInstance = echarts.init(chartContainer);
 
-// Handle resize
-this.resizeHandler = () => this.chartInstance && this.chartInstance.resize();
-window.addEventListener('resize', this.resizeHandler);
+// Handle resize with ResizeObserver
+this.resizeObserver = new ResizeObserver(() => {
+    this.chartInstance && this.chartInstance.resize();
+});
+this.resizeObserver.observe(chartContainer);
 
 // ======================
 // EVENT BINDING

@@ -9,10 +9,10 @@ const { each } = fx;
 // Remove event listeners
 removeCustomEvents(this, this.customEvents);
 
-// Remove resize handler
-if (this.resizeHandler) {
-    window.removeEventListener('resize', this.resizeHandler);
-    this.resizeHandler = null;
+// Disconnect ResizeObserver
+if (this.resizeObserver) {
+    this.resizeObserver.disconnect();
+    this.resizeObserver = null;
 }
 
 // Dispose ECharts instance

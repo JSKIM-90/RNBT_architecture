@@ -25,9 +25,9 @@ Master 영역과 Page 영역은 **독립적인 flow**를 가지며 서로 겹쳐
 │ ┌─────────────────────────────────────────────────────┐ │
 │ │ (padding-top: 60px)                                 │ │
 │ ├──────────┬──────────────────────────────────────────┤ │
-│ │(padding- │                                          │ │
-│ │ left:    │     StatsPanel (실제 컨텐츠)             │ │
-│ │ 250px)   │                                          │ │
+│ │(padding- │     StatsPanel (50%)                     │ │
+│ │ left:    │─────────────────────────────────────────│ │
+│ │ 250px)   │     VisitorChart (50%)                  │ │
 │ └──────────┴──────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -113,12 +113,28 @@ box-sizing: border-box;
 
 ```css
 width: 100%;
-min-height: calc(100vh - 60px);
+height: calc((100vh - 60px) / 2);
 ```
 
 **설명**:
-- Page Root의 padding 안에서 전체 영역 차지
-- 내부 컴포넌트가 Normal Flow로 배치
+- Page 영역의 50% 높이
+- VisitorChart와 수직으로 나란히 배치
+
+---
+
+## 5. Page - VisitorChart Wrapper
+
+### Container Inline Style (패널에서 설정)
+
+```css
+width: 100%;
+height: calc((100vh - 60px) / 2);
+```
+
+**설명**:
+- Page 영역의 50% 높이
+- StatsPanel 아래에 배치
+- ECharts 차트가 컨테이너 크기에 맞게 리사이즈됨
 
 ---
 
@@ -129,7 +145,8 @@ min-height: calc(100vh - 60px);
 | Master | Header | fixed | 0, 0 | 100%, 60px | 100 |
 | Master | Sidebar | fixed | 60px, 0 | 250px, calc(100vh-60px) | 100 |
 | Page | Root | static | - | padding: 60px 0 0 250px | 1 |
-| Page | StatsPanel | static | - | 100%, auto | - |
+| Page | StatsPanel | static | - | 100%, 50% | - |
+| Page | VisitorChart | static | - | 100%, 50% | - |
 
 ---
 
@@ -161,6 +178,22 @@ min-height: calc(100vh - 60px);
     display: flex;
     flex-direction: column;
     /* 내부 레이아웃, 색상, 스타일 */
+}
+```
+
+### Page - VisitorChart.css
+```css
+#component-id .visitor-chart-widget {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    /* ECharts 컨테이너가 flex: 1로 남은 공간 차지 */
+}
+
+#component-id .chart-container {
+    flex: 1;
+    min-height: 200px;
+    /* ResizeObserver로 크기 변화 감지 → ECharts resize */
 }
 ```
 
@@ -208,6 +241,7 @@ function renderItems(items) {
 | Header | `#nav-item-template` | menu (메뉴 항목) |
 | Sidebar | `#notification-item-template` | notifications (알림) |
 | StatsPanel | `#stat-card-template` | stats (통계) |
+| VisitorChart | - (ECharts) | chartData (차트 데이터) |
 
 ---
 
