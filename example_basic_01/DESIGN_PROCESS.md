@@ -1502,69 +1502,62 @@ document.addEventListener('visibilitychange', () => {
 ### ✅ 완료
 
 - [x] **시나리오 구상** (IoT 모니터링 대시보드)
-- [x] **API 서버 구축** (IOT_API/)
+- [x] **API 서버 구축** (mock_server/)
   - 8개 API 엔드포인트
   - 다양한 갱신 주기 시뮬레이션
   - 실시간 데이터 생성 로직
-- [x] **page_before_load.js 템플릿**
+- [x] **page_before_load.js 구현**
   - 이벤트 핸들러 등록
   - Primitive 조합 패턴
-  - Param 업데이트 예시
-- [x] **page_loaded.js 템플릿**
+- [x] **page_loaded.js 구현**
   - 데이터 매핑 및 발행
-  - Interval 관리 (startAllIntervals, stopAllIntervals)
-  - Param 관리 (currentParams)
   - Topic별 독립적 갱신 주기
-- [x] **page_before_unload.js 템플릿**
-  - Interval 정리
-  - EventBus 정리
-  - DataPublisher 정리
+- [x] **page_before_unload.js 구현**
+  - 리소스 정리
   - 생성/정리 1:1 매칭 완료
+- [x] **컴포넌트 구현**
+  - SensorPanel: 센서 데이터 카드 그리드
+  - AlertList: 알림 목록 + 카운트 배지
+  - TrendChart: ECharts 온도 트렌드 차트
+- [x] **에러 처리 패턴**
+  - Guard clause로 데이터 검증
+  - ECharts 호출만 try-catch
 
-### ⏳ 다음 단계
+### 구현된 컴포넌트
 
-1. **컴포넌트 템플릿 1개** (10-15분)
-   - Subscribe 패턴
-   - 데이터 렌더링
-   - Destroy 정리
+| 컴포넌트 | 구독 Topic | 기능 |
+|----------|-----------|------|
+| SensorPanel | sensors | 센서 카드 그리드, 상태별 스타일 |
+| AlertList | alerts | 알림 목록, 카운트 배지, 빈 상태 |
+| TrendChart | trend | ECharts 온도 트렌드, ResizeObserver |
 
-2. **실제 통합 및 동작 검증** ← 중요!
-   - API 서버와 프레임워크 연결 확인
-   - Topic 기반 pub-sub 동작 확인
-   - Interval 정상 작동 (5초, 15초 주기)
-   - Param 병합 동작 확인
-   - 메모리 누수 검증
+### datasetList.json 구조 (v3.2.0)
 
-3. **추가 컴포넌트 작성** (검증 성공 시)
-   - AlertPanel
-   - DeviceList
-   - TrendChart
-
-4. **패턴 문서화**
-   - 발견한 문제점 정리
-   - 베스트 프랙티스 정리
-   - CLAUDE.md 업데이트
+```json
+{
+  "version": "3.2.0",
+  "data": [
+    {
+      "name": "iotSensors",
+      "dataset_id": "iot-sensors-001",
+      "page_id": "PAGE",
+      "interval": "5000",
+      "rest_api": "{\"url\":\"...\",\"method\":\"GET\",...}"
+    }
+  ]
+}
+```
 
 ### 평가
 
-**논리적 완성도**: 9/10 (거의 완벽)
+**완성도**: 8/10
 - ✅ 체계적인 설계
 - ✅ 일관된 패턴
-- ✅ 명확한 책임 분리
-- ⚠️ 실제 동작 미검증
-
-**실용적 완성도**: 6/10 (현재) → 8-9/10 (잠재적)
-- ✅ 페이지 템플릿 완성
-- ❌ 컴포넌트 미구현
-- ❌ 통합 검증 필요
-
-**다음 행동**:
-1. 컴포넌트 1개 최소 구현
-2. **즉시 통합 검증** ← 가장 중요
-3. 문제 발견 시 수정
-4. 그 후 확장
+- ✅ 컴포넌트 구현 완료
+- ✅ Guard clause 에러 처리
+- ⚠️ 테스트/로딩 상태 미구현
 
 ---
 
 **작성 일시**: 2025-11-21
-**최종 업데이트**: 문서 구조 재조립 (처음 보는 사람 기준 흐름 개선)
+**최종 업데이트**: 2025-11-28 (컴포넌트 구현 완료, 에러 처리 패턴 적용)

@@ -1122,11 +1122,91 @@ WKit.enableDebugMode({
 
 ---
 
+## 예제 폴더
+
+### example_basic_01 - Page Only 아키텍처
+
+**목적**: 폴링 기반 다중 갱신 주기 대시보드 패턴 검증
+
+**구조**:
+```
+example_basic_01/
+├── page/
+│   ├── page_scripts/          # 페이지 라이프사이클
+│   └── components/            # SensorPanel, AlertList, TrendChart
+├── mock_server/               # 목 API 서버 (port: 3000)
+├── datasetList.json           # 데이터셋 정의 (v3.2.0 포맷)
+└── DESIGN_PROCESS.md          # 상세 설계 문서
+```
+
+**특징**:
+- Page 레이어만 사용
+- IoT 센서 모니터링 시나리오
+- 5초/15초/60초 갱신 주기
+
+---
+
+### example_master_01 - Master + Page 레이어 아키텍처
+
+**목적**: Master + Page 레이어의 독립적 데이터 흐름 검증
+
+**구조**:
+```
+example_master_01/
+├── master/
+│   ├── common_component/      # 페이지 스크립트 대체
+│   └── components/            # Header, Sidebar
+├── page/
+│   ├── page_scripts/
+│   └── components/            # StatsPanel, VisitorChart
+├── mock_server/               # 목 API 서버 (port: 3001)
+├── datasetList.json           # 데이터셋 정의 (v3.2.0 포맷)
+└── README.md                  # 아키텍처 설명
+```
+
+**특징**:
+- Master: 공통 UI (사용자 정보, 메뉴, 알림)
+- Page: 페이지별 콘텐츠 (통계, 차트)
+- `common_component`가 Master의 페이지 스크립트 역할
+- `fetchAndPublish(topic, this.page)` 패턴
+
+---
+
+### datasetList.json 포맷 (v3.2.0)
+
+모든 예제는 동일한 데이터셋 포맷을 사용:
+
+```json
+{
+  "version": "3.2.0",
+  "data": [
+    {
+      "name": "datasetName",
+      "dataset_id": "unique-id",
+      "page_id": "MASTER|PAGE",
+      "interval": "5000",
+      "param_info": [],
+      "rest_api": "{\"url\":\"...\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    }
+  ],
+  "datasource": []
+}
+```
+
+---
+
 ## 버전 정보
 
-**문서 버전**: 1.2.0
-**최종 업데이트**: 2025-11-19
+**문서 버전**: 1.3.0
+**최종 업데이트**: 2025-11-28
 **주요 변경사항**:
+- v1.3.0: 예제 폴더 구조화 및 문서 정비 (2025-11-28)
+  - example_basic_01: Page Only 아키텍처 (IoT 대시보드)
+  - example_master_01: Master + Page 아키텍처 (대시보드)
+  - datasetList.json v3.2.0 포맷 통일
+  - 에러 처리 패턴: Guard clause + 외부 라이브러리만 try-catch
+  - ResizeObserver 패턴 (차트 컴포넌트)
+  - event.target.closest() 패턴 (이벤트 위임)
 - v1.2.0: 대시보드 패턴 및 아키텍처 명확화 (2025-11-19)
   - 데이터셋별 독립적인 auto-refresh interval 패턴 추가
   - GlobalDataPublisher 동적 param 업데이트 지원 (param 병합)
@@ -1134,7 +1214,6 @@ WKit.enableDebugMode({
   - 페이지 Orchestration 역할 명확화: 조율 계층으로 비즈니스 로직 집중
   - 컴포넌트 메소드 위임 패턴: 복잡한 도메인 로직은 컴포넌트가 소유
   - HTML dataset 활용 베스트 프랙티스 추가
-  - dashboard_example 폴더로 실전 패턴 분리
 - v1.1.0: Primitive Building Blocks 원칙 적용 (2025-11-19)
   - 제거된 API: `pipeForDataMapping`, `triggerEventToTargetInstance`, `getDataMappingSchema`
   - 제거된 Internal: `resolveMappingInfo`, `getDataFromMapping`
