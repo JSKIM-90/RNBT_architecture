@@ -1,0 +1,30 @@
+<div class="sidebar">
+    <!-- Header -->
+    <div class="sidebar-header">
+        <h3 class="sidebar-title">Notifications</h3>
+        <span class="notification-badge">0</span>
+    </div>
+
+    <!-- Filter -->
+    <div class="sidebar-filter">
+        <select class="notification-filter">
+            <option value="5">Show 5</option>
+            <option value="10">Show 10</option>
+            <option value="20">Show 20</option>
+        </select>
+    </div>
+
+    <!-- Notification List (Dynamic) -->
+    <div class="notification-list"></div>
+
+    <!-- Templates -->
+    <template id="notification-item-template">
+        <div class="notification-item" data-notification-id="">
+            <div class="notification-icon"></div>
+            <div class="notification-content">
+                <p class="notification-message"></p>
+                <span class="notification-time"></span>
+            </div>
+        </div>
+    </template>
+</div>

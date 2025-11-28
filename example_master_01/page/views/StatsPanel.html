@@ -1,0 +1,28 @@
+<div class="stats-panel">
+    <!-- Header -->
+    <div class="stats-header">
+        <h2 class="stats-title">Statistics Dashboard</h2>
+        <div class="stats-controls">
+            <select class="period-filter">
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+            </select>
+            <button class="refresh-btn">Refresh</button>
+        </div>
+    </div>
+
+    <!-- Stats Cards (Dynamic) -->
+    <div class="stats-grid"></div>
+
+    <!-- Templates -->
+    <template id="stat-card-template">
+        <div class="stat-card" data-stat-key="">
+            <div class="stat-icon"></div>
+            <div class="stat-info">
+                <span class="stat-label"></span>
+                <span class="stat-value"></span>
+            </div>
+        </div>
+    </template>
+</div>

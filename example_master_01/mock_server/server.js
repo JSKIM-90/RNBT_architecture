@@ -67,6 +67,16 @@ function generateStats(period = '24h') {
   };
 }
 
+// Menu (for Header navigation)
+function generateMenu() {
+  return [
+    { id: 'menu-home', label: 'Home', icon: '🏠', href: '#home', active: true },
+    { id: 'menu-dashboard', label: 'Dashboard', icon: '📊', href: '#dashboard', active: false },
+    { id: 'menu-reports', label: 'Reports', icon: '📈', href: '#reports', active: false },
+    { id: 'menu-settings', label: 'Settings', icon: '⚙️', href: '#settings', active: false }
+  ];
+}
+
 // ===========================
 // API ENDPOINTS
 // ===========================
@@ -94,6 +104,14 @@ app.get('/api/stats', (req, res) => {
   res.json({
     success: true,
     data: generateStats(period)
+  });
+});
+
+// Master - Header: Navigation menu
+app.get('/api/menu', (req, res) => {
+  res.json({
+    success: true,
+    items: generateMenu()
   });
 });
 
@@ -129,6 +147,7 @@ app.listen(PORT, HOST, () => {
 
 Endpoints:
   GET /api/user              - User info (Master/Header)
+  GET /api/menu              - Navigation menu (Master/Header)
   GET /api/notifications     - Notifications (Master/Sidebar)
   GET /api/stats?period=24h  - Stats (Page/StatsPanel)
 

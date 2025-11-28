@@ -41,16 +41,40 @@ this.customEvents = {
 bindEvents(this, this.customEvents);
 
 // ======================
-// HANDLERS
+// RENDER FUNCTIONS
 // ======================
 
 function renderStats(response) {
     const { data } = response;
     console.log(`[StatsPanel] renderStats:`, data);
 
-    // Example: Update stats display
-    // this.element.querySelector('.visitors').textContent = data.visitors;
-    // this.element.querySelector('.page-views').textContent = data.pageViews;
-    // this.element.querySelector('.sessions').textContent = data.sessions;
-    // this.element.querySelector('.bounce-rate').textContent = data.bounceRate + '%';
+    const template = this.element.querySelector('#stat-card-template');
+    const container = this.element.querySelector('.stats-grid');
+
+    if (!template || !container) return;
+
+    container.innerHTML = '';
+
+    // Stats configuration
+    const statsConfig = [
+        { key: 'visitors', label: 'Visitors', icon: '👥', format: v => v.toLocaleString() },
+        { key: 'pageViews', label: 'Page Views', icon: '📄', format: v => v.toLocaleString() },
+        { key: 'sessions', label: 'Sessions', icon: '🔗', format: v => v.toLocaleString() },
+        { key: 'bounceRate', label: 'Bounce Rate', icon: '↩️', format: v => `${v}%` }
+    ];
+
+    statsConfig.forEach(config => {
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.stat-card');
+        const icon = clone.querySelector('.stat-icon');
+        const label = clone.querySelector('.stat-label');
+        const value = clone.querySelector('.stat-value');
+
+        card.dataset.statKey = config.key;
+        icon.textContent = config.icon;
+        label.textContent = config.label;
+        value.textContent = config.format(data[config.key]);
+
+        container.appendChild(clone);
+    });
 }

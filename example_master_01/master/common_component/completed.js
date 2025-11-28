@@ -25,6 +25,16 @@ this.globalDataMappings = [
         // No refreshInterval - fetch once
     },
 
+    // Menu (static - no refresh)
+    {
+        topic: 'menu',
+        datasetInfo: {
+            datasetName: 'menuapi',
+            param: {}
+        }
+        // No refreshInterval - fetch once
+    },
+
     // Notifications (refresh: 5s)
     {
         topic: 'notifications',

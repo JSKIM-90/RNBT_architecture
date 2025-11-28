@@ -42,22 +42,64 @@ this.customEvents = {
 bindEvents(this, this.customEvents);
 
 // ======================
-// HANDLERS
+// RENDER FUNCTIONS
 // ======================
 
 function renderNotifications(response) {
     const { items } = response;
     console.log(`[Sidebar] renderNotifications: ${items.length} items`);
 
-    // Example: Render notification list
-    // const html = items.map(item => `<div class="notification-item" data-notification-id="${item.id}">${item.message}</div>`).join('');
-    // this.element.querySelector('.notification-list').innerHTML = html;
+    const template = this.element.querySelector('#notification-item-template');
+    const container = this.element.querySelector('.notification-list');
+
+    if (!template || !container) return;
+
+    container.innerHTML = '';
+
+    items.forEach(item => {
+        const clone = template.content.cloneNode(true);
+        const div = clone.querySelector('.notification-item');
+        const icon = clone.querySelector('.notification-icon');
+        const message = clone.querySelector('.notification-message');
+        const time = clone.querySelector('.notification-time');
+
+        div.dataset.notificationId = item.id;
+        div.dataset.type = item.type;
+        if (!item.read) div.classList.add('unread');
+
+        // Icon based on type
+        const icons = { info: 'i', warning: '!', success: '✓' };
+        icon.textContent = icons[item.type] || 'i';
+
+        message.textContent = item.message;
+        time.textContent = formatTime(item.time);
+
+        container.appendChild(clone);
+    });
 }
 
 function updateBadge(response) {
     const { unreadCount } = response;
     console.log(`[Sidebar] updateBadge: ${unreadCount} unread`);
 
-    // Example: Update badge count
-    // this.element.querySelector('.badge').textContent = unreadCount;
+    const badge = this.element.querySelector('.notification-badge');
+    if (badge) {
+        badge.textContent = unreadCount;
+        badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+    }
+}
+
+// ======================
+// HELPERS
+// ======================
+
+function formatTime(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000 / 60); // minutes
+
+    if (diff < 1) return 'Just now';
+    if (diff < 60) return `${diff}m ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return date.toLocaleDateString();
 }

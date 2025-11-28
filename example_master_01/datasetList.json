@@ -20,6 +20,21 @@
       "datasource": "",
       "mode": "0",
       "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "MASTER",
+      "query": "",
+      "query_type": "",
+      "description": "Navigation menu API (Master/Header) - static",
+      "dataset_id": "menu-001",
+      "name": "menuapi",
+      "rest_api": "{\"url\":\"http://localhost:3001/api/menu\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
       "param_info": [
         {
           "param_name": "limit",
