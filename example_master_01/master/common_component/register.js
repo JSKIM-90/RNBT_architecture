@@ -37,7 +37,7 @@ this.eventBusHandlers = {
             limit
         };
 
-        GlobalDataPublisher.fetchAndPublish('notifications', this, this.currentParams['notifications']);
+        GlobalDataPublisher.fetchAndPublish('notifications', this.page, this.currentParams['notifications']);
     }
 };
 

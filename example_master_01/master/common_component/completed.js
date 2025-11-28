@@ -46,7 +46,7 @@ fx.go(
     this.globalDataMappings,
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => this.currentParams[topic] = {}),
-    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
+    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this.page))
 );
 
 // ======================
@@ -61,7 +61,7 @@ this.startAllIntervals = () => {
         each(({ topic, refreshInterval }) => {
             if (refreshInterval) {
                 this.refreshIntervals[topic] = setInterval(() => {
-                    GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {});
+                    GlobalDataPublisher.fetchAndPublish(topic, this.page, this.currentParams[topic] || {});
                 }, refreshInterval);
             }
         })
