@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sidebar Component Preview</title>
+
+    <!-- ========== STYLES ========== -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        /* Component Container (런타임 가이드 기준) */
+        #component-container {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 250px;
+            height: calc(100vh - 60px);
+            z-index: 100;
+            overflow-y: auto;
+            background: #fff;
+            border-right: 1px solid #eee;
+        }
+
+        /* Sidebar (height: 100%로 Container 높이 사용) */
+        .sidebar {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .notification-badge {
+            background: #e74c3c;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-filter {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .notification-filter {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .notification-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .notification-item:hover {
+            background: #f9f9f9;
+        }
+
+        .notification-item.unread {
+            background: #f0f7ff;
+        }
+
+        .notification-item.unread:hover {
+            background: #e5f0fa;
+        }
+
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .notification-item[data-type="info"] .notification-icon {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .notification-item[data-type="warning"] .notification-icon {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .notification-item[data-type="success"] .notification-icon {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .notification-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notification-message {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        .notification-time {
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== COMPONENT CONTAINER ========== -->
+    <div id="component-container">
+        <!-- Sidebar.html 내용 -->
+        <div class="sidebar">
+            <!-- Header -->
+            <div class="sidebar-header">
+                <h3 class="sidebar-title">Notifications</h3>
+                <span class="notification-badge">0</span>
+            </div>
+
+            <!-- Filter -->
+            <div class="sidebar-filter">
+                <select class="notification-filter">
+                    <option value="5">Show 5</option>
+                    <option value="10">Show 10</option>
+                    <option value="20">Show 20</option>
+                </select>
+            </div>
+
+            <!-- Notification List (Dynamic) -->
+            <div class="notification-list"></div>
+
+            <!-- Templates -->
+            <template id="notification-item-template">
+                <div class="notification-item" data-notification-id="">
+                    <div class="notification-icon"></div>
+                    <div class="notification-content">
+                        <p class="notification-message"></p>
+                        <span class="notification-time"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- ========== MOCK DATA ========== -->
+    <script>
+        const MOCK_DATA = {
+            notifications: {
+                items: [
+                    { id: 1, type: 'info', message: 'New user registered: john@example.com', time: new Date(Date.now() - 5 * 60000).toISOString(), read: false },
+                    { id: 2, type: 'success', message: 'Deployment completed successfully', time: new Date(Date.now() - 30 * 60000).toISOString(), read: false },
+                    { id: 3, type: 'warning', message: 'High CPU usage detected on server-02', time: new Date(Date.now() - 2 * 3600000).toISOString(), read: true },
+                    { id: 4, type: 'info', message: 'Weekly report is ready to download', time: new Date(Date.now() - 5 * 3600000).toISOString(), read: true },
+                    { id: 5, type: 'success', message: 'Backup completed: 2.4GB archived', time: new Date(Date.now() - 24 * 3600000).toISOString(), read: true }
+                ],
+                unreadCount: 2
+            }
+        };
+    </script>
+
+    <!-- ========== RENDER FUNCTIONS ========== -->
+    <script>
+        const container = document.getElementById('component-container');
+
+        // Sidebar_register.js에서 렌더 함수만 추출
+        function renderNotifications(response) {
+            const { items } = response;
+            console.log(`[Sidebar] renderNotifications: ${items?.length || 0} items`);
+
+            const template = container.querySelector('#notification-item-template');
+            const list = container.querySelector('.notification-list');
+
+            if (!template || !list || !items) return;
+
+            list.innerHTML = '';
+
+            items.forEach(item => {
+                const clone = template.content.cloneNode(true);
+                const div = clone.querySelector('.notification-item');
+                const icon = clone.querySelector('.notification-icon');
+                const message = clone.querySelector('.notification-message');
+                const time = clone.querySelector('.notification-time');
+
+                div.dataset.notificationId = item.id;
+                div.dataset.type = item.type;
+                if (!item.read) div.classList.add('unread');
+
+                // Icon based on type
+                const icons = { info: 'i', warning: '!', success: '✓' };
+                icon.textContent = icons[item.type] || 'i';
+
+                message.textContent = item.message;
+                time.textContent = formatTime(item.time);
+
+                list.appendChild(clone);
+            });
+        }
+
+        function updateBadge(response) {
+            const { unreadCount } = response;
+            console.log(`[Sidebar] updateBadge: ${unreadCount ?? 0} unread`);
+
+            const badge = container.querySelector('.notification-badge');
+            if (badge) {
+                badge.textContent = unreadCount ?? 0;
+                badge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            }
+        }
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000 / 60); // minutes
+
+            if (diff < 1) return 'Just now';
+            if (diff < 60) return `${diff}m ago`;
+            if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+            return date.toLocaleDateString();
+        }
+
+        // ========== 렌더링 실행 ==========
+        renderNotifications(MOCK_DATA.notifications);
+        updateBadge(MOCK_DATA.notifications);
+    </script>
+</body>
+</html>
