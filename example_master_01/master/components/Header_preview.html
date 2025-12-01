@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Component Preview</title>
+
+    <!-- ========== STYLES ========== -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        /* Component Container (런타임 가이드 기준) */
+        #component-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            z-index: 100;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Header (height: 100%로 Container 높이 사용) */
+        .header {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .header-nav {
+            flex: 1;
+            margin: 0 40px;
+        }
+
+        .nav-list {
+            display: flex;
+            list-style: none;
+            gap: 8px;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-item.active .nav-link {
+            background: #f0f0ff;
+            color: #4f46e5;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: #666;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .nav-icon {
+            font-size: 16px;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .user-menu {
+            background: none;
+            border: none;
+            font-size: 12px;
+            color: #999;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .user-menu:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== COMPONENT CONTAINER ========== -->
+    <div id="component-container">
+        <!-- Header.html 내용 -->
+        <div class="header">
+            <!-- Logo -->
+            <div class="header-logo">
+                <span class="logo-icon">M</span>
+                <span class="logo-text">Master App</span>
+            </div>
+
+            <!-- Navigation Menu (Dynamic) -->
+            <nav class="header-nav">
+                <ul class="nav-list"></ul>
+            </nav>
+
+            <!-- User Info (Dynamic) -->
+            <div class="header-user">
+                <img class="user-avatar" src="" alt="User Avatar">
+                <span class="user-name"></span>
+                <button class="user-menu">▼</button>
+            </div>
+
+            <!-- Templates -->
+            <template id="nav-item-template">
+                <li class="nav-item" data-menu-id="">
+                    <a class="nav-link" href="#">
+                        <span class="nav-icon"></span>
+                        <span class="nav-label"></span>
+                    </a>
+                </li>
+            </template>
+        </div>
+    </div>
+
+    <!-- ========== MOCK DATA ========== -->
+    <script>
+        const MOCK_DATA = {
+            userInfo: {
+                data: {
+                    name: 'John Doe',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'
+                }
+            },
+            menu: {
+                items: [
+                    { id: 1, label: 'Dashboard', icon: '📊', href: '#', active: true },
+                    { id: 2, label: 'Analytics', icon: '📈', href: '#', active: false },
+                    { id: 3, label: 'Reports', icon: '📋', href: '#', active: false },
+                    { id: 4, label: 'Settings', icon: '⚙️', href: '#', active: false }
+                ]
+            }
+        };
+    </script>
+
+    <!-- ========== RENDER FUNCTIONS ========== -->
+    <script>
+        const container = document.getElementById('component-container');
+
+        // Header_register.js에서 렌더 함수만 추출
+        function renderUserInfo(response) {
+            const { data } = response;
+            console.log(`[Header] renderUserInfo:`, data);
+
+            if (!data) return;
+
+            const avatarEl = container.querySelector('.user-avatar');
+            const nameEl = container.querySelector('.user-name');
+
+            if (avatarEl) avatarEl.src = data.avatar;
+            if (nameEl) nameEl.textContent = data.name;
+        }
+
+        function renderMenu(response) {
+            const { items } = response;
+            console.log(`[Header] renderMenu:`, items);
+
+            if (!items) return;
+
+            const template = container.querySelector('#nav-item-template');
+            const list = container.querySelector('.nav-list');
+
+            if (!template || !list) return;
+
+            list.innerHTML = '';
+
+            items.forEach(item => {
+                const clone = template.content.cloneNode(true);
+                const li = clone.querySelector('.nav-item');
+                const link = clone.querySelector('.nav-link');
+                const icon = clone.querySelector('.nav-icon');
+                const label = clone.querySelector('.nav-label');
+
+                li.dataset.menuId = item.id;
+                if (item.active) li.classList.add('active');
+
+                link.href = item.href;
+                icon.textContent = item.icon;
+                label.textContent = item.label;
+
+                list.appendChild(clone);
+            });
+        }
+
+        // ========== 렌더링 실행 ==========
+        renderUserInfo(MOCK_DATA.userInfo);
+        renderMenu(MOCK_DATA.menu);
+    </script>
+</body>
+</html>

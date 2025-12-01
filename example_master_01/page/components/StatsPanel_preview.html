@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StatsPanel Component Preview</title>
+
+    <!-- ========== STYLES ========== -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+        }
+
+        /* Component Container (런타임 가이드 기준 - Page 영역 50%) */
+        #component-container {
+            margin-left: 250px;
+            margin-top: 60px;
+            width: calc(100% - 250px);
+            height: calc((100vh - 60px) / 2);
+            background: #fff;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* StatsPanel (height: 100%로 Container 높이 사용) */
+        .stats-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .stats-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stats-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .period-filter {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .refresh-btn:hover {
+            background: #4338ca;
+        }
+
+        .stats-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== COMPONENT CONTAINER ========== -->
+    <div id="component-container">
+        <!-- StatsPanel.html 내용 -->
+        <div class="stats-panel">
+            <!-- Header -->
+            <div class="stats-header">
+                <h2 class="stats-title">Statistics Dashboard</h2>
+                <div class="stats-controls">
+                    <select class="period-filter">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                    </select>
+                    <button class="refresh-btn">Refresh</button>
+                </div>
+            </div>
+
+            <!-- Stats Cards (Dynamic) -->
+            <div class="stats-grid"></div>
+
+            <!-- Templates -->
+            <template id="stat-card-template">
+                <div class="stat-card" data-stat-key="">
+                    <div class="stat-icon"></div>
+                    <div class="stat-info">
+                        <span class="stat-label"></span>
+                        <span class="stat-value"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- ========== MOCK DATA ========== -->
+    <script>
+        const MOCK_DATA = {
+            stats: {
+                data: {
+                    visitors: 12847,
+                    pageViews: 48293,
+                    sessions: 8421,
+                    bounceRate: 32.5
+                }
+            }
+        };
+    </script>
+
+    <!-- ========== RENDER FUNCTIONS ========== -->
+    <script>
+        const container = document.getElementById('component-container');
+
+        // StatsPanel_register.js에서 렌더 함수만 추출
+        function renderStats(response) {
+            const { data } = response;
+            console.log(`[StatsPanel] renderStats:`, data);
+
+            const template = container.querySelector('#stat-card-template');
+            const grid = container.querySelector('.stats-grid');
+
+            if (!template || !grid || !data) return;
+
+            grid.innerHTML = '';
+
+            // Stats configuration
+            const statsConfig = [
+                { key: 'visitors', label: 'Visitors', icon: '👥', format: v => v.toLocaleString() },
+                { key: 'pageViews', label: 'Page Views', icon: '📄', format: v => v.toLocaleString() },
+                { key: 'sessions', label: 'Sessions', icon: '🔗', format: v => v.toLocaleString() },
+                { key: 'bounceRate', label: 'Bounce Rate', icon: '↩️', format: v => `${v}%` }
+            ];
+
+            statsConfig.forEach(config => {
+                const clone = template.content.cloneNode(true);
+                const card = clone.querySelector('.stat-card');
+                const icon = clone.querySelector('.stat-icon');
+                const label = clone.querySelector('.stat-label');
+                const value = clone.querySelector('.stat-value');
+
+                card.dataset.statKey = config.key;
+                icon.textContent = config.icon;
+                label.textContent = config.label;
+                value.textContent = config.format(data[config.key]);
+
+                grid.appendChild(clone);
+            });
+        }
+
+        // ========== 렌더링 실행 ==========
+        renderStats(MOCK_DATA.stats);
+    </script>
+</body>
+</html>
