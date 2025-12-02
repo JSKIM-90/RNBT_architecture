@@ -218,7 +218,9 @@ WKit.getSubscriptionSchema = function () {
 
 function makeHandler(targetInstance, selector) {
   return function (event) {
-    event.preventDefault();
+    // submit만 새로고침 방지, 나머지는 사용자가 핸들러에서 직접 호출
+    event.type === 'submit' && event.preventDefault();
+
     const { customEvents } = targetInstance;
     const triggerEvent = customEvents?.[event.type]?.[selector];
     if (triggerEvent) {

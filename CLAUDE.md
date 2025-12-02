@@ -1190,43 +1190,55 @@ this.showUserDetail = function(user) {
 <div class="component-wrapper">...</div>
 ```
 
-### 8. 이벤트 바인딩 시 event.preventDefault() 주의사항
+### 8. 이벤트 바인딩과 event.preventDefault()
 
-WKit의 `bindEvents`는 모든 이벤트에 `event.preventDefault()`를 호출합니다.
-대부분의 UI 상호작용에서 의도된 동작이지만, 일부 요소는 주의가 필요합니다.
+WKit의 `bindEvents`는 **submit 이벤트에만** `event.preventDefault()`를 호출합니다.
 
-**click 이벤트 사용 가능:**
+**설계 원칙:**
+- `submit`: 페이지 새로고침 방지 (필수) → 자동 호출
+- 나머지: 사용자가 핸들러에서 필요시 직접 호출
+
 ```javascript
-click: {
-    '.my-button': '@buttonClicked',     // ✅ 버튼
-    '.nav-link': '@linkClicked',        // ✅ 링크 (SPA 네비게이션)
-    '.card': '@cardClicked'             // ✅ 일반 요소
+// Page - before_load.js
+this.eventBusHandlers = {
+    '@linkClicked': ({ event }) => {
+        event.preventDefault();  // 필요시 직접 호출
+        // SPA 네비게이션 처리
+    },
+
+    '@formSubmitted': ({ event }) => {
+        // preventDefault 자동 호출됨 (submit 이벤트)
+        // 폼 데이터 처리
+    }
+};
+```
+
+**Primitive 원칙:**
+- 프레임워크: 필수적인 것만 처리 (submit 새로고침)
+- 사용자: 필요시 핸들러에서 직접 제어
+
+**비동기 핸들러 주의사항:**
+
+```javascript
+// ✅ 동기 핸들러 - 어디서든 호출 가능
+'@linkClicked': ({ event }) => {
+    // ... 로직
+    event.preventDefault();  // OK
+}
+
+// ⚠️ 비동기 핸들러 - await 전에 호출 필수
+'@linkClicked': async ({ event }) => {
+    event.preventDefault();  // ✅ await 전에 호출
+
+    const data = await fetchData(...);
+
+    // ❌ 여기서 호출하면 이미 늦음
+    // 브라우저가 이미 기본 동작 수행 완료
 }
 ```
 
-**change 이벤트 사용 필요:**
-```javascript
-// ❌ click 사용 시 상태 변경 안 됨
-click: { 'input[type="checkbox"]': '@toggled' }
-
-// ✅ change 사용 (상태 변경 후 발생)
-change: {
-    'input[type="checkbox"]': '@toggled',
-    'input[type="radio"]': '@selected',
-    'select': '@optionChanged'
-}
-```
-
-**요소별 권장 이벤트:**
-
-| 요소 | 권장 이벤트 | click 사용 시 문제 |
-|------|------------|------------------|
-| button, a, div 등 | click | 없음 |
-| checkbox, radio | **change** | 상태 변경 안 됨 |
-| select | **change** | 드롭다운 문제 가능 |
-| contenteditable | focus/input | 커서/선택 문제 |
-| details > summary | 회피 권장 | 토글 안 됨 |
-| a[download] | 회피 권장 | 다운로드 안 됨 |
+브라우저는 동기 핸들러 완료 후 기본 동작 수행 여부를 결정합니다.
+`await` 이후는 핸들러가 "완료"된 것으로 간주됩니다.
 
 ---
 
