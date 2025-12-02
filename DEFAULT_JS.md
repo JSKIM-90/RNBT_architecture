@@ -133,15 +133,11 @@ this.datasetInfo = {
 bind3DEvents(this, this.customEvents);
 ```
 
-### destroy.js
-
-```javascript
-// 3D 이벤트는 페이지 unload에서 일괄 정리됨
-// 컴포넌트에서는 참조만 제거
-
-this.customEvents = null;
-this.datasetInfo = null;
-```
+> **Note**: 3D 컴포넌트는 destroy.js가 없습니다.
+> 페이지 `before_unload.js`의 `disposeAllThreeResources()`에서 일괄 정리됩니다.
+> - subscriptions 해제
+> - customEvents, datasetInfo 참조 제거
+> - 3D 리소스 dispose (geometry, material, texture)
 
 ---
 
@@ -364,9 +360,11 @@ withSelector(this.element, 'canvas', canvas => {
 // 3D RESOURCES CLEANUP
 // ======================
 
-// 한 줄로 모든 3D 리소스 정리:
-// - 모든 3D 컴포넌트의 geometry, material, texture
-// - Scene background
+// 한 줄로 모든 3D 컴포넌트 정리:
+// - subscriptions 해제
+// - customEvents, datasetInfo 참조 제거
+// - geometry, material, texture dispose
+// - Scene background 정리
 disposeAllThreeResources(this);
 ```
 
@@ -572,9 +570,10 @@ this.customEvents = {
 
 ---
 
-**버전**: 1.3.0
+**버전**: 1.4.0
 **작성일**: 2025-12-02
 **변경사항**:
+- v1.4.0: 3D 컴포넌트 destroy.js 제거 - `disposeAllThreeResources()`에서 일괄 정리
 - v1.3.0: 문서 구조 재정리 - 섹션 번호 추가, 컴포넌트 destroy.js 위치 수정
 - v1.2.0: `WKit.withSelector` 사용으로 변경 (선택자 외부 주입)
 - v1.1.0: 3D Raycasting 설정에 Higher-Order Function 패턴 적용

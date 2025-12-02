@@ -101,10 +101,29 @@ WKit.clearSceneBackground = function (scene) {
 
 WKit.disposeAllThreeResources = function (page) {
   const { scene } = wemb.threeElements;
+  const { unsubscribe } = GlobalDataPublisher;
 
   fx.go(
     WKit.makeIterator(page, 'threeLayer'),
-    fx.map(({ appendElement }) => WKit.dispose3DTree(appendElement))
+    fx.each((instance) => {
+      // 1. Subscription 정리
+      if (instance.subscriptions) {
+        fx.go(
+          Object.keys(instance.subscriptions),
+          fx.each((topic) => unsubscribe(topic, instance))
+        );
+        instance.subscriptions = null;
+      }
+
+      // 2. 참조 정리
+      instance.customEvents = null;
+      instance.datasetInfo = null;
+
+      // 3. 3D 리소스 정리
+      if (instance.appendElement) {
+        WKit.dispose3DTree(instance.appendElement);
+      }
+    })
   );
 
   WKit.clearSceneBackground(scene);
