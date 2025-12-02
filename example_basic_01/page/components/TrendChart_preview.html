@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrendChart Component Preview</title>
+
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* ========== Page Root (CONTAINER_STYLES.md) ========== */
+        #page-root {
+            width: 100%;
+            min-height: 100vh;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            background: #f1f5f9;
+        }
+
+        /* ========== Bottom Row Container (CONTAINER_STYLES.md) ========== */
+        #bottom-row {
+            display: flex;
+            gap: 1.5rem;
+            height: calc(60vh - 4.5rem);
+        }
+
+        /* ========== Container Inline Style (CONTAINER_STYLES.md) ========== */
+        #component-container {
+            flex: 1;
+            height: 100%;
+        }
+
+        /* ========== TrendChart.css (styles/TrendChart.css 그대로) ========== */
+        #component-container .trend-chart-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header */
+        #component-container .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        #component-container .panel-title-group {
+            flex: 1;
+        }
+
+        #component-container .panel-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 0.25rem 0;
+        }
+
+        #component-container .panel-subtitle {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        #component-container .panel-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #component-container .period-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #475569;
+            background: white;
+            cursor: pointer;
+        }
+
+        #component-container .period-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        #component-container .btn-refresh {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: white;
+            background: #3b82f6;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #component-container .btn-refresh:hover {
+            background: #2563eb;
+        }
+
+        /* Chart Container */
+        #component-container .chart-container {
+            flex: 1;
+            min-height: 250px;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== PAGE ROOT ========== -->
+    <div id="page-root">
+        <!-- ========== BOTTOM ROW ========== -->
+        <div id="bottom-row">
+            <!-- ========== COMPONENT CONTAINER ========== -->
+            <div id="component-container">
+                <!-- views/TrendChart.html 그대로 -->
+                <div class="trend-chart-panel">
+                    <!-- Header -->
+                    <div class="panel-header">
+                        <div class="panel-title-group">
+                            <h3 class="panel-title">24h Temperature Trend</h3>
+                            <p class="panel-subtitle">Temperature readings across all sensors</p>
+                        </div>
+                        <div class="panel-actions">
+                            <select class="period-select">
+                                <option value="24h" selected>Last 24 hours</option>
+                                <option value="12h">Last 12 hours</option>
+                                <option value="6h">Last 6 hours</option>
+                            </select>
+                            <button class="btn-refresh trend-refresh-btn">Refresh</button>
+                        </div>
+                    </div>
+
+                    <!-- Chart Container -->
+                    <div class="chart-container" id="echarts"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MOCK DATA ========== -->
+    <script>
+        // 24시간 동안의 온도 데이터 생성
+        function generateTrendData() {
+            const now = Date.now();
+            const sensors = ['TEMP-001', 'TEMP-002', 'TEMP-003'];
+
+            return {
+                trends: {
+                    temperature: sensors.map((deviceId, idx) => {
+                        const baseTemp = 22 + idx * 2;
+                        const data = [];
+                        for (let i = 24; i >= 0; i--) {
+                            const timestamp = new Date(now - i * 3600000).toISOString();
+                            const value = baseTemp + Math.sin(i / 4) * 3 + Math.random() * 2;
+                            data.push({ timestamp, value: Math.round(value * 10) / 10 });
+                        }
+                        return { deviceId, data };
+                    })
+                }
+            };
+        }
+
+        const MOCK_DATA = {
+            trend: generateTrendData()
+        };
+    </script>
+
+    <!-- ========== RENDER FUNCTIONS (TrendChart_register.js 그대로) ========== -->
+    <script>
+        const container = document.getElementById('component-container');
+        const chartContainer = container.querySelector('#echarts');
+
+        // ECharts 초기화
+        const chartInstance = echarts.init(chartContainer);
+
+        // ResizeObserver로 리사이즈 처리
+        const resizeObserver = new ResizeObserver(() => {
+            chartInstance && chartInstance.resize();
+        });
+        resizeObserver.observe(chartContainer);
+
+        function renderChart(response) {
+            const { trends } = response;
+            console.log(`[TrendChart] renderChart`);
+
+            if (!trends || !trends.temperature) return;
+
+            // Prepare series data for temperature sensors
+            const series = trends.temperature.map((sensor, index) => {
+                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+                return {
+                    name: sensor.deviceId,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'none',
+                    data: sensor.data.map(d => [d.timestamp, d.value]),
+                    lineStyle: {
+                        width: 2,
+                        color: colors[index % colors.length]
+                    },
+                    itemStyle: {
+                        color: colors[index % colors.length]
+                    }
+                };
+            });
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'cross'
+                    },
+                    formatter: function(params) {
+                        const time = new Date(params[0].axisValue).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        let result = `<strong>${time}</strong><br/>`;
+                        params.forEach(p => {
+                            result += `${p.marker} ${p.seriesName}: ${p.value[1]}°C<br/>`;
+                        });
+                        return result;
+                    }
+                },
+                legend: {
+                    data: trends.temperature.map(s => s.deviceId),
+                    top: 0,
+                    textStyle: {
+                        fontSize: 10
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'time',
+                    axisLabel: {
+                        fontSize: 10,
+                        formatter: function(value) {
+                            return new Date(value).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                    },
+                    splitLine: {
+                        show: false
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '°C',
+                    nameTextStyle: {
+                        fontSize: 10
+                    },
+                    axisLabel: {
+                        fontSize: 10
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            type: 'dashed',
+                            color: '#e2e8f0'
+                        }
+                    }
+                },
+                series: series
+            };
+
+            try {
+                chartInstance.setOption(option);
+            } catch (error) {
+                console.error('[TrendChart] ECharts setOption error:', error);
+            }
+        }
+
+        // ========== 렌더링 실행 ==========
+        renderChart(MOCK_DATA.trend);
+    </script>
+</body>
+</html>
