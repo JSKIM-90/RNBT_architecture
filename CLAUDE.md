@@ -1058,6 +1058,27 @@ this.showUserDetail = function(user) {
 }
 ```
 
+### 7. Preview 파일 작성
+
+**목적**:
+- 런타임에서 사용할 코드가 Preview에서도 동일하게 동작해야 함
+- 컴포넌트가 외부 컨텍스트에 의존하지 않고 독립적으로 동작하는지 검증
+
+**원칙**:
+- Preview는 컴포넌트 격리 테스트 환경
+- page-root 등 외부 wrapper 없이 컴포넌트만 배치
+- register.js 코드를 그대로 붙여넣었을 때 동일한 결과가 나와야 함
+
+```html
+<!-- ❌ 외부 wrapper 추가하지 않음 -->
+<div class="page-root">
+    <div class="component-wrapper">...</div>
+</div>
+
+<!-- ✅ 컴포넌트만 배치 -->
+<div class="component-wrapper">...</div>
+```
+
 ---
 
 ## 트러블슈팅
@@ -1079,6 +1100,17 @@ this.showUserDetail = function(user) {
 1. before_unload에서 모든 리소스 정리 확인
 2. 3D 객체 dispose 확인
 3. 이벤트 리스너 제거 확인
+
+### Tabulator 무한 resize 루프
+
+**증상**: 테이블 컬럼이 계속 크기가 변함
+
+**원인**: `layout: 'fitColumns'`와 컨테이너의 CSS `fit-content` 속성 충돌
+- 컨테이너: "내 너비는 내용물에 맞춤"
+- Tabulator: "내 컬럼은 컨테이너에 맞춤"
+- 서로를 참조하며 무한 루프
+
+**해결**: `layout: 'fitData'`로 변경하여 테이블이 고정 너비를 갖도록 함
 
 ---
 
