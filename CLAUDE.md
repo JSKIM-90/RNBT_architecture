@@ -1069,6 +1069,11 @@ this.showUserDetail = function(user) {
 - page-root 등 외부 wrapper 없이 컴포넌트만 배치
 - register.js 코드를 그대로 붙여넣었을 때 동일한 결과가 나와야 함
 
+**이유**:
+- page-root는 가변적 (프로젝트/페이지마다 다름)
+- 컴포넌트는 어떤 page-root에도 종속되지 않아야 함
+- 특정 page-root에 종속된 Preview는 이식성을 검증할 수 없음
+
 ```html
 <!-- ❌ 외부 wrapper 추가하지 않음 -->
 <div class="page-root">
