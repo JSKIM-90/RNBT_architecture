@@ -23,69 +23,69 @@
         #component-container {
             width: 100%;
             height: 400px;
-        }
 
-        /* ========== VisitorChart.css (styles/VisitorChart.css 그대로) ========== */
-        #component-container .visitor-chart-widget {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            padding: 1.5rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
+            /* ========== VisitorChart.css (styles/VisitorChart.css 그대로) ========== */
+            .visitor-chart-widget {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                padding: 1.5rem;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
 
-        /* Header */
-        #component-container .widget-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
+            /* Header */
+            .widget-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 1rem;
+            }
 
-        #component-container .widget-title-group {
-            flex: 1;
-        }
+            .widget-title-group {
+                flex: 1;
+            }
 
-        #component-container .widget-title {
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin: 0 0 0.25rem 0;
-        }
+            .widget-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0 0 0.25rem 0;
+            }
 
-        #component-container .widget-subtitle {
-            font-size: 0.75rem;
-            color: #64748b;
-            margin: 0;
-        }
+            .widget-subtitle {
+                font-size: 0.75rem;
+                color: #64748b;
+                margin: 0;
+            }
 
-        #component-container .widget-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
+            .widget-actions {
+                display: flex;
+                gap: 0.5rem;
+            }
 
-        #component-container .btn-refresh {
-            padding: 0.5rem 1rem;
-            background: none;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+            .btn-refresh {
+                padding: 0.5rem 1rem;
+                background: none;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 0.75rem;
+                color: #64748b;
+                cursor: pointer;
+                transition: all 0.2s;
 
-        #component-container .btn-refresh:hover {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
+                &:hover {
+                    background: #f1f5f9;
+                    color: #1e293b;
+                }
+            }
 
-        /* Chart Container */
-        #component-container .chart-container {
-            flex: 1;
-            min-height: 200px;
+            /* Chart Container */
+            .chart-container {
+                flex: 1;
+                min-height: 200px;
+            }
         }
     </style>
 </head>

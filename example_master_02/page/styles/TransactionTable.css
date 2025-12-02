@@ -6,126 +6,128 @@
  * Shows recent card transactions
  */
 
-#component-id .transaction-table {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+#component-id {
+    .transaction-table {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
 
-/* Header */
-#component-id .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
+    /* Header */
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
 
-#component-id .panel-title-group {
-    flex: 1;
-}
+    .panel-title-group {
+        flex: 1;
+    }
 
-#component-id .panel-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0 0 0.25rem 0;
-}
+    .panel-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 0.25rem 0;
+    }
 
-#component-id .panel-subtitle {
-    font-size: 0.75rem;
-    color: #64748b;
-    margin: 0;
-}
+    .panel-subtitle {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin: 0;
+    }
 
-#component-id .panel-actions {
-    display: flex;
-    gap: 0.5rem;
-}
+    .panel-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
 
-#component-id .filter-select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    color: #475569;
-    background: white;
-    cursor: pointer;
-}
+    .filter-select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        color: #475569;
+        background: white;
+        cursor: pointer;
 
-#component-id .filter-select:focus {
-    outline: none;
-    border-color: #f59e0b;
-}
+        &:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+    }
 
-#component-id .btn-refresh {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: white;
-    background: #f59e0b;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+    .btn-refresh {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: white;
+        background: #f59e0b;
+        cursor: pointer;
+        transition: background 0.2s;
 
-#component-id .btn-refresh:hover {
-    background: #d97706;
-}
+        &:hover {
+            background: #d97706;
+        }
+    }
 
-/* Tabulator Container */
-#component-id .table-container {
-    flex: 1;
-    min-height: 0;
-}
+    /* Tabulator Container */
+    .table-container {
+        flex: 1;
+        min-height: 0;
+    }
 
-/* Tabulator Overrides */
-#component-id .tabulator {
-    border: none;
-    background: transparent;
-}
+    /* Tabulator Overrides */
+    .tabulator {
+        border: none;
+        background: transparent;
+    }
 
-#component-id .tabulator-header {
-    background: #f8fafc;
-    border-bottom: 2px solid #e2e8f0;
-}
+    .tabulator-header {
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+    }
 
-#component-id .tabulator-col {
-    background: transparent;
-    border-right: none;
-}
+    .tabulator-col {
+        background: transparent;
+        border-right: none;
+    }
 
-#component-id .tabulator-col-title {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-}
+    .tabulator-col-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+    }
 
-#component-id .tabulator-row {
-    border-bottom: 1px solid #f1f5f9;
-}
+    .tabulator-row {
+        border-bottom: 1px solid #f1f5f9;
 
-#component-id .tabulator-row:hover {
-    background: #f8fafc;
-}
+        &:hover {
+            background: #f8fafc;
+        }
+    }
 
-#component-id .tabulator-cell {
-    border-right: none;
-    font-size: 0.875rem;
-    color: #1e293b;
-}
+    .tabulator-cell {
+        border-right: none;
+        font-size: 0.875rem;
+        color: #1e293b;
 
-#component-id .tabulator-cell.amount-positive {
-    color: #059669;
-    font-weight: 600;
-}
+        &.amount-positive {
+            color: #059669;
+            font-weight: 600;
+        }
 
-#component-id .tabulator-cell.amount-negative {
-    color: #dc2626;
-    font-weight: 600;
+        &.amount-negative {
+            color: #dc2626;
+            font-weight: 600;
+        }
+    }
 }

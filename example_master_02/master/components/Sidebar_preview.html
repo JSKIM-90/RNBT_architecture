@@ -25,157 +25,157 @@
             height: calc(100vh - 60px);
             z-index: 100;
             overflow-y: auto;
-        }
 
-        /* ========== Sidebar.css (styles/Sidebar.css 그대로) ========== */
-        #component-container .sidebar {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: #f8fafc;
-            border-right: 1px solid #e2e8f0;
-        }
+            /* ========== Sidebar.css (styles/Sidebar.css 그대로) ========== */
+            .sidebar {
+                height: 100%;
+                display: flex;
+                flex-direction: column;
+                background: #f8fafc;
+                border-right: 1px solid #e2e8f0;
+            }
 
-        /* Header */
-        #component-container .sidebar-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.25rem;
-            border-bottom: 1px solid #e2e8f0;
-            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
-        }
+            /* Header */
+            .sidebar-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem 1.25rem;
+                border-bottom: 1px solid #e2e8f0;
+                background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            }
 
-        #component-container .sidebar-title {
-            margin: 0;
-            font-size: 1rem;
-            font-weight: 600;
-            color: #f8fafc;
-        }
+            .sidebar-title {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 600;
+                color: #f8fafc;
+            }
 
-        #component-container .alert-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 24px;
-            height: 24px;
-            padding: 0 0.5rem;
-            background: #f59e0b;
-            color: #0f172a;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
+            .alert-badge {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 24px;
+                height: 24px;
+                padding: 0 0.5rem;
+                background: #f59e0b;
+                color: #0f172a;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 600;
+            }
 
-        /* Filter */
-        #component-container .sidebar-filter {
-            padding: 0.75rem 1.25rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
+            /* Filter */
+            .sidebar-filter {
+                padding: 0.75rem 1.25rem;
+                border-bottom: 1px solid #e2e8f0;
+            }
 
-        #component-container .alert-filter {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            color: #475569;
-            background: white;
-            cursor: pointer;
-        }
+            .alert-filter {
+                width: 100%;
+                padding: 0.5rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 0.875rem;
+                color: #475569;
+                background: white;
+                cursor: pointer;
 
-        #component-container .alert-filter:focus {
-            outline: none;
-            border-color: #f59e0b;
-        }
+                &:focus {
+                    outline: none;
+                    border-color: #f59e0b;
+                }
+            }
 
-        /* Alert List */
-        #component-container .alert-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0.5rem;
-        }
+            /* Alert List */
+            .alert-list {
+                flex: 1;
+                overflow-y: auto;
+                padding: 0.5rem;
+            }
 
-        /* Alert Item */
-        #component-container .alert-item {
-            display: flex;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.2s;
-            margin-bottom: 0.5rem;
-        }
+            /* Alert Item */
+            .alert-item {
+                display: flex;
+                gap: 0.75rem;
+                padding: 0.75rem;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background 0.2s;
+                margin-bottom: 0.5rem;
 
-        #component-container .alert-item:hover {
-            background: #e2e8f0;
-        }
+                &:hover {
+                    background: #e2e8f0;
+                }
 
-        #component-container .alert-item.unread {
-            background: #fffbeb;
-            border-left: 3px solid #f59e0b;
-        }
+                &.unread {
+                    background: #fffbeb;
+                    border-left: 3px solid #f59e0b;
 
-        #component-container .alert-item.unread:hover {
-            background: #fef3c7;
-        }
+                    &:hover {
+                        background: #fef3c7;
+                    }
+                }
 
-        #component-container .alert-icon {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
+                &[data-type="transaction"] .alert-icon {
+                    background: #dbeafe;
+                    color: #2563eb;
+                }
 
-        #component-container .alert-item[data-type="transaction"] .alert-icon {
-            background: #dbeafe;
-            color: #2563eb;
-        }
+                &[data-type="security"] .alert-icon {
+                    background: #fee2e2;
+                    color: #dc2626;
+                }
 
-        #component-container .alert-item[data-type="security"] .alert-icon {
-            background: #fee2e2;
-            color: #dc2626;
-        }
+                &[data-type="reward"] .alert-icon {
+                    background: #d1fae5;
+                    color: #059669;
+                }
+            }
 
-        #component-container .alert-item[data-type="reward"] .alert-icon {
-            background: #d1fae5;
-            color: #059669;
-        }
+            .alert-icon {
+                width: 32px;
+                height: 32px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                font-size: 1rem;
+                flex-shrink: 0;
+            }
 
-        #component-container .alert-content {
-            flex: 1;
-            min-width: 0;
-        }
+            .alert-content {
+                flex: 1;
+                min-width: 0;
+            }
 
-        #component-container .alert-message {
-            margin: 0 0 0.25rem;
-            font-size: 0.875rem;
-            color: #1e293b;
-            line-height: 1.4;
-        }
+            .alert-message {
+                margin: 0 0 0.25rem;
+                font-size: 0.875rem;
+                color: #1e293b;
+                line-height: 1.4;
+            }
 
-        #component-container .alert-meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            color: #64748b;
-        }
+            .alert-meta {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.75rem;
+                color: #64748b;
+            }
 
-        #component-container .alert-amount {
-            font-weight: 600;
-            color: #1e293b;
-        }
+            .alert-amount {
+                font-weight: 600;
+                color: #1e293b;
 
-        #component-container .alert-amount.negative {
-            color: #dc2626;
-        }
+                &.negative {
+                    color: #dc2626;
+                }
 
-        #component-container .alert-amount.positive {
-            color: #059669;
+                &.positive {
+                    color: #059669;
+                }
+            }
         }
     </style>
 </head>

@@ -6,93 +6,95 @@
  * Fixed height for summary cards
  */
 
-#component-id .summary-panel {
-    height: 100%;
-    display: flex;
-    gap: 1rem;
-}
+#component-id {
+    .summary-panel {
+        height: 100%;
+        display: flex;
+        gap: 1rem;
+    }
 
-/* Summary Grid */
-#component-id .summary-grid {
-    display: flex;
-    gap: 1rem;
-    width: 100%;
-}
+    /* Summary Grid */
+    .summary-grid {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
+    }
 
-/* Summary Card */
-#component-id .summary-card {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+    /* Summary Card */
+    .summary-card {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
-#component-id .summary-icon {
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-}
+        &[data-summary-key="balance"] .summary-icon {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #2563eb;
+        }
 
-#component-id .summary-card[data-summary-key="balance"] .summary-icon {
-    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-    color: #2563eb;
-}
+        &[data-summary-key="spending"] .summary-icon {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+        }
 
-#component-id .summary-card[data-summary-key="spending"] .summary-icon {
-    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-    color: #dc2626;
-}
+        &[data-summary-key="rewards"] .summary-icon {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #d97706;
+        }
 
-#component-id .summary-card[data-summary-key="rewards"] .summary-icon {
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    color: #d97706;
-}
+        &[data-summary-key="limit"] .summary-icon {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #059669;
+        }
+    }
 
-#component-id .summary-card[data-summary-key="limit"] .summary-icon {
-    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-    color: #059669;
-}
+    .summary-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
 
-#component-id .summary-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
-}
+    .summary-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1;
+    }
 
-#component-id .summary-label {
-    font-size: 0.875rem;
-    color: #64748b;
-}
+    .summary-label {
+        font-size: 0.875rem;
+        color: #64748b;
+    }
 
-#component-id .summary-value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1e293b;
-}
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
 
-#component-id .summary-trend {
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-}
+    .summary-trend {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
 
-#component-id .summary-trend.up {
-    color: #059669;
-    background: #d1fae5;
-}
+        &.up {
+            color: #059669;
+            background: #d1fae5;
+        }
 
-#component-id .summary-trend.down {
-    color: #dc2626;
-    background: #fee2e2;
+        &.down {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+    }
 }

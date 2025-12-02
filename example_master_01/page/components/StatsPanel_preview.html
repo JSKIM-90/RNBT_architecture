@@ -20,133 +20,133 @@
         #component-container {
             width: 100%;
             height: 300px;
-        }
 
-        /* ========== StatsPanel.css (styles/StatsPanel.css 그대로) ========== */
-        #component-container .stats-panel {
-            height: 100%;
-            min-height: 280px;
-            display: flex;
-            flex-direction: column;
-            padding: 1.5rem;
-            background: #f1f5f9;
-        }
+            /* ========== StatsPanel.css (styles/StatsPanel.css 그대로) ========== */
+            .stats-panel {
+                height: 100%;
+                min-height: 280px;
+                display: flex;
+                flex-direction: column;
+                padding: 1.5rem;
+                background: #f1f5f9;
+            }
 
-        /* Header */
-        #component-container .stats-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-        }
+            /* Header */
+            .stats-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 1.5rem;
+            }
 
-        #component-container .stats-title {
-            margin: 0;
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1e293b;
-        }
+            .stats-title {
+                margin: 0;
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #1e293b;
+            }
 
-        #component-container .stats-controls {
-            display: flex;
-            gap: 0.75rem;
-        }
+            .stats-controls {
+                display: flex;
+                gap: 0.75rem;
+            }
 
-        #component-container .period-filter {
-            padding: 0.5rem 1rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            color: #475569;
-            background: white;
-            cursor: pointer;
-        }
+            .period-filter {
+                padding: 0.5rem 1rem;
+                border: 1px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 0.875rem;
+                color: #475569;
+                background: white;
+                cursor: pointer;
 
-        #component-container .period-filter:focus {
-            outline: none;
-            border-color: #4f46e5;
-        }
+                &:focus {
+                    outline: none;
+                    border-color: #4f46e5;
+                }
+            }
 
-        #component-container .refresh-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: white;
-            background: #4f46e5;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+            .refresh-btn {
+                padding: 0.5rem 1rem;
+                border: none;
+                border-radius: 6px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: white;
+                background: #4f46e5;
+                cursor: pointer;
+                transition: background 0.2s;
 
-        #component-container .refresh-btn:hover {
-            background: #4338ca;
-        }
+                &:hover {
+                    background: #4338ca;
+                }
+            }
 
-        /* Stats Grid */
-        #component-container .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }
+            /* Stats Grid */
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
 
-        /* Stat Card */
-        #component-container .stat-card {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1.25rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
+            /* Stat Card */
+            .stat-card {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1.25rem;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
-        #component-container .stat-icon {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-size: 1.5rem;
-            flex-shrink: 0;
-        }
+                &[data-stat-key="visitors"] .stat-icon {
+                    background: #dbeafe;
+                    color: #2563eb;
+                }
 
-        #component-container .stat-card[data-stat-key="visitors"] .stat-icon {
-            background: #dbeafe;
-            color: #2563eb;
-        }
+                &[data-stat-key="pageViews"] .stat-icon {
+                    background: #d1fae5;
+                    color: #059669;
+                }
 
-        #component-container .stat-card[data-stat-key="pageViews"] .stat-icon {
-            background: #d1fae5;
-            color: #059669;
-        }
+                &[data-stat-key="sessions"] .stat-icon {
+                    background: #fef3c7;
+                    color: #d97706;
+                }
 
-        #component-container .stat-card[data-stat-key="sessions"] .stat-icon {
-            background: #fef3c7;
-            color: #d97706;
-        }
+                &[data-stat-key="bounceRate"] .stat-icon {
+                    background: #fee2e2;
+                    color: #dc2626;
+                }
+            }
 
-        #component-container .stat-card[data-stat-key="bounceRate"] .stat-icon {
-            background: #fee2e2;
-            color: #dc2626;
-        }
+            .stat-icon {
+                width: 48px;
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 12px;
+                font-size: 1.5rem;
+                flex-shrink: 0;
+            }
 
-        #component-container .stat-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
+            .stat-info {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
 
-        #component-container .stat-label {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
+            .stat-label {
+                font-size: 0.875rem;
+                color: #64748b;
+            }
 
-        #component-container .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1e293b;
+            .stat-value {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #1e293b;
+            }
         }
     </style>
 </head>

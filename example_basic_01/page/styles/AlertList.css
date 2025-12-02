@@ -3,167 +3,169 @@
  * Displays active alerts with severity indicators
  */
 
-#component-id .alert-list-panel {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+#component-id {
+    .alert-list-panel {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
 
-/* Header */
-#component-id .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-}
+    /* Header */
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
 
-#component-id .panel-title-group {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
+    .panel-title-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
 
-#component-id .panel-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-}
+    .panel-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
 
-#component-id .alert-count {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: white;
-    background: #ef4444;
-    padding: 0.125rem 0.5rem;
-    border-radius: 10px;
-    min-width: 20px;
-    text-align: center;
-}
+    .alert-count {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        background: #ef4444;
+        padding: 0.125rem 0.5rem;
+        border-radius: 10px;
+        min-width: 20px;
+        text-align: center;
 
-#component-id .alert-count.empty {
-    background: #10b981;
-}
+        &.empty {
+            background: #10b981;
+        }
+    }
 
-/* Alert List */
-#component-id .alert-list {
-    flex: 1;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
+    /* Alert List */
+    .alert-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 
-/* Alert Item */
-#component-id .alert-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: #fef2f2;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
+    /* Alert Item */
+    .alert-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: #fef2f2;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background 0.2s;
 
-#component-id .alert-item:hover {
-    background: #fee2e2;
-}
+        &:hover {
+            background: #fee2e2;
+        }
 
-#component-id .alert-item[data-severity="warning"] {
-    background: #fffbeb;
-}
+        &[data-severity="warning"] {
+            background: #fffbeb;
 
-#component-id .alert-item[data-severity="warning"]:hover {
-    background: #fef3c7;
-}
+            &:hover {
+                background: #fef3c7;
+            }
 
-/* Alert Indicator */
-#component-id .alert-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #ef4444;
-    margin-top: 0.375rem;
-    flex-shrink: 0;
-    animation: pulse 2s infinite;
-}
+            .alert-indicator {
+                background: #f59e0b;
+            }
+        }
+    }
 
-#component-id .alert-item[data-severity="warning"] .alert-indicator {
-    background: #f59e0b;
+    /* Alert Indicator */
+    .alert-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #ef4444;
+        margin-top: 0.375rem;
+        flex-shrink: 0;
+        animation: pulse 2s infinite;
+    }
+
+    /* Alert Content */
+    .alert-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .alert-message {
+        font-size: 0.875rem;
+        color: #1e293b;
+        margin: 0 0 0.25rem 0;
+        line-height: 1.4;
+    }
+
+    .alert-meta {
+        display: flex;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    .alert-zone {
+        font-weight: 500;
+    }
+
+    /* Dismiss Button */
+    .alert-dismiss {
+        width: 24px;
+        height: 24px;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: #94a3b8;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        flex-shrink: 0;
+
+        &:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #64748b;
+        }
+    }
+
+    /* Empty State */
+    .alert-empty {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+    }
+
+    .empty-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #10b981;
+    }
+
+    .empty-text {
+        font-size: 0.875rem;
+        margin: 0;
+    }
 }
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
-}
-
-/* Alert Content */
-#component-id .alert-content {
-    flex: 1;
-    min-width: 0;
-}
-
-#component-id .alert-message {
-    font-size: 0.875rem;
-    color: #1e293b;
-    margin: 0 0 0.25rem 0;
-    line-height: 1.4;
-}
-
-#component-id .alert-meta {
-    display: flex;
-    gap: 0.75rem;
-    font-size: 0.75rem;
-    color: #64748b;
-}
-
-#component-id .alert-zone {
-    font-weight: 500;
-}
-
-/* Dismiss Button */
-#component-id .alert-dismiss {
-    width: 24px;
-    height: 24px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: #94a3b8;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-#component-id .alert-dismiss:hover {
-    background: rgba(0, 0, 0, 0.1);
-    color: #64748b;
-}
-
-/* Empty State */
-#component-id .alert-empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #64748b;
-}
-
-#component-id .empty-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    color: #10b981;
-}
-
-#component-id .empty-text {
-    font-size: 0.875rem;
-    margin: 0;
 }
