@@ -1406,9 +1406,14 @@ example_master_01/
 
 ## 버전 정보
 
-**문서 버전**: 1.5.0
+**문서 버전**: 1.5.1
 **최종 업데이트**: 2025-12-02
 **주요 변경사항**:
+- v1.5.1: CSS nesting 구조로 변환 (2025-12-02)
+  - 모든 예제의 CSS 파일을 컨테이너 ID 중심 nesting으로 변경
+  - preview.html 파일의 inline CSS도 동일하게 nesting 적용
+  - `&:hover`, `&[data-*]` 등 중첩 선택자 활용
+  - 변환된 파일: example_basic_01, example_master_01, example_master_02 (총 24개 파일)
 - v1.5.0: Cleanup 순서 대칭화 및 3D 컴포넌트 정리 개선 (2025-12-02)
   - `disposeAllThreeResources`에서 3D 컴포넌트 일괄 정리 (subscriptions, customEvents, datasetInfo)
   - 3D 컴포넌트는 DOM이 아니라 destroy 콜백 없음 → 페이지에서 일괄 정리
