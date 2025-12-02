@@ -1190,6 +1190,30 @@ this.showUserDetail = function(user) {
 <div class="component-wrapper">...</div>
 ```
 
+**CONTAINER_STYLES.md 준수 (필수)**:
+- 각 예제 폴더에 `CONTAINER_STYLES.md`가 있다면, Preview의 `#component-container` 스타일은 **반드시** 해당 문서를 따라야 함
+- 임의의 고정값(예: `height: 300px`)이 아닌, MD에 명시된 값(예: `calc((100vh - 60px) / 2)`)을 사용
+- 이를 통해 Preview가 실제 런타임 환경과 동일한 레이아웃 조건에서 테스트됨
+
+```css
+/* ❌ 임의의 고정값 사용 */
+#component-container {
+    width: 100%;
+    height: 300px;  /* CONTAINER_STYLES.md 무시 */
+}
+
+/* ✅ CONTAINER_STYLES.md 값 그대로 사용 */
+#component-container {
+    width: 100%;
+    height: calc((100vh - 60px) / 2);  /* MD에 명시된 값 */
+}
+```
+
+**확인 절차**:
+1. 예제 폴더의 `CONTAINER_STYLES.md` 확인
+2. 해당 컴포넌트의 Container Inline Style 섹션 찾기
+3. Preview 파일의 `#component-container`에 동일하게 적용
+
 ### 8. 이벤트 바인딩과 event.preventDefault()
 
 WKit의 `bindEvents`는 **submit 이벤트에만** `event.preventDefault()`를 호출합니다.
@@ -1406,9 +1430,14 @@ example_master_01/
 
 ## 버전 정보
 
-**문서 버전**: 1.5.1
+**문서 버전**: 1.5.2
 **최종 업데이트**: 2025-12-02
 **주요 변경사항**:
+- v1.5.2: Preview 컨테이너 스타일 CONTAINER_STYLES.md 준수 원칙 추가 (2025-12-02)
+  - Preview 파일의 `#component-container` 스타일은 CONTAINER_STYLES.md를 따라야 함
+  - 임의의 고정값 대신 MD에 명시된 값 사용 (예: `calc((100vh - 60px) / 2)`)
+  - 수정된 파일 (7개): StatsPanel, VisitorChart, SensorPanel, AlertList, TrendChart, TransactionTable, SpendingChart
+  - 베스트 프랙티스 섹션에 확인 절차 추가
 - v1.5.1: CSS nesting 구조로 변환 (2025-12-02)
   - 모든 예제의 CSS 파일을 컨테이너 ID 중심 nesting으로 변경
   - preview.html 파일의 inline CSS도 동일하게 nesting 적용
