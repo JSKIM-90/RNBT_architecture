@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransactionTable Component Preview - Card Company Dashboard</title>
+
+    <!-- Tabulator CDN -->
+    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* ========== Container Inline Style (CONTAINER_STYLES.md) ========== */
+        #component-container {
+            width: 100%;
+            height: 500px;
+        }
+
+        /* ========== TransactionTable.css (styles/TransactionTable.css 그대로) ========== */
+        #component-container .transaction-table {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Header */
+        #component-container .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        #component-container .panel-title-group {
+            flex: 1;
+        }
+
+        #component-container .panel-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 0.25rem 0;
+        }
+
+        #component-container .panel-subtitle {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        #component-container .panel-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        #component-container .filter-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #475569;
+            background: white;
+            cursor: pointer;
+        }
+
+        #component-container .filter-select:focus {
+            outline: none;
+            border-color: #f59e0b;
+        }
+
+        #component-container .btn-refresh {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: white;
+            background: #f59e0b;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #component-container .btn-refresh:hover {
+            background: #d97706;
+        }
+
+        /* Tabulator Container */
+        #component-container .table-container {
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Tabulator Overrides */
+        #component-container .tabulator {
+            border: none;
+            background: transparent;
+        }
+
+        #component-container .tabulator-header {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        #component-container .tabulator-col {
+            background: transparent;
+            border-right: none;
+        }
+
+        #component-container .tabulator-col-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        #component-container .tabulator-row {
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        #component-container .tabulator-row:hover {
+            background: #f8fafc;
+        }
+
+        #component-container .tabulator-cell {
+            border-right: none;
+            font-size: 0.875rem;
+            color: #1e293b;
+        }
+
+        #component-container .tabulator-cell.amount-positive {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        #component-container .tabulator-cell.amount-negative {
+            color: #dc2626;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <!-- ========== COMPONENT CONTAINER ========== -->
+    <div id="component-container">
+        <!-- views/TransactionTable.html 그대로 -->
+        <div class="transaction-table">
+            <!-- Header -->
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <h3 class="panel-title">Recent Transactions</h3>
+                    <p class="panel-subtitle">Your latest card transactions</p>
+                </div>
+                <div class="panel-actions">
+                    <select class="filter-select">
+                        <option value="all">All Categories</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="food">Food & Dining</option>
+                        <option value="transport">Transport</option>
+                        <option value="entertainment">Entertainment</option>
+                    </select>
+                    <button class="btn-refresh table-refresh-btn">Refresh</button>
+                </div>
+            </div>
+
+            <!-- Tabulator Container -->
+            <div class="table-container" id="tabulator"></div>
+        </div>
+    </div>
+
+    <!-- ========== MOCK DATA ========== -->
+    <script>
+        const MOCK_DATA = {
+            transactions: {
+                data: [
+                    { date: '2025-12-02', merchant: 'Amazon.com', category: 'shopping', amount: -89.99 },
+                    { date: '2025-12-01', merchant: 'Starbucks', category: 'food', amount: -12.50 },
+                    { date: '2025-12-01', merchant: 'Uber', category: 'transport', amount: -24.00 },
+                    { date: '2025-11-30', merchant: 'Netflix', category: 'entertainment', amount: -15.99 },
+                    { date: '2025-11-30', merchant: 'Apple Store', category: 'shopping', amount: 199.00 },
+                    { date: '2025-11-29', merchant: 'Whole Foods', category: 'food', amount: -156.78 },
+                    { date: '2025-11-28', merchant: 'Shell Gas', category: 'transport', amount: -45.00 },
+                    { date: '2025-11-27', merchant: 'Target', category: 'shopping', amount: -234.56 }
+                ]
+            }
+        };
+    </script>
+
+    <!-- ========== RENDER FUNCTIONS (TransactionTable_register.js 그대로) ========== -->
+    <script>
+        // Tabulator 초기화
+        const tableInstance = new Tabulator("#tabulator", {
+            layout: 'fitColumns',
+            height: 400,
+            data: MOCK_DATA.transactions.data,
+            placeholder: 'No transactions found',
+            columns: [
+                {
+                    title: 'Date',
+                    field: 'date',
+                    sorter: 'date',
+                    width: 120,
+                    formatter: function(cell) {
+                        const date = new Date(cell.getValue());
+                        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }
+                },
+                {
+                    title: 'Merchant',
+                    field: 'merchant',
+                    sorter: 'string'
+                },
+                {
+                    title: 'Category',
+                    field: 'category',
+                    sorter: 'string',
+                    width: 130,
+                    formatter: function(cell) {
+                        const value = cell.getValue();
+                        const icons = {
+                            shopping: '🛍️',
+                            food: '🍽️',
+                            transport: '🚗',
+                            entertainment: '🎬',
+                            other: '📦'
+                        };
+                        return `${icons[value] || '📦'} ${value}`;
+                    }
+                },
+                {
+                    title: 'Amount',
+                    field: 'amount',
+                    sorter: 'number',
+                    hozAlign: 'right',
+                    width: 120,
+                    formatter: function(cell) {
+                        const value = cell.getValue();
+                        const isNegative = value < 0;
+                        cell.getElement().classList.add(isNegative ? 'amount-negative' : 'amount-positive');
+                        return `${isNegative ? '-' : '+'}$${Math.abs(value).toLocaleString()}`;
+                    }
+                }
+            ]
+        });
+
+        console.log(`[TransactionTable] initialized with ${MOCK_DATA.transactions.data.length} items`);
+    </script>
+</body>
+</html>
