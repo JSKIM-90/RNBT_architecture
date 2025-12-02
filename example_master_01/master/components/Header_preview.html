@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Header Component Preview</title>
 
-    <!-- ========== STYLES ========== -->
     <style>
         * {
             margin: 0;
@@ -15,10 +14,9 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
         }
 
-        /* Component Container (런타임 가이드 기준) */
+        /* ========== Container Inline Style (CONTAINER_STYLES.md) ========== */
         #component-container {
             position: fixed;
             top: 0;
@@ -26,126 +24,130 @@
             width: 100%;
             height: 60px;
             z-index: 100;
-            background: #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        /* Header (height: 100%로 Container 높이 사용) */
-        .header {
+        /* ========== Header.css (styles/Header.css 그대로) ========== */
+        #component-container .header {
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 1.5rem;
+            background: #1e293b;
+            color: #f8fafc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .header-logo {
+        /* Logo */
+        #component-container .header-logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.75rem;
         }
 
-        .logo-icon {
+        #component-container .logo-icon {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
+            background: #4f46e5;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.25rem;
         }
 
-        .logo-text {
-            font-size: 18px;
+        #component-container .logo-text {
+            font-size: 1.25rem;
             font-weight: 600;
-            color: #333;
         }
 
-        .header-nav {
+        /* Navigation */
+        #component-container .header-nav {
             flex: 1;
-            margin: 0 40px;
-        }
-
-        .nav-list {
             display: flex;
-            list-style: none;
-            gap: 8px;
+            justify-content: center;
         }
 
-        .nav-item {
+        #component-container .nav-list {
+            display: flex;
+            gap: 0.5rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #component-container .nav-item {
             position: relative;
         }
 
-        .nav-item.active .nav-link {
-            background: #f0f0ff;
-            color: #4f46e5;
-        }
-
-        .nav-link {
+        #component-container .nav-link {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: #94a3b8;
             text-decoration: none;
-            color: #666;
             border-radius: 6px;
             transition: all 0.2s;
         }
 
-        .nav-link:hover {
-            background: #f5f5f5;
-            color: #333;
+        #component-container .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
         }
 
-        .nav-icon {
-            font-size: 16px;
+        #component-container .nav-item.active .nav-link {
+            background: #4f46e5;
+            color: #f8fafc;
         }
 
-        .nav-label {
-            font-size: 14px;
+        #component-container .nav-icon {
+            font-size: 1rem;
+        }
+
+        #component-container .nav-label {
+            font-size: 0.875rem;
             font-weight: 500;
         }
 
-        .header-user {
+        /* User */
+        #component-container .header-user {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.75rem;
         }
 
-        .user-avatar {
+        #component-container .user-avatar {
             width: 36px;
             height: 36px;
             border-radius: 50%;
             object-fit: cover;
         }
 
-        .user-name {
-            font-size: 14px;
+        #component-container .user-name {
+            font-size: 0.875rem;
             font-weight: 500;
-            color: #333;
         }
 
-        .user-menu {
+        #component-container .user-menu {
             background: none;
             border: none;
-            font-size: 12px;
-            color: #999;
+            color: #94a3b8;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 0.25rem;
+            font-size: 0.75rem;
         }
 
-        .user-menu:hover {
-            color: #333;
+        #component-container .user-menu:hover {
+            color: #f8fafc;
         }
     </style>
 </head>
 <body>
     <!-- ========== COMPONENT CONTAINER ========== -->
     <div id="component-container">
-        <!-- Header.html 내용 -->
+        <!-- views/Header.html 그대로 -->
         <div class="header">
             <!-- Logo -->
             <div class="header-logo">
@@ -197,11 +199,10 @@
         };
     </script>
 
-    <!-- ========== RENDER FUNCTIONS ========== -->
+    <!-- ========== RENDER FUNCTIONS (Header_register.js 그대로) ========== -->
     <script>
         const container = document.getElementById('component-container');
 
-        // Header_register.js에서 렌더 함수만 추출
         function renderUserInfo(response) {
             const { data } = response;
             console.log(`[Header] renderUserInfo:`, data);
@@ -222,11 +223,11 @@
             if (!items) return;
 
             const template = container.querySelector('#nav-item-template');
-            const list = container.querySelector('.nav-list');
+            const navList = container.querySelector('.nav-list');
 
-            if (!template || !list) return;
+            if (!template || !navList) return;
 
-            list.innerHTML = '';
+            navList.innerHTML = '';
 
             items.forEach(item => {
                 const clone = template.content.cloneNode(true);
@@ -242,7 +243,7 @@
                 icon.textContent = item.icon;
                 label.textContent = item.label;
 
-                list.appendChild(clone);
+                navList.appendChild(clone);
             });
         }
 

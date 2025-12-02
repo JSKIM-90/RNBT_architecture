@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StatsPanel Component Preview</title>
 
-    <!-- ========== STYLES ========== -->
     <style>
         * {
             margin: 0;
@@ -15,151 +14,184 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
         }
 
-        /* Component Container (런타임 가이드 기준 - Page 영역 50%) */
+        /* ========== Page Root (CONTAINER_STYLES.md) ========== */
+        #page-root {
+            padding-top: 60px;
+            padding-left: 250px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* ========== Container Inline Style (CONTAINER_STYLES.md) ========== */
         #component-container {
-            margin-left: 250px;
-            margin-top: 60px;
-            width: calc(100% - 250px);
+            width: 100%;
             height: calc((100vh - 60px) / 2);
-            background: #fff;
-            border-bottom: 1px solid #eee;
         }
 
-        /* StatsPanel (height: 100%로 Container 높이 사용) */
-        .stats-panel {
+        /* ========== StatsPanel.css (styles/StatsPanel.css 그대로) ========== */
+        #component-container .stats-panel {
             height: 100%;
+            min-height: 280px;
             display: flex;
             flex-direction: column;
-            padding: 24px;
+            padding: 1.5rem;
+            background: #f1f5f9;
         }
 
-        .stats-header {
+        /* Header */
+        #component-container .stats-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
         }
 
-        .stats-title {
-            font-size: 20px;
+        #component-container .stats-title {
+            margin: 0;
+            font-size: 1.5rem;
             font-weight: 600;
-            color: #333;
+            color: #1e293b;
         }
 
-        .stats-controls {
+        #component-container .stats-controls {
             display: flex;
-            gap: 12px;
+            gap: 0.75rem;
         }
 
-        .period-filter {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
+        #component-container .period-filter {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 0.875rem;
+            color: #475569;
+            background: white;
             cursor: pointer;
         }
 
-        .refresh-btn {
-            padding: 8px 16px;
-            background: #4f46e5;
-            color: white;
+        #component-container .period-filter:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+
+        #component-container .refresh-btn {
+            padding: 0.5rem 1rem;
             border: none;
             border-radius: 6px;
-            font-size: 14px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            background: #4f46e5;
             cursor: pointer;
             transition: background 0.2s;
         }
 
-        .refresh-btn:hover {
+        #component-container .refresh-btn:hover {
             background: #4338ca;
         }
 
-        .stats-grid {
-            flex: 1;
+        /* Stats Grid */
+        #component-container .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
         }
 
-        .stat-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
+        /* Stat Card */
+        #component-container .stat-card {
             display: flex;
             align-items: center;
-            gap: 16px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
+            gap: 1rem;
+            padding: 1.25rem;
             background: white;
             border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #component-container .stat-icon {
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            font-size: 1.5rem;
+            flex-shrink: 0;
         }
 
-        .stat-info {
+        #component-container .stat-card[data-stat-key="visitors"] .stat-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        #component-container .stat-card[data-stat-key="pageViews"] .stat-icon {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        #component-container .stat-card[data-stat-key="sessions"] .stat-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        #component-container .stat-card[data-stat-key="bounceRate"] .stat-icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        #component-container .stat-info {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 0.25rem;
         }
 
-        .stat-label {
-            font-size: 13px;
-            color: #666;
+        #component-container .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
         }
 
-        .stat-value {
-            font-size: 24px;
+        #component-container .stat-value {
+            font-size: 1.5rem;
             font-weight: 700;
-            color: #333;
+            color: #1e293b;
         }
     </style>
 </head>
 <body>
-    <!-- ========== COMPONENT CONTAINER ========== -->
-    <div id="component-container">
-        <!-- StatsPanel.html 내용 -->
-        <div class="stats-panel">
-            <!-- Header -->
-            <div class="stats-header">
-                <h2 class="stats-title">Statistics Dashboard</h2>
-                <div class="stats-controls">
-                    <select class="period-filter">
-                        <option value="24h">Last 24 Hours</option>
-                        <option value="7d">Last 7 Days</option>
-                        <option value="30d">Last 30 Days</option>
-                    </select>
-                    <button class="refresh-btn">Refresh</button>
-                </div>
-            </div>
-
-            <!-- Stats Cards (Dynamic) -->
-            <div class="stats-grid"></div>
-
-            <!-- Templates -->
-            <template id="stat-card-template">
-                <div class="stat-card" data-stat-key="">
-                    <div class="stat-icon"></div>
-                    <div class="stat-info">
-                        <span class="stat-label"></span>
-                        <span class="stat-value"></span>
+    <!-- ========== PAGE ROOT ========== -->
+    <div id="page-root">
+        <!-- ========== COMPONENT CONTAINER ========== -->
+        <div id="component-container">
+            <!-- views/StatsPanel.html 그대로 -->
+            <div class="stats-panel">
+                <!-- Header -->
+                <div class="stats-header">
+                    <h2 class="stats-title">Statistics Dashboard</h2>
+                    <div class="stats-controls">
+                        <select class="period-filter">
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                        </select>
+                        <button class="refresh-btn">Refresh</button>
                     </div>
                 </div>
-            </template>
+
+                <!-- Stats Cards (Dynamic) -->
+                <div class="stats-grid"></div>
+
+                <!-- Templates -->
+                <template id="stat-card-template">
+                    <div class="stat-card" data-stat-key="">
+                        <div class="stat-icon"></div>
+                        <div class="stat-info">
+                            <span class="stat-label"></span>
+                            <span class="stat-value"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 
@@ -177,11 +209,10 @@
         };
     </script>
 
-    <!-- ========== RENDER FUNCTIONS ========== -->
+    <!-- ========== RENDER FUNCTIONS (StatsPanel_register.js 그대로) ========== -->
     <script>
         const container = document.getElementById('component-container');
 
-        // StatsPanel_register.js에서 렌더 함수만 추출
         function renderStats(response) {
             const { data } = response;
             console.log(`[StatsPanel] renderStats:`, data);
