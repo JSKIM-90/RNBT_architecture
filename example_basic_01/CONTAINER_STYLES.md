@@ -71,23 +71,7 @@ margin-bottom: 1.5rem;
 
 ---
 
-## 3. Page - Bottom Row Container
-
-### Container Inline Style (패널에서 설정)
-
-```css
-display: flex;
-gap: 1.5rem;
-height: calc(60vh - 4.5rem);
-```
-
-**설명**:
-- AlertList와 TrendChart를 가로로 배치
-- 남은 높이(60vh - padding/gap) 사용
-
----
-
-## 4. Page - AlertList Wrapper
+## 3. Page - AlertList Wrapper
 
 ### Container Inline Style (패널에서 설정)
 
@@ -102,7 +86,7 @@ height: 100%;
 
 ---
 
-## 5. Page - TrendChart Wrapper
+## 4. Page - TrendChart Wrapper
 
 ### Container Inline Style (패널에서 설정)
 
