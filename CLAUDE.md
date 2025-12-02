@@ -1406,9 +1406,15 @@ example_master_01/
 
 ## 버전 정보
 
-**문서 버전**: 1.4.0
+**문서 버전**: 1.5.0
 **최종 업데이트**: 2025-12-02
 **주요 변경사항**:
+- v1.5.0: Cleanup 순서 대칭화 및 3D 컴포넌트 정리 개선 (2025-12-02)
+  - `disposeAllThreeResources`에서 3D 컴포넌트 일괄 정리 (subscriptions, customEvents, datasetInfo)
+  - 3D 컴포넌트는 DOM이 아니라 destroy 콜백 없음 → 페이지에서 일괄 정리
+  - 컴포넌트 destroy 순서: Subscription → Event → Handler (register와 대칭)
+  - 페이지 before_unload 순서: Event Bus → Data Publisher → Interval (before_load/loaded와 대칭)
+  - DEFAULT_JS.md 문서 구조 재정리 (섹션 번호 추가)
 - v1.4.0: Higher-Order Function 제어 흐름 패턴 추가 (2025-12-02)
   - `withX(source, fn)` 패턴으로 if문 추상화
   - 적용 기준 및 일반화 패턴 문서화
