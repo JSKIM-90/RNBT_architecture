@@ -711,6 +711,107 @@ this.datasetInfo = {
 
 ---
 
+### Higher-Order Function으로 제어 흐름 추상화
+
+**`if` 문을 함수로 감싸서 재사용 가능한 패턴으로 만든다**
+
+#### 문제 상황
+
+```javascript
+// 명령형: 전제조건 검사가 코드에 산재
+const canvas = this.element.querySelector('canvas');
+if (canvas) {
+    // canvas 관련 로직
+}
+
+const modal = document.querySelector('.modal');
+if (modal) {
+    // modal 관련 로직
+}
+```
+
+#### 해결: Higher-Order Function
+
+```javascript
+// 제어 흐름을 함수로 추상화
+const withCanvas = (element, fn) => {
+    const canvas = element.querySelector('canvas');
+    return canvas ? fn(canvas) : null;
+};
+
+// 선언적 사용
+withCanvas(this.element, canvas => {
+    // canvas가 존재할 때만 실행
+    // canvas를 클로저로 안전하게 사용
+});
+```
+
+#### 적용 기준
+
+이 패턴을 적용하면 좋은 경우:
+
+| 조건 | 설명 |
+|------|------|
+| **반복되는 null 체크** | 동일한 요소를 여러 곳에서 검사 |
+| **전제조건과 순회 대상이 다름** | `if (canvas)` 후 `events.forEach()` |
+| **컨텍스트 전달 필요** | 검사 결과를 콜백에서 사용 |
+
+적용하지 않아도 되는 경우:
+
+| 조건 | 설명 |
+|------|------|
+| **단순 일회성 검사** | 한 곳에서만 사용되는 검사 |
+| **순회 대상과 검사 대상이 동일** | 배열 자체를 filter |
+
+#### 일반화 패턴
+
+```javascript
+// 패턴: withX(source, fn)
+// - source에서 X를 찾고
+// - 존재하면 fn(X) 실행
+// - 없으면 null/기본값 반환
+
+const withElement = (selector, fn, fallback = null) => {
+    const el = document.querySelector(selector);
+    return el ? fn(el) : fallback;
+};
+
+const withInstance = (name, page, fn) => {
+    const iter = WKit.makeIterator(page);
+    const instance = WKit.getInstanceByName(name, iter);
+    return instance ? fn(instance) : null;
+};
+```
+
+#### 장점
+
+1. **관심사 분리**: null 체크 책임과 비즈니스 로직 책임 분리
+2. **재사용성**: 동일 패턴을 여러 곳에서 사용
+3. **선언적 표현**: "X와 함께 이걸 해라" vs "X가 있으면 이걸 해라"
+4. **클로저로 안전한 컨텍스트**: 검사 결과를 콜백 내에서 안전하게 사용
+
+#### 실제 적용 예시
+
+```javascript
+// DEFAULT_JS.md - 3D Raycasting Setup
+const withCanvas = (element, fn) => {
+    const canvas = element.querySelector('canvas');
+    return canvas ? fn(canvas) : null;
+};
+
+this.raycastingEvents = withCanvas(this.element, canvas =>
+    fx.go(
+        [{ type: 'click' }, { type: 'mousemove' }],
+        fx.map(event => ({
+            ...event,
+            handler: initThreeRaycasting(canvas, event.type)
+        }))
+    )
+);
+```
+
+---
+
 ### 코드 생성 친화적
 스키마 함수들로 코드 자동 생성 지원:
 - `WKit.getCustomEventsSchema()` - 이벤트 바인딩 패턴
@@ -1257,9 +1358,13 @@ example_master_01/
 
 ## 버전 정보
 
-**문서 버전**: 1.3.0
-**최종 업데이트**: 2025-11-28
+**문서 버전**: 1.4.0
+**최종 업데이트**: 2025-12-02
 **주요 변경사항**:
+- v1.4.0: Higher-Order Function 제어 흐름 패턴 추가 (2025-12-02)
+  - `withX(source, fn)` 패턴으로 if문 추상화
+  - 적용 기준 및 일반화 패턴 문서화
+  - 3D Raycasting 설정에 실제 적용
 - v1.3.0: 예제 폴더 구조화 및 문서 정비 (2025-11-28)
   - example_basic_01: Page Only 아키텍처 (IoT 대시보드)
   - example_master_01: Master + Page 아키텍처 (대시보드)
