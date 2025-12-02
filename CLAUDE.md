@@ -143,6 +143,7 @@ WKit.bindEvents(instance, {
 - 인스턴스 검색 (`getInstanceByName`, `getInstanceById`)
 - 데이터 fetch (`fetchData`)
 - 이벤트 발행 (`emitEvent`)
+- 제어 흐름 추상화 (`withSelector`) - if문을 HOF로 추상화
 
 ---
 
@@ -730,19 +731,24 @@ if (modal) {
 }
 ```
 
-#### 해결: Higher-Order Function
+#### 해결: WKit.withSelector
 
 ```javascript
-// 제어 흐름을 함수로 추상화
-const withCanvas = (element, fn) => {
-    const canvas = element.querySelector('canvas');
-    return canvas ? fn(canvas) : null;
+// WKit에서 제공하는 HOF
+// element 내에서 selector로 요소를 찾고, 존재하면 fn 실행
+const withSelector = (element, selector, fn) => {
+    const target = element.querySelector(selector);
+    return target ? fn(target) : null;
 };
 
 // 선언적 사용
-withCanvas(this.element, canvas => {
+WKit.withSelector(this.element, 'canvas', canvas => {
     // canvas가 존재할 때만 실행
     // canvas를 클로저로 안전하게 사용
+});
+
+WKit.withSelector(this.element, '.modal', modal => {
+    // modal이 존재할 때만 실행
 });
 ```
 
@@ -763,19 +769,14 @@ withCanvas(this.element, canvas => {
 | **단순 일회성 검사** | 한 곳에서만 사용되는 검사 |
 | **순회 대상과 검사 대상이 동일** | 배열 자체를 filter |
 
-#### 일반화 패턴
+#### 확장 패턴
 
 ```javascript
-// 패턴: withX(source, fn)
-// - source에서 X를 찾고
-// - 존재하면 fn(X) 실행
-// - 없으면 null/기본값 반환
+// WKit.withSelector 기반으로 특화된 헬퍼 생성 가능
+const withCanvas = (element, fn) => WKit.withSelector(element, 'canvas', fn);
+const withModal = (element, fn) => WKit.withSelector(element, '.modal', fn);
 
-const withElement = (selector, fn, fallback = null) => {
-    const el = document.querySelector(selector);
-    return el ? fn(el) : fallback;
-};
-
+// 인스턴스 검색에도 동일 패턴 적용
 const withInstance = (name, page, fn) => {
     const iter = WKit.makeIterator(page);
     const instance = WKit.getInstanceByName(name, iter);
@@ -794,12 +795,9 @@ const withInstance = (name, page, fn) => {
 
 ```javascript
 // DEFAULT_JS.md - 3D Raycasting Setup
-const withCanvas = (element, fn) => {
-    const canvas = element.querySelector('canvas');
-    return canvas ? fn(canvas) : null;
-};
+const { withSelector } = WKit;
 
-this.raycastingEvents = withCanvas(this.element, canvas =>
+this.raycastingEvents = withSelector(this.element, 'canvas', canvas =>
     fx.go(
         [{ type: 'click' }, { type: 'mousemove' }],
         fx.map(event => ({

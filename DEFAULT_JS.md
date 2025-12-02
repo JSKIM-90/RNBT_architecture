@@ -143,13 +143,9 @@ onEventBusHandlers(this.eventBusHandlers);
 // 3D RAYCASTING SETUP
 // ======================
 
-// Higher-Order Function으로 제어 흐름 추상화
-const withCanvas = (element, fn) => {
-    const canvas = element.querySelector('canvas');
-    return canvas ? fn(canvas) : null;
-};
+const { withSelector } = WKit;
 
-this.raycastingEvents = withCanvas(this.element, canvas =>
+this.raycastingEvents = withSelector(this.element, 'canvas', canvas =>
     fx.go(
         [
             { type: 'click' }
@@ -176,12 +172,9 @@ const { each } = fx;
 // 3D RAYCASTING CLEANUP
 // ======================
 
-const withCanvas = (element, fn) => {
-    const canvas = element.querySelector('canvas');
-    return canvas ? fn(canvas) : null;
-};
+const { withSelector } = WKit;
 
-withCanvas(this.element, canvas => {
+withSelector(this.element, 'canvas', canvas => {
     if (this.raycastingEvents) {
         fx.go(
             this.raycastingEvents,
@@ -575,7 +568,8 @@ this.customEvents = {
 
 ---
 
-**버전**: 1.1.0
+**버전**: 1.2.0
 **작성일**: 2025-12-02
 **변경사항**:
-- v1.1.0: 3D Raycasting 설정에 Higher-Order Function 패턴 적용 (`withCanvas`)
+- v1.2.0: `WKit.withSelector` 사용으로 변경 (선택자 외부 주입)
+- v1.1.0: 3D Raycasting 설정에 Higher-Order Function 패턴 적용
