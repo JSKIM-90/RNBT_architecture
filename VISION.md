@@ -23,7 +23,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │ 2. HTML/CSS 퍼블리싱 (MCP Server)                                │
 │    ├─ Figma MCP Server로 디자인 정보 추출                        │
-│    ├─ Playwright MCP로 스크린샷 자동화                           │
+│    ├─ Playwright CLI로 스크린샷 자동화                           │
 │    └─ 컴포넌트 구조에 맞춘 HTML/CSS 생성                         │
 │        ├─ views/ComponentName.html                              │
 │        ├─ styles/ComponentName.css                              │
@@ -71,14 +71,14 @@
 
 ## 자동화 전략
 
-### Figma MCP + Playwright MCP 결합
+### Figma MCP + Playwright CLI 결합
 
 ```
 Figma 디자인
     ↓
 Figma MCP Server (디자인 정보 추출)
     ↓
-Playwright MCP (스크린샷 자동화)
+Playwright CLI (스크린샷 자동화)
     ↓
 Claude Code (HTML/CSS 생성)
     ↓
