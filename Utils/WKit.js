@@ -148,6 +148,11 @@ WKit.emitEvent = function (eventName, targetInstance) {
   });
 };
 
+WKit.withSelector = function (element, selector, fn) {
+  const target = element.querySelector(selector);
+  return target ? fn(target) : null;
+};
+
 /* Public API: event bus on / off */
 WKit.onEventBusHandlers = function (eventBusHandlers) {
   fx.go(
