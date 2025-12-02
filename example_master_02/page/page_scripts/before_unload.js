@@ -14,20 +14,9 @@ const { offEventBusHandlers } = WKit;
 onPageUnLoad.call(this);
 
 function onPageUnLoad() {
-    stopAllIntervals.call(this);
     clearEventBus.call(this);
     clearDataPublisher.call(this);
-}
-
-// ======================
-// INTERVAL CLEANUP
-// ======================
-
-function stopAllIntervals() {
-    if (this.stopAllIntervals) {
-        this.stopAllIntervals();
-    }
-    this.refreshIntervals = null;
+    stopAllIntervals.call(this);
 }
 
 // ======================
@@ -51,6 +40,17 @@ function clearDataPublisher() {
 
     this.globalDataMappings = null;
     this.currentParams = null;
+}
+
+// ======================
+// INTERVAL CLEANUP
+// ======================
+
+function stopAllIntervals() {
+    if (this.stopAllIntervals) {
+        this.stopAllIntervals();
+    }
+    this.refreshIntervals = null;
 }
 
 console.log('[Page] before_unload - cleanup completed');

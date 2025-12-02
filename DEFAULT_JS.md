@@ -250,15 +250,6 @@ const { offEventBusHandlers } = WKit;
 const { each } = fx;
 
 // ======================
-// INTERVAL CLEANUP
-// ======================
-
-if (this.stopAllIntervals) {
-    this.stopAllIntervals();
-}
-this.refreshIntervals = null;
-
-// ======================
 // EVENT BUS CLEANUP
 // ======================
 
@@ -276,6 +267,15 @@ fx.go(
 
 this.globalDataMappings = null;
 this.currentParams = null;
+
+// ======================
+// INTERVAL CLEANUP
+// ======================
+
+if (this.stopAllIntervals) {
+    this.stopAllIntervals();
+}
+this.refreshIntervals = null;
 ```
 
 ---
@@ -459,15 +459,6 @@ const { offEventBusHandlers } = WKit;
 const { each } = fx;
 
 // ======================
-// INTERVAL CLEANUP
-// ======================
-
-if (this.stopAllIntervals) {
-    this.stopAllIntervals();
-}
-this.refreshIntervals = null;
-
-// ======================
 // EVENT BUS CLEANUP
 // ======================
 
@@ -485,6 +476,15 @@ fx.go(
 
 this.globalDataMappings = null;
 this.currentParams = null;
+
+// ======================
+// INTERVAL CLEANUP
+// ======================
+
+if (this.stopAllIntervals) {
+    this.stopAllIntervals();
+}
+this.refreshIntervals = null;
 ```
 
 ---
