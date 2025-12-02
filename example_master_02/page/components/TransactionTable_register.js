@@ -19,6 +19,9 @@ const tableContainer = this.element.querySelector('.table-container');
 const uniqueId = `tabulator-${this.id}`;
 tableContainer.id = uniqueId;
 
+// NOTE: 컨테이너가 CSS 'fit-content' 속성을 가진 경우,
+// 'fitColumns'는 무한 resize 루프를 유발할 수 있음 (서로 크기 참조).
+// 그 경우 'fitData'를 사용하여 테이블이 고정 너비를 갖도록 변경 필요.
 this.tableInstance = new Tabulator(`#${uniqueId}`, {
     layout: 'fitColumns',
     height: '100%',

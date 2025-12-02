@@ -114,6 +114,9 @@ example_master_02/
 ```javascript
 const tableContainer = this.element.querySelector('#tabulator');
 
+// NOTE: 컨테이너가 CSS 'fit-content' 속성을 가진 경우,
+// 'fitColumns'는 무한 resize 루프를 유발할 수 있음.
+// 그 경우 'fitData'를 사용할 것.
 this.tableInstance = new Tabulator(tableContainer, {
     layout: 'fitColumns',
     height: '100%',
