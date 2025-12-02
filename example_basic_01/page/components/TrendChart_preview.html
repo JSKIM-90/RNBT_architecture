@@ -19,26 +19,10 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* ========== Page Root (CONTAINER_STYLES.md) ========== */
-        #page-root {
-            width: 100%;
-            min-height: 100vh;
-            padding: 1.5rem;
-            box-sizing: border-box;
-            background: #f1f5f9;
-        }
-
-        /* ========== Bottom Row Container (CONTAINER_STYLES.md) ========== */
-        #bottom-row {
-            display: flex;
-            gap: 1.5rem;
-            height: calc(60vh - 4.5rem);
-        }
-
         /* ========== Container Inline Style (CONTAINER_STYLES.md) ========== */
         #component-container {
-            flex: 1;
-            height: 100%;
+            width: 100%;
+            height: 400px;
         }
 
         /* ========== TrendChart.css (styles/TrendChart.css 그대로) ========== */
@@ -121,34 +105,28 @@
     </style>
 </head>
 <body>
-    <!-- ========== PAGE ROOT ========== -->
-    <div id="page-root">
-        <!-- ========== BOTTOM ROW ========== -->
-        <div id="bottom-row">
-            <!-- ========== COMPONENT CONTAINER ========== -->
-            <div id="component-container">
-                <!-- views/TrendChart.html 그대로 -->
-                <div class="trend-chart-panel">
-                    <!-- Header -->
-                    <div class="panel-header">
-                        <div class="panel-title-group">
-                            <h3 class="panel-title">24h Temperature Trend</h3>
-                            <p class="panel-subtitle">Temperature readings across all sensors</p>
-                        </div>
-                        <div class="panel-actions">
-                            <select class="period-select">
-                                <option value="24h" selected>Last 24 hours</option>
-                                <option value="12h">Last 12 hours</option>
-                                <option value="6h">Last 6 hours</option>
-                            </select>
-                            <button class="btn-refresh trend-refresh-btn">Refresh</button>
-                        </div>
-                    </div>
-
-                    <!-- Chart Container -->
-                    <div class="chart-container" id="echarts"></div>
+    <!-- ========== COMPONENT CONTAINER ========== -->
+    <div id="component-container">
+        <!-- views/TrendChart.html 그대로 -->
+        <div class="trend-chart-panel">
+            <!-- Header -->
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <h3 class="panel-title">24h Temperature Trend</h3>
+                    <p class="panel-subtitle">Temperature readings across all sensors</p>
+                </div>
+                <div class="panel-actions">
+                    <select class="period-select">
+                        <option value="24h" selected>Last 24 hours</option>
+                        <option value="12h">Last 12 hours</option>
+                        <option value="6h">Last 6 hours</option>
+                    </select>
+                    <button class="btn-refresh trend-refresh-btn">Refresh</button>
                 </div>
             </div>
+
+            <!-- Chart Container -->
+            <div class="chart-container" id="echarts"></div>
         </div>
     </div>
 

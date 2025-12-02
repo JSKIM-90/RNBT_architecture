@@ -19,18 +19,10 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* ========== Page Root (CONTAINER_STYLES.md) ========== */
-        #page-root {
-            padding-top: 60px;
-            padding-left: 250px;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-
         /* ========== Container Inline Style (CONTAINER_STYLES.md) ========== */
         #component-container {
             width: 100%;
-            height: calc((100vh - 60px) / 2);
+            height: 400px;
         }
 
         /* ========== VisitorChart.css (styles/VisitorChart.css 그대로) ========== */
@@ -98,26 +90,23 @@
     </style>
 </head>
 <body>
-    <!-- ========== PAGE ROOT ========== -->
-    <div id="page-root">
-        <!-- ========== COMPONENT CONTAINER ========== -->
-        <div id="component-container">
-            <!-- views/VisitorChart.html 그대로 -->
-            <div class="visitor-chart-widget">
-                <!-- Header -->
-                <div class="widget-header">
-                    <div class="widget-title-group">
-                        <h3 class="widget-title">Visitor Trends</h3>
-                        <p class="widget-subtitle">Visitors and page views over time</p>
-                    </div>
-                    <div class="widget-actions">
-                        <button class="btn-refresh chart-refresh-btn">Refresh</button>
-                    </div>
+    <!-- ========== COMPONENT CONTAINER ========== -->
+    <div id="component-container">
+        <!-- views/VisitorChart.html 그대로 -->
+        <div class="visitor-chart-widget">
+            <!-- Header -->
+            <div class="widget-header">
+                <div class="widget-title-group">
+                    <h3 class="widget-title">Visitor Trends</h3>
+                    <p class="widget-subtitle">Visitors and page views over time</p>
                 </div>
-
-                <!-- ECharts Container -->
-                <div class="chart-container" id="echarts"></div>
+                <div class="widget-actions">
+                    <button class="btn-refresh chart-refresh-btn">Refresh</button>
+                </div>
             </div>
+
+            <!-- ECharts Container -->
+            <div class="chart-container" id="echarts"></div>
         </div>
     </div>
 

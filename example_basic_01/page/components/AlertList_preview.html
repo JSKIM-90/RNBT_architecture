@@ -16,26 +16,10 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        /* ========== Page Root (CONTAINER_STYLES.md) ========== */
-        #page-root {
-            width: 100%;
-            min-height: 100vh;
-            padding: 1.5rem;
-            box-sizing: border-box;
-            background: #f1f5f9;
-        }
-
-        /* ========== Bottom Row Container (CONTAINER_STYLES.md) ========== */
-        #bottom-row {
-            display: flex;
-            gap: 1.5rem;
-            height: calc(60vh - 4.5rem);
-        }
-
         /* ========== Container Inline Style (CONTAINER_STYLES.md) ========== */
         #component-container {
-            width: 35%;
-            height: 100%;
+            width: 100%;
+            height: 400px;
         }
 
         /* ========== AlertList.css (styles/AlertList.css 그대로) ========== */
@@ -206,47 +190,41 @@
     </style>
 </head>
 <body>
-    <!-- ========== PAGE ROOT ========== -->
-    <div id="page-root">
-        <!-- ========== BOTTOM ROW ========== -->
-        <div id="bottom-row">
-            <!-- ========== COMPONENT CONTAINER ========== -->
-            <div id="component-container">
-                <!-- views/AlertList.html 그대로 -->
-                <div class="alert-list-panel">
-                    <!-- Header -->
-                    <div class="panel-header">
-                        <div class="panel-title-group">
-                            <h3 class="panel-title">Active Alerts</h3>
-                            <span class="alert-count">0</span>
-                        </div>
-                    </div>
-
-                    <!-- Alert List -->
-                    <div class="alert-list"></div>
-
-                    <!-- Empty State -->
-                    <div class="alert-empty" style="display: none;">
-                        <span class="empty-icon">✓</span>
-                        <p class="empty-text">No active alerts</p>
-                    </div>
-
-                    <!-- Template -->
-                    <template id="alert-item-template">
-                        <div class="alert-item" data-alert-id="" data-severity="">
-                            <div class="alert-indicator"></div>
-                            <div class="alert-content">
-                                <p class="alert-message"></p>
-                                <div class="alert-meta">
-                                    <span class="alert-zone"></span>
-                                    <span class="alert-time"></span>
-                                </div>
-                            </div>
-                            <button class="alert-dismiss">×</button>
-                        </div>
-                    </template>
+    <!-- ========== COMPONENT CONTAINER ========== -->
+    <div id="component-container">
+        <!-- views/AlertList.html 그대로 -->
+        <div class="alert-list-panel">
+            <!-- Header -->
+            <div class="panel-header">
+                <div class="panel-title-group">
+                    <h3 class="panel-title">Active Alerts</h3>
+                    <span class="alert-count">0</span>
                 </div>
             </div>
+
+            <!-- Alert List -->
+            <div class="alert-list"></div>
+
+            <!-- Empty State -->
+            <div class="alert-empty" style="display: none;">
+                <span class="empty-icon">✓</span>
+                <p class="empty-text">No active alerts</p>
+            </div>
+
+            <!-- Template -->
+            <template id="alert-item-template">
+                <div class="alert-item" data-alert-id="" data-severity="">
+                    <div class="alert-indicator"></div>
+                    <div class="alert-content">
+                        <p class="alert-message"></p>
+                        <div class="alert-meta">
+                            <span class="alert-zone"></span>
+                            <span class="alert-time"></span>
+                        </div>
+                    </div>
+                    <button class="alert-dismiss">×</button>
+                </div>
+            </template>
         </div>
     </div>
 
