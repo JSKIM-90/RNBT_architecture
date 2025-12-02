@@ -106,7 +106,7 @@ WKit.disposeAllThreeResources = function (page) {
   fx.go(
     WKit.makeIterator(page, 'threeLayer'),
     fx.each((instance) => {
-      // 1. Subscription 정리
+      // 1. Subscription 정리 (있는 경우)
       if (instance.subscriptions) {
         fx.go(
           Object.keys(instance.subscriptions),
@@ -115,7 +115,7 @@ WKit.disposeAllThreeResources = function (page) {
         instance.subscriptions = null;
       }
 
-      // 2. 참조 정리
+      // 2. Event 참조 정리
       instance.customEvents = null;
       instance.datasetInfo = null;
 

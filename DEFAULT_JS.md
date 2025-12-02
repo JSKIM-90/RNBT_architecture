@@ -80,13 +80,6 @@ const { removeCustomEvents } = WKit;
 const { each } = fx;
 
 // ======================
-// EVENT CLEANUP
-// ======================
-
-removeCustomEvents(this, this.customEvents);
-this.customEvents = null;
-
-// ======================
 // SUBSCRIPTION CLEANUP
 // ======================
 
@@ -95,6 +88,13 @@ fx.go(
     each(([topic, _]) => unsubscribe(topic, this))
 );
 this.subscriptions = null;
+
+// ======================
+// EVENT CLEANUP
+// ======================
+
+removeCustomEvents(this, this.customEvents);
+this.customEvents = null;
 
 // ======================
 // HANDLER CLEANUP
