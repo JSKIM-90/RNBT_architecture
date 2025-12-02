@@ -734,23 +734,10 @@ this.datasetInfo = {
 
 ### 컴포넌트 구조: 컨테이너 + 내부 요소
 
-```
-컴포넌트 = 컨테이너 + 내부 요소 (함께 배포됨)
-├─ 컨테이너: 독립적인 HTML 단위로 그려짐
-└─ 내부 요소: 컨테이너를 기준으로 레이아웃 (height: 100% 등)
-```
+컴포넌트는 **컨테이너 + 내부 요소**로 구성되며 함께 배포됩니다.
+컨테이너는 독립적인 HTML 단위로 그려지고, 박스 단위 조합을 가능하게 합니다.
 
-```html
-<div id="component-container">       <!-- 컨테이너 -->
-    <div class="transaction-table">  <!-- 내부 요소 -->
-        ...
-    </div>
-</div>
-```
-
-- 컨테이너는 컴포넌트의 일부로서 함께 움직임
-- 컨테이너의 크기 스타일은 CONTAINER_STYLES.md에서 관리
-- 내부 요소의 스타일은 컴포넌트 CSS에서 정의
+상세 내용은 [`COMPONENT_STRUCTURE.md`](COMPONENT_STRUCTURE.md) 참조.
 
 ---
 
