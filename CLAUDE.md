@@ -1190,6 +1190,44 @@ this.showUserDetail = function(user) {
 <div class="component-wrapper">...</div>
 ```
 
+### 8. 이벤트 바인딩 시 event.preventDefault() 주의사항
+
+WKit의 `bindEvents`는 모든 이벤트에 `event.preventDefault()`를 호출합니다.
+대부분의 UI 상호작용에서 의도된 동작이지만, 일부 요소는 주의가 필요합니다.
+
+**click 이벤트 사용 가능:**
+```javascript
+click: {
+    '.my-button': '@buttonClicked',     // ✅ 버튼
+    '.nav-link': '@linkClicked',        // ✅ 링크 (SPA 네비게이션)
+    '.card': '@cardClicked'             // ✅ 일반 요소
+}
+```
+
+**change 이벤트 사용 필요:**
+```javascript
+// ❌ click 사용 시 상태 변경 안 됨
+click: { 'input[type="checkbox"]': '@toggled' }
+
+// ✅ change 사용 (상태 변경 후 발생)
+change: {
+    'input[type="checkbox"]': '@toggled',
+    'input[type="radio"]': '@selected',
+    'select': '@optionChanged'
+}
+```
+
+**요소별 권장 이벤트:**
+
+| 요소 | 권장 이벤트 | click 사용 시 문제 |
+|------|------------|------------------|
+| button, a, div 등 | click | 없음 |
+| checkbox, radio | **change** | 상태 변경 안 됨 |
+| select | **change** | 드롭다운 문제 가능 |
+| contenteditable | focus/input | 커서/선택 문제 |
+| details > summary | 회피 권장 | 토글 안 됨 |
+| a[download] | 회피 권장 | 다운로드 안 됨 |
+
 ---
 
 ## 트러블슈팅
