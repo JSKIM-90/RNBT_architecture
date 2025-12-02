@@ -21,7 +21,7 @@ Default JS 적용 ← 이 문서
 
 ---
 
-## 컴포넌트 Default JS
+## 1. 컴포넌트 Default JS
 
 ### register.js
 
@@ -72,9 +72,40 @@ bindEvents(this, this.customEvents);
 // }
 ```
 
+### destroy.js
+
+```javascript
+const { unsubscribe } = GlobalDataPublisher;
+const { removeCustomEvents } = WKit;
+const { each } = fx;
+
+// ======================
+// EVENT CLEANUP
+// ======================
+
+removeCustomEvents(this, this.customEvents);
+this.customEvents = null;
+
+// ======================
+// SUBSCRIPTION CLEANUP
+// ======================
+
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, _]) => unsubscribe(topic, this))
+);
+this.subscriptions = null;
+
+// ======================
+// HANDLER CLEANUP
+// ======================
+
+// this.renderData = null;
+```
+
 ---
 
-## 3D 컴포넌트 Default JS
+## 2. 3D 컴포넌트 Default JS
 
 ### register.js
 
@@ -114,122 +145,7 @@ this.datasetInfo = null;
 
 ---
 
-## 페이지 3D Default JS (before_load.js 추가)
-
-```javascript
-const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
-
-// ======================
-// EVENT BUS HANDLERS
-// ======================
-
-this.eventBusHandlers = {
-    // 3D 객체 클릭 핸들러
-    '@3dObjectClicked': async ({ event, targetInstance }) => {
-        console.log('Clicked 3D object:', event.intersects[0]?.object);
-
-        const { datasetInfo } = targetInstance;
-        if (datasetInfo) {
-            const { datasetName, param } = datasetInfo;
-            const data = await fetchData(this, datasetName, param);
-            console.log('3D object data:', data);
-        }
-    }
-};
-
-onEventBusHandlers(this.eventBusHandlers);
-
-// ======================
-// 3D RAYCASTING SETUP
-// ======================
-
-const { withSelector } = WKit;
-
-this.raycastingEvents = withSelector(this.element, 'canvas', canvas =>
-    fx.go(
-        [
-            { type: 'click' }
-            // { type: 'mousemove' },
-            // { type: 'dblclick' }
-        ],
-        fx.map(event => ({
-            ...event,
-            handler: initThreeRaycasting(canvas, event.type)
-        }))
-    )
-);
-```
-
----
-
-## 페이지 3D Default JS (before_unload.js 추가)
-
-```javascript
-const { disposeAllThreeResources } = WKit;
-const { each } = fx;
-
-// ======================
-// 3D RAYCASTING CLEANUP
-// ======================
-
-const { withSelector } = WKit;
-
-withSelector(this.element, 'canvas', canvas => {
-    if (this.raycastingEvents) {
-        fx.go(
-            this.raycastingEvents,
-            each(({ type, handler }) => canvas.removeEventListener(type, handler))
-        );
-        this.raycastingEvents = null;
-    }
-});
-
-// ======================
-// 3D RESOURCES CLEANUP
-// ======================
-
-// 한 줄로 모든 3D 리소스 정리:
-// - 모든 3D 컴포넌트의 geometry, material, texture
-// - Scene background
-disposeAllThreeResources(this);
-```
-
----
-
-### destroy.js
-
-```javascript
-const { unsubscribe } = GlobalDataPublisher;
-const { removeCustomEvents } = WKit;
-const { each } = fx;
-
-// ======================
-// EVENT CLEANUP
-// ======================
-
-removeCustomEvents(this, this.customEvents);
-this.customEvents = null;
-
-// ======================
-// SUBSCRIPTION CLEANUP
-// ======================
-
-fx.go(
-    Object.entries(this.subscriptions),
-    each(([topic, _]) => unsubscribe(topic, this))
-);
-this.subscriptions = null;
-
-// ======================
-// HANDLER CLEANUP
-// ======================
-
-// this.renderData = null;
-```
-
----
-
-## 페이지 Default JS
+## 3. 페이지 Default JS
 
 ### before_load.js
 
@@ -368,7 +284,95 @@ this.currentParams = null;
 
 ---
 
-## Master common_component Default JS
+## 4. 페이지 3D Default JS (추가 섹션)
+
+3D 컴포넌트가 있는 페이지는 위 페이지 Default JS에 아래 내용을 **추가**합니다.
+
+### before_load.js 추가
+
+```javascript
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
+
+// ======================
+// EVENT BUS HANDLERS (3D 핸들러 추가)
+// ======================
+
+this.eventBusHandlers = {
+    // ... 기존 핸들러 ...
+
+    // 3D 객체 클릭 핸들러
+    '@3dObjectClicked': async ({ event, targetInstance }) => {
+        console.log('Clicked 3D object:', event.intersects[0]?.object);
+
+        const { datasetInfo } = targetInstance;
+        if (datasetInfo) {
+            const { datasetName, param } = datasetInfo;
+            const data = await fetchData(this, datasetName, param);
+            console.log('3D object data:', data);
+        }
+    }
+};
+
+onEventBusHandlers(this.eventBusHandlers);
+
+// ======================
+// 3D RAYCASTING SETUP
+// ======================
+
+const { withSelector } = WKit;
+
+this.raycastingEvents = withSelector(this.element, 'canvas', canvas =>
+    fx.go(
+        [
+            { type: 'click' }
+            // { type: 'mousemove' },
+            // { type: 'dblclick' }
+        ],
+        fx.map(event => ({
+            ...event,
+            handler: initThreeRaycasting(canvas, event.type)
+        }))
+    )
+);
+```
+
+### before_unload.js 추가
+
+```javascript
+const { disposeAllThreeResources } = WKit;
+const { each } = fx;
+
+// ... 기존 cleanup 코드 ...
+
+// ======================
+// 3D RAYCASTING CLEANUP
+// ======================
+
+const { withSelector } = WKit;
+
+withSelector(this.element, 'canvas', canvas => {
+    if (this.raycastingEvents) {
+        fx.go(
+            this.raycastingEvents,
+            each(({ type, handler }) => canvas.removeEventListener(type, handler))
+        );
+        this.raycastingEvents = null;
+    }
+});
+
+// ======================
+// 3D RESOURCES CLEANUP
+// ======================
+
+// 한 줄로 모든 3D 리소스 정리:
+// - 모든 3D 컴포넌트의 geometry, material, texture
+// - Scene background
+disposeAllThreeResources(this);
+```
+
+---
+
+## 5. Master common_component Default JS
 
 Master 레이어에서는 `common_component`가 페이지 스크립트 역할을 대체합니다.
 
@@ -568,8 +572,9 @@ this.customEvents = {
 
 ---
 
-**버전**: 1.2.0
+**버전**: 1.3.0
 **작성일**: 2025-12-02
 **변경사항**:
+- v1.3.0: 문서 구조 재정리 - 섹션 번호 추가, 컴포넌트 destroy.js 위치 수정
 - v1.2.0: `WKit.withSelector` 사용으로 변경 (선택자 외부 주입)
 - v1.1.0: 3D Raycasting 설정에 Higher-Order Function 패턴 적용
