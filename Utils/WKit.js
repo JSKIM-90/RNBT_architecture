@@ -48,6 +48,8 @@ WKit.bind3DEvents = function (instance, customEvents) {
 
 /* Public API: 3D dispose */
 WKit.dispose3DTree = function (rootContainer) {
+  if (!rootContainer) return;
+
   rootContainer.traverse((obj) => {
     // 1. geometry
     if (obj.geometry) {
@@ -149,6 +151,8 @@ WKit.emitEvent = function (eventName, targetInstance) {
 };
 
 WKit.withSelector = function (element, selector, fn) {
+  if (!element) return null;
+
   const target = element.querySelector(selector);
   return target ? fn(target) : null;
 };
