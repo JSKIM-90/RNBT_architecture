@@ -143,21 +143,25 @@ onEventBusHandlers(this.eventBusHandlers);
 // 3D RAYCASTING SETUP
 // ======================
 
-const canvas = this.element.querySelector('canvas');
-if (canvas) {
-    this.raycastingEvents = [
-        { type: 'click' }
-        // { type: 'mousemove' },
-        // { type: 'dblclick' }
-    ];
+// Higher-Order Function으로 제어 흐름 추상화
+const withCanvas = (element, fn) => {
+    const canvas = element.querySelector('canvas');
+    return canvas ? fn(canvas) : null;
+};
 
+this.raycastingEvents = withCanvas(this.element, canvas =>
     fx.go(
-        this.raycastingEvents,
-        fx.each(event => {
-            event.handler = initThreeRaycasting(canvas, event.type);
-        })
-    );
-}
+        [
+            { type: 'click' }
+            // { type: 'mousemove' },
+            // { type: 'dblclick' }
+        ],
+        fx.map(event => ({
+            ...event,
+            handler: initThreeRaycasting(canvas, event.type)
+        }))
+    )
+);
 ```
 
 ---
@@ -172,17 +176,20 @@ const { each } = fx;
 // 3D RAYCASTING CLEANUP
 // ======================
 
-const canvas = this.element.querySelector('canvas');
+const withCanvas = (element, fn) => {
+    const canvas = element.querySelector('canvas');
+    return canvas ? fn(canvas) : null;
+};
 
-if (canvas && this.raycastingEvents) {
-    fx.go(
-        this.raycastingEvents,
-        each(({ type, handler }) => {
-            canvas.removeEventListener(type, handler);
-        })
-    );
-    this.raycastingEvents = null;
-}
+withCanvas(this.element, canvas => {
+    if (this.raycastingEvents) {
+        fx.go(
+            this.raycastingEvents,
+            each(({ type, handler }) => canvas.removeEventListener(type, handler))
+        );
+        this.raycastingEvents = null;
+    }
+});
 
 // ======================
 // 3D RESOURCES CLEANUP
@@ -568,5 +575,7 @@ this.customEvents = {
 
 ---
 
-**버전**: 1.0.0
+**버전**: 1.1.0
 **작성일**: 2025-12-02
+**변경사항**:
+- v1.1.0: 3D Raycasting 설정에 Higher-Order Function 패턴 적용 (`withCanvas`)
