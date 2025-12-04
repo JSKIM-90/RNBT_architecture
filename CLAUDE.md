@@ -92,8 +92,9 @@ WEventBus.on('@myClickEvent', handler)
 - 구독 관리 (`subscribe`, `unsubscribe`)
 - 페이지 레벨 공유 데이터 관리
 - 데이터셋별 독립적인 auto-refresh 주기 설정 가능
+- **WebSocket 실시간 데이터 스트리밍 지원** (v1.6.0)
 
-**데이터 흐름**:
+**데이터 흐름 (HTTP)**:
 ```javascript
 // 1. 매핑 등록
 GlobalDataPublisher.registerMapping({
@@ -106,6 +107,24 @@ GlobalDataPublisher.fetchAndPublish('users', page)
 
 // 3. 컴포넌트 구독
 GlobalDataPublisher.subscribe('users', instance, handler)
+```
+
+**데이터 흐름 (WebSocket)**:
+```javascript
+// 1. 소켓 등록 (Page - before_load)
+GlobalDataPublisher.registerSocket({
+  topic: 'realtime_orders',
+  url: 'ws://localhost:3002'
+})
+
+// 2. 소켓 연결 (Page - loaded)
+GlobalDataPublisher.openSocket('realtime_orders')
+
+// 3. 컴포넌트 구독 (HTTP와 동일!)
+GlobalDataPublisher.subscribe('realtime_orders', instance, handler)
+
+// 4. 소켓 종료 (Page - before_unload)
+GlobalDataPublisher.closeSocket('realtime_orders')
 ```
 
 ### WKit.js - 통합 유틸리티 킷
@@ -1431,6 +1450,34 @@ example_master_01/
 
 ---
 
+### example_websocket_01 - WebSocket 실시간 대시보드
+
+**목적**: WebSocket 기반 실시간 데이터 스트리밍 패턴 검증
+
+**구조**:
+```
+example_websocket_01/
+├── page/
+│   ├── page_scripts/          # registerSocket → openSocket → closeSocket
+│   └── components/            # OrderList, OrderStats
+├── mock_server/               # WebSocket 서버 (port: 3002)
+└── README.md
+```
+
+**특징**:
+- HTTP와 동일한 라이프사이클 (등록 → 실행 → 해제)
+- 컴포넌트는 HTTP/WebSocket 구분 없이 동일한 `subscribe` 패턴
+
+**패턴 비교**:
+| | HTTP | WebSocket |
+|---|---|---|
+| 등록 | `registerMapping` | `registerSocket` |
+| 실행 | `fetchAndPublish` | `openSocket` |
+| 해제 | `unregisterMapping` | `closeSocket` |
+| 구독 | `subscribe` | `subscribe` (동일) |
+
+---
+
 ### datasetList.json 포맷 (v3.2.0)
 
 모든 예제는 동일한 데이터셋 포맷을 사용:
@@ -1456,9 +1503,15 @@ example_master_01/
 
 ## 버전 정보
 
-**문서 버전**: 1.5.2
-**최종 업데이트**: 2025-12-02
+**문서 버전**: 1.6.0
+**최종 업데이트**: 2025-12-04
 **주요 변경사항**:
+- v1.6.0: WebSocket 실시간 데이터 스트리밍 지원 (2025-12-04)
+  - GlobalDataPublisher에 WebSocket API 추가
+  - `registerSocket`, `openSocket`, `closeSocket`, `sendMessage`
+  - HTTP와 동일한 라이프사이클 (등록 → 실행 → 해제)
+  - 컴포넌트는 HTTP/WebSocket 구분 없이 동일한 `subscribe` 패턴
+  - example_websocket_01: 실시간 주문 대시보드 예제
 - v1.5.2: Preview 컨테이너 스타일 CONTAINER_STYLES.md 준수 원칙 추가 (2025-12-02)
   - Preview 파일의 `#component-container` 스타일은 CONTAINER_STYLES.md를 따라야 함
   - 임의의 고정값 대신 MD에 명시된 값 사용 (예: `calc((100vh - 60px) / 2)`)
