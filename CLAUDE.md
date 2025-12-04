@@ -831,10 +831,32 @@ this.raycastingEvents = withSelector(this.element, 'canvas', canvas =>
 - 디버깅 용이성 (콘솔 로그 자동 출력)
 - 에러 핸들링 일관성
 
-### 컴포넌트 구조: 컨테이너 + 내부 요소
+### 컴포넌트 구조: Figma 선택 요소 = 컨테이너
 
-컴포넌트는 **컨테이너 + 내부 요소**로 구성되며 함께 배포됩니다.
-컨테이너는 독립적인 HTML 단위로 그려지고, 박스 단위 조합을 가능하게 합니다.
+웹 빌더는 컴포넌트마다 **div 컨테이너**를 기본 단위로 가집니다.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Figma 링크 제공 = 컴포넌트 단위 선택                                  │
+│                                                                      │
+│  - Figma 선택 요소의 가장 바깥 = div 컨테이너                          │
+│  - Figma 선택 요소의 크기 = 컨테이너 크기                              │
+│  - 내부 요소 = innerHTML (Figma 스타일 그대로)                        │
+│                                                                      │
+│  <div id="component-container">   ← Figma 선택 요소 크기              │
+│      <!-- innerHTML -->           ← Figma 내부 요소 (스타일 그대로)    │
+│  </div>                                                              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**컨테이너 크기 규칙:**
+
+| 상황 | 컨테이너 크기 |
+|------|-------------|
+| CONTAINER_STYLES.md 없음 | Figma 선택 요소 크기 (고정) |
+| CONTAINER_STYLES.md 있음 | 레이아웃 기반 크기로 재정의 |
+
+**overflow: auto** - 동적 렌더링 시 콘텐츠 넘침 대응 (컨테이너에 적용)
 
 상세 내용은 [`COMPONENT_STRUCTURE.md`](COMPONENT_STRUCTURE.md) 참조.
 
@@ -1190,29 +1212,33 @@ this.showUserDetail = function(user) {
 <div class="component-wrapper">...</div>
 ```
 
-**CONTAINER_STYLES.md 준수 (필수)**:
-- 각 예제 폴더에 `CONTAINER_STYLES.md`가 있다면, Preview의 `#component-container` 스타일은 **반드시** 해당 문서를 따라야 함
-- 임의의 고정값(예: `height: 300px`)이 아닌, MD에 명시된 값(예: `calc((100vh - 60px) / 2)`)을 사용
-- 이를 통해 Preview가 실제 런타임 환경과 동일한 레이아웃 조건에서 테스트됨
+**컨테이너 크기 규칙**:
+
+| 상황 | 컨테이너 크기 |
+|------|-------------|
+| CONTAINER_STYLES.md 있음 | 해당 문서 값 사용 |
+| CONTAINER_STYLES.md 없음 | Figma 선택 요소 크기 사용 (고정) |
 
 ```css
-/* ❌ 임의의 고정값 사용 */
-#component-container {
-    width: 100%;
-    height: 300px;  /* CONTAINER_STYLES.md 무시 */
-}
-
-/* ✅ CONTAINER_STYLES.md 값 그대로 사용 */
+/* CONTAINER_STYLES.md 있는 경우 */
 #component-container {
     width: 100%;
     height: calc((100vh - 60px) / 2);  /* MD에 명시된 값 */
+    overflow: auto;
+}
+
+/* CONTAINER_STYLES.md 없는 경우 (Figma 크기 사용) */
+#component-container {
+    width: 524px;   /* Figma 선택 요소 width */
+    height: 350px;  /* Figma 선택 요소 height */
+    overflow: auto; /* 동적 렌더링 대응 */
 }
 ```
 
-**확인 절차**:
-1. 예제 폴더의 `CONTAINER_STYLES.md` 확인
-2. 해당 컴포넌트의 Container Inline Style 섹션 찾기
-3. Preview 파일의 `#component-container`에 동일하게 적용
+**핵심 원칙**:
+- 내부 HTML/CSS는 Figma 스타일 그대로 구현
+- overflow: auto는 동적 렌더링 대응 (컨테이너에 적용)
+- 임의로 width: 100%, height: 100%로 변경하지 않음
 
 ### 8. 이벤트 바인딩과 event.preventDefault()
 

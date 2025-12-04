@@ -4,17 +4,24 @@
 
 ---
 
-## 핵심 구조
+## 핵심 원칙
+
+**Figma 선택 요소 = 컨테이너**
 
 ```
-컴포넌트 = 컨테이너 + 내부 요소 (함께 배포됨)
-├─ 컨테이너: 독립적인 HTML 단위로 그려짐
-└─ 내부 요소: 컨테이너를 기준으로 레이아웃 (height: 100% 등)
+┌─────────────────────────────────────────────────────────────────────┐
+│  Figma 링크 제공 = 컴포넌트 단위 선택                                  │
+│                                                                      │
+│  사용자가 Figma 링크를 제공하면:                                       │
+│  - 선택된 요소의 가장 바깥 = div 컨테이너                              │
+│  - 선택된 요소의 크기 = 컨테이너 크기                                  │
+│  - 내부 요소 = innerHTML (Figma 스타일 그대로)                        │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ```html
-<div id="component-container">       <!-- 컨테이너 -->
-    <div class="transaction-table">  <!-- 내부 요소 -->
+<div id="component-container">       <!-- Figma 선택 요소 크기 -->
+    <div class="transaction-table">  <!-- Figma 내부 요소 (스타일 그대로) -->
         ...
     </div>
 </div>
@@ -22,14 +29,54 @@
 
 ---
 
+## 웹 빌더 기본 구조
+
+웹 빌더는 컴포넌트마다 **div 컨테이너**를 기본 단위로 가집니다.
+
+```
+웹 빌더에서 컴포넌트를 배치하면:
+
+<div id="component-xxx">   ← 웹 빌더가 자동 생성하는 컨테이너
+    <!-- innerHTML -->     ← 사용자 정의 내용
+</div>
+```
+
+따라서 Figma 선택 요소의 크기가 곧 컨테이너 크기가 되어야 스타일링이 그대로 유지됩니다.
+
+---
+
+## 컨테이너 크기 규칙
+
+| 상황 | 컨테이너 크기 |
+|------|-------------|
+| CONTAINER_STYLES.md 있음 | 해당 문서 값 사용 (레이아웃 기반) |
+| CONTAINER_STYLES.md 없음 | Figma 선택 요소 크기 사용 (고정) |
+
+```css
+/* CONTAINER_STYLES.md 있는 경우 */
+#component-container {
+    width: 100%;
+    height: calc((100vh - 60px) / 2);  /* MD에 명시된 값 */
+    overflow: auto;
+}
+
+/* CONTAINER_STYLES.md 없는 경우 */
+#component-container {
+    width: 524px;   /* Figma 선택 요소 width */
+    height: 350px;  /* Figma 선택 요소 height */
+    overflow: auto; /* 동적 렌더링 대응 */
+}
+```
+
+---
+
 ## 설계 철학
 
-### 컨테이너는 컴포넌트의 일부
+### Figma 스타일 그대로 유지
 
-- 컨테이너는 외부에서 컴포넌트를 감싸는 것이 아님
-- 컨테이너는 컴포넌트의 일부로서 함께 움직임
-- 컨테이너의 크기 스타일은 CONTAINER_STYLES.md에서 관리
-- 내부 요소의 스타일은 컴포넌트 CSS에서 정의
+- 컨테이너 크기 = Figma 선택 요소 크기 (또는 CONTAINER_STYLES.md 값)
+- 내부 요소 스타일 = Figma에서 추출한 그대로
+- **임의로 width: 100%, height: 100%로 변경하지 않음**
 
 ### 박스 단위 조합
 
@@ -54,8 +101,8 @@
 ### CSS Box Model과의 일관성
 
 - 컨테이너 = Containing Block 역할
-- 내부 요소의 `height: 100%`가 자연스럽게 동작
-- 컨테이너가 명시적 크기를 가지므로 % 기반 레이아웃 가능
+- 컨테이너가 명시적 크기를 가지므로 레이아웃 예측 가능
+- overflow: auto로 동적 콘텐츠 대응
 
 ---
 
@@ -99,18 +146,21 @@ container.innerHTML = 사용자 정의 HTML
 
 ```html
 <div class="component-name">
-    <!-- 내부 구조 -->
+    <!-- Figma 내부 구조 그대로 -->
 </div>
 ```
 
 ### CSS (styles/ComponentName.css)
 
 ```css
-#component-id .component-name {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    /* 내부 스타일링 */
+/* 컨테이너 ID 중심 nesting 구조 */
+#component-id {
+    .component-name {
+        /* Figma에서 추출한 스타일 그대로 적용 */
+        display: flex;
+        flex-direction: column;
+        /* ... */
+    }
 }
 ```
 
@@ -121,16 +171,18 @@ container.innerHTML = 사용자 정의 HTML
 <html>
 <head>
     <style>
-        /* Container Inline Style */
+        /* Container Style - CONTAINER_STYLES.md 또는 Figma 크기 */
         #component-container {
-            width: 100%;
-            height: 500px;
+            width: 524px;   /* Figma 크기 또는 MD 값 */
+            height: 350px;
+            overflow: auto;
         }
 
-        /* Component CSS */
-        #component-container .component-name {
-            height: 100%;
-            /* ... */
+        /* Component CSS - Figma 스타일 그대로 */
+        #component-container {
+            .component-name {
+                /* Figma에서 추출한 스타일 그대로 */
+            }
         }
     </style>
 </head>
@@ -151,6 +203,7 @@ container.innerHTML = 사용자 정의 HTML
 
 ### 장점
 
+- **디자인 일관성**: Figma 스타일을 그대로 유지
 - **독립성**: 각 컴포넌트가 자신의 경계 안에서 완결됨
 - **조합성**: 컨테이너 크기만 조정하면 어떤 레이아웃에도 배치 가능
 - **예측 가능성**: 일관된 구조로 유지보수 용이
@@ -164,10 +217,11 @@ container.innerHTML = 사용자 정의 HTML
 
 ### 결론
 
-비주얼 빌더에서는 **예측 가능한 구조**의 가치가 트레이드오프보다 큽니다.
+비주얼 빌더에서는 **Figma 스타일 유지**와 **예측 가능한 구조**의 가치가 트레이드오프보다 큽니다.
 일관된 구조를 유지하면 컴포넌트를 자산으로 쌓을 수 있습니다.
 
 ---
 
-**버전**: 1.0.0
-**작성일**: 2025-12-02
+**버전**: 2.0.0
+**작성일**: 2025-12-04
+**변경사항**: Figma 스타일 그대로 유지 원칙 명확화, height: 100% 패턴 제거, 컨테이너 크기 규칙 추가
