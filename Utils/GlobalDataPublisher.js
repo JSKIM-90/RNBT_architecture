@@ -17,16 +17,31 @@ const GlobalDataPublisher = (() => {
     }
   }
 
-  function connectSocket(topic) {
+  function buildSocketUrl(url, param) {
+    if (!param || Object.keys(param).length === 0) return url;
+    const queryString = new URLSearchParams(param).toString();
+    return `${url}?${queryString}`;
+  }
+
+  function connectSocket(topic, param) {
     const socketInfo = socketTable.get(topic);
     if (!socketInfo) return;
 
-    const { url, protocols, reconnect, reconnectInterval, maxReconnectAttempts, transform } = socketInfo;
-    const ws = new WebSocket(url, protocols);
+    const { url, options } = socketInfo;
+    const { protocols, reconnect, reconnectInterval, maxReconnectAttempts, transform } = options;
+
+    // param 병합 후 URL 생성
+    const mergedParam = param
+      ? { ...socketInfo.param, ...param }
+      : socketInfo.param;
+    const fullUrl = buildSocketUrl(url, mergedParam);
+
+    const ws = new WebSocket(fullUrl, protocols);
 
     ws.onopen = () => {
       console.log(`[GlobalDataPublisher] Socket connected: ${topic}`);
       socketInfo.reconnectAttempts = 0;
+      socketInfo.currentParam = mergedParam; // 재연결용 저장
     };
 
     ws.onmessage = (event) => {
@@ -57,7 +72,8 @@ const GlobalDataPublisher = (() => {
     const socketInfo = socketTable.get(topic);
     if (!socketInfo) return;
 
-    const { reconnectInterval, maxReconnectAttempts } = socketInfo;
+    const { options, currentParam } = socketInfo;
+    const { reconnectInterval, maxReconnectAttempts } = options;
 
     if (maxReconnectAttempts > 0 && socketInfo.reconnectAttempts >= maxReconnectAttempts) {
       console.error(`[GlobalDataPublisher] Max reconnect attempts reached: ${topic}`);
@@ -68,17 +84,15 @@ const GlobalDataPublisher = (() => {
     console.log(`[GlobalDataPublisher] Reconnecting (${socketInfo.reconnectAttempts}/${maxReconnectAttempts || '∞'}): ${topic}`);
 
     socketInfo.reconnectTimer = setTimeout(() => {
-      connectSocket(topic);
+      connectSocket(topic, currentParam);
     }, reconnectInterval);
   }
 
   return {
+    // ========== HTTP API ==========
     registerMapping({ topic, datasetInfo }) {
       mappingTable.set(topic, datasetInfo);
-      return {
-        topic,
-        datasetInfo,
-      };
+      return { topic, datasetInfo };
     },
 
     unregisterMapping(topic) {
@@ -92,7 +106,6 @@ const GlobalDataPublisher = (() => {
         return;
       }
 
-      // paramUpdates가 있으면 기존 param과 병합 (얕은 병합)
       const param = paramUpdates
         ? { ...datasetInfo.param, ...paramUpdates }
         : datasetInfo.param;
@@ -111,6 +124,7 @@ const GlobalDataPublisher = (() => {
       }
     },
 
+    // ========== Subscribe API (공유) ==========
     subscribe(topic, instance, handler) {
       if (!subscriberTable.has(topic)) subscriberTable.set(topic, new Set());
       subscriberTable.get(topic).add({ instance, handler });
@@ -123,45 +137,31 @@ const GlobalDataPublisher = (() => {
         if (sub.instance === instance) subs.delete(sub);
       }
     },
-    getGlobalMappingSchema({
-      topic = 'weather',
-      datasetInfo = {
-        datasetName: 'dummyjson',
-        param: { dataType: 'weather', id: 'default' },
-      },
-    } = {}) {
-      return {
-        topic,
-        datasetInfo,
-      };
-    },
 
     // ========== WebSocket API ==========
-    registerSocket({
-      topic,
-      url,
-      protocols = [],
-      reconnect = true,
-      reconnectInterval = 3000,
-      maxReconnectAttempts = 5,
-      transform = (data) => JSON.parse(data),
-    }) {
+    registerSocket({ topic, url, param = {}, options = {} }) {
+      const defaultOptions = {
+        protocols: [],
+        reconnect: true,
+        reconnectInterval: 3000,
+        maxReconnectAttempts: 5,
+        transform: (data) => JSON.parse(data),
+      };
+
       socketTable.set(topic, {
         url,
-        protocols,
-        reconnect,
-        reconnectInterval,
-        maxReconnectAttempts,
-        transform,
+        param,
+        options: { ...defaultOptions, ...options },
         ws: null,
         reconnectAttempts: 0,
         reconnectTimer: null,
+        currentParam: null,
       });
 
       return { topic, url };
     },
 
-    openSocket(topic) {
+    openSocket(topic, paramUpdates = null) {
       const socketInfo = socketTable.get(topic);
       if (!socketInfo) {
         console.warn(`[GlobalDataPublisher] 등록되지 않은 socket topic: ${topic}`);
@@ -174,7 +174,7 @@ const GlobalDataPublisher = (() => {
         return;
       }
 
-      connectSocket(topic);
+      connectSocket(topic, paramUpdates);
     },
 
     closeSocket(topic) {
@@ -195,16 +195,24 @@ const GlobalDataPublisher = (() => {
       socketTable.delete(topic);
     },
 
-    sendMessage(topic, message) {
-      const socketInfo = socketTable.get(topic);
-      if (!socketInfo?.ws || socketInfo.ws.readyState !== WebSocket.OPEN) {
-        console.warn(`[GlobalDataPublisher] Socket not open: ${topic}`);
-        return false;
-      }
+    // ========== Schema ==========
+    getGlobalMappingSchema({
+      topic = 'weather',
+      datasetInfo = {
+        datasetName: 'dummyjson',
+        param: { dataType: 'weather', id: 'default' },
+      },
+    } = {}) {
+      return { topic, datasetInfo };
+    },
 
-      const data = typeof message === 'string' ? message : JSON.stringify(message);
-      socketInfo.ws.send(data);
-      return true;
+    getSocketMappingSchema({
+      topic = 'realtime',
+      url = 'ws://localhost:3000',
+      param = {},
+      options = {},
+    } = {}) {
+      return { topic, url, param, options };
     },
   };
 })();

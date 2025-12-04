@@ -6,10 +6,7 @@ this.socketMappings = [
     {
         topic: 'realtime_orders',
         url: 'ws://localhost:3002',
-        reconnect: true,
-        reconnectInterval: 3000,
-        maxReconnectAttempts: 5,
-        transform: (raw) => JSON.parse(raw)
+        param: { channel: 'orders' }
     }
 ];
 
@@ -17,12 +14,11 @@ fx.each(registerSocket, this.socketMappings);
 
 // ========== 이벤트 핸들러 ==========
 this.eventBusHandlers = {
-    '@updateOrderStatus': ({ orderId, status }) => {
-        GlobalDataPublisher.sendMessage('realtime_orders', {
-            type: 'update_status',
-            orderId,
-            status
-        });
+    '@orderClicked': ({ event, targetInstance }) => {
+        const orderId = event.target.closest('[data-order-id]')?.dataset.orderId;
+        if (orderId) {
+            console.log('[Page] Order clicked:', orderId);
+        }
     }
 };
 

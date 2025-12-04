@@ -32,24 +32,26 @@ example_websocket_01/
 ### HTTP
 
 ```javascript
-// Page - before_load (또는 loaded)
-registerMapping({ topic, datasetInfo })
-fetchAndPublish(topic, page)
+// 등록
+registerMapping({ topic, datasetInfo: { datasetName, param } })
 
-// Page - before_unload
+// 실행
+fetchAndPublish(topic, page, paramUpdates)
+
+// 해제
 unregisterMapping(topic)
 ```
 
 ### WebSocket
 
 ```javascript
-// Page - before_load
-registerSocket({ topic, url, ... })
+// 등록
+registerSocket({ topic, url, param, options })
 
-// Page - loaded
-openSocket(topic)
+// 실행
+openSocket(topic, paramUpdates)
 
-// Page - before_unload
+// 해제
 closeSocket(topic)
 ```
 
@@ -68,6 +70,26 @@ fx.go(
 
 ---
 
+## socketMappings 구조
+
+```javascript
+this.socketMappings = [
+    {
+        topic: 'realtime_orders',
+        url: 'ws://localhost:3002',
+        param: { channel: 'orders' },      // URL 쿼리로 변환
+        options: {                          // 선택 (기본값 있음)
+            reconnect: true,
+            reconnectInterval: 3000,
+            maxReconnectAttempts: 5,
+            transform: (data) => JSON.parse(data)
+        }
+    }
+];
+```
+
+---
+
 ## 실행
 
 ```bash
@@ -80,7 +102,33 @@ npm start
 
 ---
 
+## 향후 구현 예정
+
+- `sendMessage(topic, message)`: 서버로 메시지 전송
+
+---
+
+## 설계 검토 (2025-12-04)
+
+### 잘된 점
+
+1. **패턴 일관성**: HTTP와 WebSocket의 라이프사이클이 대칭 (register → open/fetch → close)
+2. **컴포넌트 투명성**: 컴포넌트는 데이터 소스(HTTP/WebSocket)를 알 필요 없음
+3. **책임 분리**: `mappingTable`(HTTP), `socketTable`(WebSocket), `subscriberTable`(공유)
+
+### 참고사항
+
+1. **closeSocket 동작**: 등록 자체를 삭제함 (`socketTable.delete`). 재연결하려면 다시 `registerSocket` 필요.
+2. **reconnect와 closeSocket**: `closeSocket` 호출 시 `onclose = null`로 재연결 방지됨.
+3. **param 병합**: `openSocket` 시점에 `currentParam` 저장 → 재연결 시 동일 param 사용.
+
+### 결론
+
+구조적 문제 없음. 실제 테스트 후 엣지 케이스 발견 시 수정.
+
+---
+
 ## 버전
 
-**버전**: 1.0.0
+**버전**: 1.1.0
 **업데이트**: 2025-12-04

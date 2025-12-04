@@ -114,11 +114,14 @@ GlobalDataPublisher.subscribe('users', instance, handler)
 // 1. 소켓 등록 (Page - before_load)
 GlobalDataPublisher.registerSocket({
   topic: 'realtime_orders',
-  url: 'ws://localhost:3002'
+  url: 'ws://localhost:3002',
+  param: { channel: 'orders' },  // URL 쿼리로 변환
+  options: { reconnect: true }   // 선택 (기본값 있음)
 })
 
 // 2. 소켓 연결 (Page - loaded)
 GlobalDataPublisher.openSocket('realtime_orders')
+// → ws://localhost:3002?channel=orders 로 연결
 
 // 3. 컴포넌트 구독 (HTTP와 동일!)
 GlobalDataPublisher.subscribe('realtime_orders', instance, handler)
@@ -126,6 +129,9 @@ GlobalDataPublisher.subscribe('realtime_orders', instance, handler)
 // 4. 소켓 종료 (Page - before_unload)
 GlobalDataPublisher.closeSocket('realtime_orders')
 ```
+
+**향후 구현 예정**:
+- `sendMessage(topic, message)`: 서버로 메시지 전송
 
 ### WKit.js - 통합 유틸리티 킷
 
@@ -1508,10 +1514,12 @@ example_websocket_01/
 **주요 변경사항**:
 - v1.6.0: WebSocket 실시간 데이터 스트리밍 지원 (2025-12-04)
   - GlobalDataPublisher에 WebSocket API 추가
-  - `registerSocket`, `openSocket`, `closeSocket`, `sendMessage`
+  - `registerSocket({ topic, url, param, options })`, `openSocket(topic, paramUpdates)`, `closeSocket(topic)`
   - HTTP와 동일한 라이프사이클 (등록 → 실행 → 해제)
+  - `param`은 URL 쿼리 파라미터로 변환, `options`로 재연결 설정 분리
   - 컴포넌트는 HTTP/WebSocket 구분 없이 동일한 `subscribe` 패턴
   - example_websocket_01: 실시간 주문 대시보드 예제
+  - 향후 구현 예정: `sendMessage(topic, message)`
 - v1.5.2: Preview 컨테이너 스타일 CONTAINER_STYLES.md 준수 원칙 추가 (2025-12-02)
   - Preview 파일의 `#component-container` 스타일은 CONTAINER_STYLES.md를 따라야 함
   - 임의의 고정값 대신 MD에 명시된 값 사용 (예: `calc((100vh - 60px) / 2)`)
