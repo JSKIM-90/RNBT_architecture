@@ -28,4 +28,7 @@ if (this.chartInstance) {
     this.chartInstance = null;
 }
 
+// Clear bound methods
+this.renderChart = null;
+
 console.log('[TimeTrendChart] destroy - cleanup completed');

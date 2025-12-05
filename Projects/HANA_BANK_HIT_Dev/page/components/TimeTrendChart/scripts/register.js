@@ -101,7 +101,7 @@ bindEvents(this, this.customEvents);
 
 function renderLineData(config, response) {
     const { data } = response;
-    if (!data || !Array.isArray(data)) return;
+    if (!data || !data[Symbol.iterator]) return;
 
     const { xKey, seriesMap, smooth, symbol, areaStyle, areaGradient, yAxis } = config;
 
