@@ -331,25 +331,11 @@
         }
 
         // ======================
-        // RENDER & EVENT HANDLERS
+        // RESIZE & RENDER
         // ======================
         window.addEventListener('resize', () => chartInstance.resize());
 
-        // Render with mock response
         renderLineData(config, mockResponse);
-
-        // Filter button click handler
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.btn').forEach(b => {
-                    b.classList.remove('btn-active');
-                    b.classList.add('btn-inactive');
-                });
-                e.target.classList.remove('btn-inactive');
-                e.target.classList.add('btn-active');
-                console.log('Filter clicked:', e.target.dataset.filter);
-            });
-        });
     </script>
 </body>
 </html>
