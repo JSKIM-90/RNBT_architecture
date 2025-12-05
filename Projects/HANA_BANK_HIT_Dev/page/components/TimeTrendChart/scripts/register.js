@@ -5,24 +5,54 @@
  * Subscribes to: timeTrendData
  * Events: @filterClicked
  *
- * Expected Data Structure (Bottom-Up):
- * {
- *   peakDate: "2025/08/05",
- *   series: {
- *     labels: ["00", "02", "04", ..., "22"],
- *     역대픽: [1200, 1300, ...],
- *     연중최고픽: [1100, 1200, ...],
- *     월픽: [600, 650, ...],
- *     전일: [400, 450, ...],
- *     금일: [300, 350, ...]
- *   },
- *   activeFilter: "전체"
- * }
+ * Expected Raw API Data Structure:
+ * [
+ *   { tm: "00", val_max: 1200, val_year: 1100, val_month: 600, val_prev: 400, val_today: 300 },
+ *   { tm: "02", val_max: 1300, val_year: 1150, val_month: 650, val_prev: 420, val_today: 320 },
+ *   ...
+ * ]
  */
 
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents } = WKit;
-const { each } = fx;
+const { each, curry } = fx;
+
+// ======================
+// CONFIG (정적 선언)
+// ======================
+
+const config = {
+    // Raw API 필드 매핑
+    xKey: 'tm',             // X축에 사용할 API 필드
+
+    // 시리즈 정의: key는 API 필드명, name은 범례 표시명
+    seriesMap: [
+        { key: 'val_max', name: '역대픽', color: '#526FE5' },
+        { key: 'val_year', name: '연중최고픽', color: '#52BEE5' },
+        { key: 'val_month', name: '월픽', color: '#009178' },
+        { key: 'val_prev', name: '전일', color: '#52E5C3' },
+        { key: 'val_today', name: '금일', color: '#AAFD84' }
+    ],
+
+    // 시리즈 공통 스타일
+    smooth: true,
+    symbol: 'none',
+    areaStyle: true,        // Area 차트 여부
+    areaGradient: true,     // 그라데이션 채우기
+
+    // Y축 설정
+    yAxis: {
+        min: 0,
+        max: 1800,
+        interval: 600
+    }
+};
+
+// ======================
+// BINDNGS (커링 + 바인딩)
+// ======================
+
+this.renderChart = curry(renderLineData)(config).bind(this);
 
 // ======================
 // SUBSCRIPTIONS
@@ -31,8 +61,6 @@ const { each } = fx;
 this.subscriptions = {
     timeTrendData: ['renderChart']
 };
-
-this.renderChart = renderChart.bind(this);
 
 fx.go(
     Object.entries(this.subscriptions),
@@ -69,166 +97,53 @@ this.customEvents = {
 bindEvents(this, this.customEvents);
 
 // ======================
-// RENDER FUNCTIONS
+// RENDER FUNCTION (호이스팅)
 // ======================
 
-function renderChart(response) {
+function renderLineData(config, response) {
     const { data } = response;
-    console.log(`[TimeTrendChart] renderChart:`, data);
+    if (!data || !Array.isArray(data)) return;
 
-    if (!data || !data.series) return;
-
-    // Update PEAK date
-    const peakDateEl = this.element.querySelector('[data-peak-date]');
-    if (peakDateEl && data.peakDate) {
-        peakDateEl.textContent = data.peakDate;
-    }
-
-    // Update active filter button
-    if (data.activeFilter) {
-        updateActiveFilter.call(this, data.activeFilter);
-    }
-
-    const { labels, 역대픽, 연중최고픽, 월픽, 전일, 금일 } = data.series;
+    const { xKey, seriesMap, smooth, symbol, areaStyle, areaGradient, yAxis } = config;
 
     const option = {
-        backgroundColor: 'transparent',
-        tooltip: {
-            trigger: 'axis',
-            axisPointer: {
-                type: 'line',
-                lineStyle: {
-                    color: 'rgba(255, 255, 255, 0.3)',
-                    width: 2
-                }
-            },
-            backgroundColor: 'rgba(53, 60, 60, 0.8)',
-            borderColor: 'transparent',
-            textStyle: {
-                color: '#fff',
-                fontSize: 14
-            }
-        },
-        legend: {
-            show: true,
-            bottom: 0,
-            itemWidth: 8,
-            itemHeight: 8,
-            itemGap: 16,
-            icon: 'circle',
-            textStyle: {
-                color: '#d2d8d6',
-                fontSize: 13,
-                fontWeight: 500,
-                fontFamily: 'Pretendard, sans-serif'
-            }
-        },
-        grid: {
-            left: 40,
-            right: 10,
-            top: 10,
-            bottom: 40,
-            containLabel: false
-        },
         xAxis: {
             type: 'category',
-            boundaryGap: false,
-            data: labels,
-            axisLine: {
-                show: true,
-                lineStyle: {
-                    color: 'rgba(255, 255, 255, 0.3)'
-                }
-            },
-            axisTick: {
-                show: false
-            },
-            axisLabel: {
-                color: '#d2d8d6',
-                fontSize: 12
-            },
-            splitLine: {
-                show: false
-            }
+            data: fx.go(data, fx.map(d => d[xKey]))
         },
         yAxis: {
             type: 'value',
-            min: 0,
-            max: 1800,
-            interval: 600,
-            axisLine: {
-                show: false
-            },
-            axisTick: {
-                show: false
-            },
-            axisLabel: {
-                color: '#d2d8d6',
-                fontSize: 12,
-                formatter: '{value}'
-            },
-            splitLine: {
-                show: true,
-                lineStyle: {
-                    color: 'rgba(255, 255, 255, 0.2)',
-                    type: 'dashed'
-                }
-            }
+            min: yAxis.min,
+            max: yAxis.max,
+            interval: yAxis.interval
         },
-        series: [
-            createAreaSeries('역대픽', 역대픽, '#526FE5'),
-            createAreaSeries('연중최고픽', 연중최고픽, '#52BEE5'),
-            createAreaSeries('월픽', 월픽, '#009178'),
-            createAreaSeries('전일', 전일, '#52E5C3'),
-            createAreaSeries('금일', 금일, '#AAFD84')
-        ]
+        series: fx.go(
+            seriesMap,
+            fx.map(s => ({
+                name: s.name,
+                type: 'line',
+                smooth,
+                symbol,
+                data: fx.go(data, fx.map(d => d[s.key])),
+                itemStyle: { color: s.color },
+                lineStyle: { color: s.color, width: 2 },
+                areaStyle: areaStyle ? {
+                    color: areaGradient ? {
+                        type: 'linear',
+                        x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: s.color + '80' },
+                            { offset: 1, color: s.color + '10' }
+                        ]
+                    } : s.color
+                } : undefined
+            }))
+        )
     };
 
     try {
         this.chartInstance.setOption(option);
-    } catch (error) {
-        console.error('[TimeTrendChart] ECharts setOption error:', error);
+    } catch (e) {
+        console.error('[TimeTrendChart] setOption error:', e);
     }
 }
-
-function createAreaSeries(name, data, color) {
-    return {
-        name: name,
-        type: 'line',
-        smooth: true,
-        symbol: 'none',
-        data: data,
-        itemStyle: {
-            color: color
-        },
-        lineStyle: {
-            color: color,
-            width: 2
-        },
-        areaStyle: {
-            color: {
-                type: 'linear',
-                x: 0, y: 0, x2: 0, y2: 1,
-                colorStops: [
-                    { offset: 0, color: color + '80' },
-                    { offset: 1, color: color + '10' }
-                ]
-            }
-        }
-    };
-}
-
-function updateActiveFilter(activeFilter) {
-    const buttons = this.element.querySelectorAll('.btn');
-    buttons.forEach(btn => {
-        if (btn.dataset.filter === activeFilter) {
-            btn.classList.remove('btn-inactive');
-            btn.classList.add('btn-active');
-        } else {
-            btn.classList.remove('btn-active');
-            btn.classList.add('btn-inactive');
-        }
-    });
-}
-
-console.log('[TimeTrendChart] register - initialized');
