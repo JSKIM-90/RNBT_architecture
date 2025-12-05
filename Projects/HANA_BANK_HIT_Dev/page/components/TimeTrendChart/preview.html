@@ -165,34 +165,6 @@
                 width: 100%;
                 min-height: 200px;
             }
-
-            & .legend {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                padding: 5px 13px;
-                border-radius: 50px;
-            }
-
-            & .legend-item {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-            }
-
-            & .legend-dot {
-                width: 4px;
-                height: 4px;
-                border-radius: 50%;
-                flex-shrink: 0;
-            }
-
-            & .legend-text {
-                font-size: 13px;
-                font-weight: 500;
-                color: #d2d8d6;
-                white-space: nowrap;
-            }
         }
     </style>
 </head>
@@ -229,29 +201,6 @@
                     <div class="chart-area" id="echarts"></div>
                 </div>
 
-                <!-- Legend -->
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background: #526FE5;"></div>
-                        <span class="legend-text">역대픽</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background: #52BEE5;"></div>
-                        <span class="legend-text">연중최고픽</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background: #009178;"></div>
-                        <span class="legend-text">월픽</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background: #52E5C3;"></div>
-                        <span class="legend-text">전일</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-dot" style="background: #AAFD84;"></div>
-                        <span class="legend-text">금일</span>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -291,6 +240,7 @@
                 smooth: true,
                 symbol: 'none',
                 data: data,
+                itemStyle: { color: color },
                 lineStyle: { color: color, width: 2 },
                 areaStyle: {
                     color: {
@@ -316,8 +266,21 @@
                     borderColor: 'transparent',
                     textStyle: { color: '#fff', fontSize: 14 }
                 },
-                legend: { show: false },
-                grid: { left: 40, right: 10, top: 10, bottom: 30, containLabel: false },
+                legend: {
+                    show: true,
+                    bottom: 0,
+                    itemWidth: 8,
+                    itemHeight: 8,
+                    itemGap: 16,
+                    icon: 'circle',
+                    textStyle: {
+                        color: '#d2d8d6',
+                        fontSize: 13,
+                        fontWeight: 500,
+                        fontFamily: 'Pretendard, sans-serif'
+                    }
+                },
+                grid: { left: 40, right: 10, top: 10, bottom: 40, containLabel: false },
                 xAxis: {
                     type: 'category',
                     boundaryGap: false,

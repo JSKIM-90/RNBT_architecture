@@ -110,13 +110,24 @@ function renderChart(response) {
             }
         },
         legend: {
-            show: false
+            show: true,
+            bottom: 0,
+            itemWidth: 8,
+            itemHeight: 8,
+            itemGap: 16,
+            icon: 'circle',
+            textStyle: {
+                color: '#d2d8d6',
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: 'Pretendard, sans-serif'
+            }
         },
         grid: {
             left: 40,
             right: 10,
             top: 10,
-            bottom: 30,
+            bottom: 40,
             containLabel: false
         },
         xAxis: {
@@ -187,6 +198,9 @@ function createAreaSeries(name, data, color) {
         smooth: true,
         symbol: 'none',
         data: data,
+        itemStyle: {
+            color: color
+        },
         lineStyle: {
             color: color,
             width: 2

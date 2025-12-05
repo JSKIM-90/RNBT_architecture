@@ -142,39 +142,10 @@
         white-space: nowrap;
     }
 
-    /* Chart Area - ECharts Container */
+    /* Chart Area - ECharts Container (includes legend) */
     & .chart-area {
         flex: 1;
         width: 100%;
         min-height: 200px;
-    }
-
-    /* Legend */
-    & .legend {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        padding: 5px 13px;
-        border-radius: 50px;
-    }
-
-    & .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    & .legend-dot {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-
-    & .legend-text {
-        font-size: 13px;
-        font-weight: 500;
-        color: #d2d8d6;
-        white-space: nowrap;
     }
 }
