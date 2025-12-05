@@ -1,0 +1,54 @@
+<div class="time-trend-chart">
+    <!-- Header -->
+    <div class="header">
+        <div class="title">
+            <img class="title-icon" src="./assets/icon.svg" alt="icon">
+            <span class="title-text">시간대별 거래추이</span>
+        </div>
+        <div class="action-buttons">
+            <div class="btn btn-active" data-filter="전체">전체</div>
+            <div class="btn btn-inactive" data-filter="상품">상품</div>
+            <div class="btn btn-inactive" data-filter="1Q">1Q</div>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <div class="contents">
+            <!-- Date Row -->
+            <div class="date-row">
+                <div class="date-box">
+                    <span class="date-label">PEAK일</span>
+                    <span class="date-value" data-peak-date>2025/08/05</span>
+                </div>
+            </div>
+
+            <!-- ECharts Container -->
+            <div class="chart-area" id="echarts"></div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #526FE5;"></div>
+                <span class="legend-text">역대픽</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #52BEE5;"></div>
+                <span class="legend-text">연중최고픽</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #009178;"></div>
+                <span class="legend-text">월픽</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #52E5C3;"></div>
+                <span class="legend-text">전일</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background: #AAFD84;"></div>
+                <span class="legend-text">금일</span>
+            </div>
+        </div>
+    </div>
+</div>
