@@ -15,7 +15,6 @@
 
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents } = WKit;
-const { each, curry } = fx;
 
 // ======================
 // CONFIG (정적 선언)
@@ -52,7 +51,7 @@ const config = {
 // BINDNGS (커링 + 바인딩)
 // ======================
 
-this.renderChart = curry(renderLineData)(config).bind(this);
+this.renderChart = fx.curry(renderLineData)(config).bind(this);
 
 // ======================
 // SUBSCRIPTIONS
@@ -64,8 +63,8 @@ this.subscriptions = {
 
 fx.go(
     Object.entries(this.subscriptions),
-    each(([topic, fnList]) =>
-        each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+    fx.each(([topic, fnList]) =>
+        fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
     )
 );
 
