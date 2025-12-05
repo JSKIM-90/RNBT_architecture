@@ -206,53 +206,59 @@
     </div>
 
     <script>
-        // Mock data for preview (Figma 원본 차트 패턴에 맞춤)
-        const mockData = {
-            peakDate: "2025/08/05",
-            series: {
-                // X축: 00 ~ 22 (2시간 간격, 12개 포인트)
-                labels: ["00", "02", "04", "06", "08", "10", "12", "14", "16", "18", "20", "22"],
-                // 역대픽 (파란색): 초반 1200~1400 고점, 중반 하락 후 800~900 유지, 후반 600~700
-                역대픽: [1200, 1450, 950, 850, 900, 950, 850, 620, 680, 750, 680, 720],
-                // 연중최고픽 (민트색): 역대픽보다 약간 아래, 비슷한 패턴
-                연중최고픽: [1050, 1250, 880, 780, 850, 900, 800, 600, 650, 700, 650, 680],
-                // 월픽 (진녹색): 중간 레벨, 400~600대 유지
-                월픽: [550, 650, 500, 420, 480, 550, 500, 450, 500, 550, 520, 580],
-                // 전일 (청록색): 200~400대, 완만한 곡선
-                전일: [280, 350, 280, 220, 260, 320, 300, 280, 320, 380, 350, 400],
-                // 금일 (연두색/노란색): 가장 낮은 레벨, 후반부 상승세
-                금일: [150, 200, 180, 120, 150, 200, 180, 160, 220, 320, 280, 350]
-            },
-            activeFilter: "전체"
+        // ======================
+        // Mock Response (Raw API 구조)
+        // ======================
+        const mockResponse = {
+            data: [
+                { tm: "00", val_max: 1200, val_year: 1050, val_month: 550, val_prev: 280, val_today: 150 },
+                { tm: "02", val_max: 1450, val_year: 1250, val_month: 650, val_prev: 350, val_today: 200 },
+                { tm: "04", val_max: 950, val_year: 880, val_month: 500, val_prev: 280, val_today: 180 },
+                { tm: "06", val_max: 850, val_year: 780, val_month: 420, val_prev: 220, val_today: 120 },
+                { tm: "08", val_max: 900, val_year: 850, val_month: 480, val_prev: 260, val_today: 150 },
+                { tm: "10", val_max: 950, val_year: 900, val_month: 550, val_prev: 320, val_today: 200 },
+                { tm: "12", val_max: 850, val_year: 800, val_month: 500, val_prev: 300, val_today: 180 },
+                { tm: "14", val_max: 620, val_year: 600, val_month: 450, val_prev: 280, val_today: 160 },
+                { tm: "16", val_max: 680, val_year: 650, val_month: 500, val_prev: 320, val_today: 220 },
+                { tm: "18", val_max: 750, val_year: 700, val_month: 550, val_prev: 380, val_today: 320 },
+                { tm: "20", val_max: 680, val_year: 650, val_month: 520, val_prev: 350, val_today: 280 },
+                { tm: "22", val_max: 720, val_year: 680, val_month: 580, val_prev: 400, val_today: 350 }
+            ]
         };
 
-        // Initialize ECharts
+        // ======================
+        // CONFIG (register.js와 동일)
+        // ======================
+        const config = {
+            xKey: 'tm',
+            seriesMap: [
+                { key: 'val_max', name: '역대픽', color: '#526FE5' },
+                { key: 'val_year', name: '연중최고픽', color: '#52BEE5' },
+                { key: 'val_month', name: '월픽', color: '#009178' },
+                { key: 'val_prev', name: '전일', color: '#52E5C3' },
+                { key: 'val_today', name: '금일', color: '#AAFD84' }
+            ],
+            smooth: true,
+            symbol: 'none',
+            areaStyle: true,
+            areaGradient: true,
+            yAxis: { min: 0, max: 1800, interval: 600 }
+        };
+
+        // ======================
+        // INITIALIZE ECHARTS
+        // ======================
         const chartContainer = document.getElementById('echarts');
         const chartInstance = echarts.init(chartContainer);
 
-        // Render chart
-        function renderChart(data) {
-            const { labels, 역대픽, 연중최고픽, 월픽, 전일, 금일 } = data.series;
+        // ======================
+        // RENDER FUNCTION (register.js와 동일 로직)
+        // ======================
+        function renderLineData(config, response) {
+            const { data } = response;
+            if (!data || !Array.isArray(data)) return;
 
-            const createAreaSeries = (name, data, color) => ({
-                name: name,
-                type: 'line',
-                smooth: true,
-                symbol: 'none',
-                data: data,
-                itemStyle: { color: color },
-                lineStyle: { color: color, width: 2 },
-                areaStyle: {
-                    color: {
-                        type: 'linear',
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: color + '80' },
-                            { offset: 1, color: color + '10' }
-                        ]
-                    }
-                }
-            });
+            const { xKey, seriesMap, smooth, symbol, areaStyle, areaGradient, yAxis } = config;
 
             const option = {
                 backgroundColor: 'transparent',
@@ -284,7 +290,7 @@
                 xAxis: {
                     type: 'category',
                     boundaryGap: false,
-                    data: labels,
+                    data: data.map(d => d[xKey]),
                     axisLine: { show: true, lineStyle: { color: 'rgba(255, 255, 255, 0.3)' } },
                     axisTick: { show: false },
                     axisLabel: { color: '#d2d8d6', fontSize: 12 },
@@ -292,31 +298,45 @@
                 },
                 yAxis: {
                     type: 'value',
-                    min: 0,
-                    max: 1800,
-                    interval: 600,
+                    min: yAxis.min,
+                    max: yAxis.max,
+                    interval: yAxis.interval,
                     axisLine: { show: false },
                     axisTick: { show: false },
                     axisLabel: { color: '#d2d8d6', fontSize: 12 },
                     splitLine: { show: true, lineStyle: { color: 'rgba(255, 255, 255, 0.2)', type: 'dashed' } }
                 },
-                series: [
-                    createAreaSeries('역대픽', 역대픽, '#526FE5'),
-                    createAreaSeries('연중최고픽', 연중최고픽, '#52BEE5'),
-                    createAreaSeries('월픽', 월픽, '#009178'),
-                    createAreaSeries('전일', 전일, '#52E5C3'),
-                    createAreaSeries('금일', 금일, '#AAFD84')
-                ]
+                series: seriesMap.map(s => ({
+                    name: s.name,
+                    type: 'line',
+                    smooth,
+                    symbol,
+                    data: data.map(d => d[s.key]),
+                    itemStyle: { color: s.color },
+                    lineStyle: { color: s.color, width: 2 },
+                    areaStyle: areaStyle ? {
+                        color: areaGradient ? {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: s.color + '80' },
+                                { offset: 1, color: s.color + '10' }
+                            ]
+                        } : s.color
+                    } : undefined
+                }))
             };
 
             chartInstance.setOption(option);
         }
 
-        // Handle resize
+        // ======================
+        // RENDER & EVENT HANDLERS
+        // ======================
         window.addEventListener('resize', () => chartInstance.resize());
 
-        // Render with mock data
-        renderChart(mockData);
+        // Render with mock response
+        renderLineData(config, mockResponse);
 
         // Filter button click handler
         document.querySelectorAll('.btn').forEach(btn => {
