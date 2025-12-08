@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PerformanceStatus - Preview</title>
+    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        /* Container: Figma 선택 요소 크기 */
+        #performance-status-container {
+            width: 524px;
+            height: 350px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="performance-status-container">
+        <div class="performance-status">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-top">
+                    <div class="title">
+                        <div class="icon">
+                            <img src="assets/6e134c6c4f175a81f94018216584fd808a1b84b6.svg" alt="">
+                        </div>
+                        <span class="title-text">구간별 성능현황</span>
+                    </div>
+                    <div class="data">
+                        <div class="data-item data-count">
+                            <p class="header-count">681</p>
+                        </div>
+                        <div class="data-item data-tps">
+                            <p class="header-tps">16,959.0</p>
+                        </div>
+                        <div class="data-item data-response">
+                            <p class="header-response">0.603</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-dot tps"></div>
+                        <p>TPS</p>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot response"></div>
+                        <p>응답시간</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Container -->
+            <div class="container">
+                <template id="item-template">
+                    <div class="item">
+                        <div class="cylinder-wrapper">
+                            <div class="cylinder-img">
+                                <img src="" alt="">
+                            </div>
+                        </div>
+                        <p class="item-number"></p>
+                        <div class="item-label">
+                            <p></p>
+                        </div>
+                        <div class="item-tps">
+                            <p></p>
+                        </div>
+                        <div class="item-response">
+                            <p></p>
+                        </div>
+                    </div>
+                </template>
+                <div class="items-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for preview
+        const mockData = {
+            header: {
+                count: 681,
+                totalTps: 16959.0,
+                avgResponse: 0.603
+            },
+            items: [
+                { label: '전체', number: 5, tps: 61.0, response: 0.003, cylinderType: 'green' },
+                { label: 'WEB', number: 5, tps: 51.0, response: 0.007, cylinderType: 'blue' },
+                { label: 'WAS', number: 109, tps: 1999.8, response: 0.005, cylinderType: 'green' },
+                { label: 'TP', number: 15, tps: 5318.0, response: 0.031, cylinderType: 'yellow' },
+                { label: 'TP-DB', number: 431, tps: 2781.2, response: 0.046, cylinderType: 'red' },
+                { label: 'MCA', number: 69, tps: 2618.2, response: 0.161, cylinderType: 'green' },
+                { label: '대내 EAI', number: 10, tps: 741.2, response: 0.010, cylinderType: 'red' },
+                { label: '대내 EIC', number: 23, tps: 627.4, response: 0.187, cylinderType: 'purple' },
+                { label: '대외 EIC', number: 14, tps: 2761.2, response: 0.153, cylinderType: 'red' }
+            ]
+        };
+
+        // Cylinder assets mapping
+        const CYLINDER_ASSETS = {
+            green: 'assets/22d18fb2964a57ef7db9eaa50bd9135cbff48aa5.svg',
+            blue: 'assets/cad60b4e3cd34eaac69c5d923a31932955d32d8c.svg',
+            yellow: 'assets/3d5912f055fba78c669d556c26e1f66c6ef0cc1a.svg',
+            red: 'assets/fa8972967a99dcd64e9820680b79f9346edeef9f.svg',
+            purple: 'assets/60de5f08b5d94f20c34edde8382f259149e5ae2f.svg'
+        };
+
+        // Render function
+        function renderData(data) {
+            const { header, items } = data;
+
+            // Render header
+            document.querySelector('.header-count').textContent = header.count.toLocaleString();
+            document.querySelector('.header-tps').textContent = header.totalTps.toLocaleString();
+            document.querySelector('.header-response').textContent = header.avgResponse.toFixed(3);
+
+            // Get template and container
+            const template = document.querySelector('#item-template');
+            const container = document.querySelector('.items-container');
+            container.innerHTML = '';
+
+            // Group items into rows of 3
+            const rows = [];
+            for (let i = 0; i < items.length; i += 3) {
+                rows.push(items.slice(i, i + 3));
+            }
+
+            // Render rows
+            rows.forEach(rowItems => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+
+                rowItems.forEach((item, index) => {
+                    const clone = template.content.cloneNode(true);
+                    const itemEl = clone.querySelector('.item');
+
+                    // Set cylinder image
+                    const cylinderImg = itemEl.querySelector('.cylinder-img img');
+                    cylinderImg.src = CYLINDER_ASSETS[item.cylinderType] || CYLINDER_ASSETS.green;
+
+                    // Set number
+                    itemEl.querySelector('.item-number').textContent = item.number;
+
+                    // Set label
+                    itemEl.querySelector('.item-label p').textContent = item.label;
+
+                    // Set TPS (no comma formatting per Figma design)
+                    itemEl.querySelector('.item-tps p').textContent = item.tps;
+
+                    // Set response
+                    itemEl.querySelector('.item-response p').textContent = item.response.toFixed(3);
+
+                    rowDiv.appendChild(clone);
+                });
+
+                container.appendChild(rowDiv);
+            });
+        }
+
+        // Initial render
+        document.addEventListener('DOMContentLoaded', () => {
+            renderData(mockData);
+        });
+    </script>
+</body>
+</html>
