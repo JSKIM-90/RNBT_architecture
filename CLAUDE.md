@@ -1255,7 +1255,117 @@ this.showUserDetail = function(user) {
 - overflow: auto는 동적 렌더링 대응 (컨테이너에 적용)
 - 임의로 width: 100%, height: 100%로 변경하지 않음
 
-### 8. 이벤트 바인딩과 event.preventDefault()
+### 8. 페이지네이션 패턴
+
+**핵심 원칙**: 서버가 데이터 주체, 클라이언트는 렌더링만 담당
+
+```javascript
+// 클라이언트: "3페이지 보겠다"
+// 서버: "현재 데이터 기준 3페이지 + 메타정보"
+```
+
+**버튼 재생성 조건**:
+- `totalPages` 변경 시에만 버튼 재생성 (필터 변경 등)
+- 일반 페이지 이동 시에는 active 클래스만 토글
+
+**구현 패턴**:
+
+```javascript
+// Component - register.js
+this.pageState = {
+    page: 1,
+    pageSize: 10,
+    category: 'all',
+    total: 0,
+    totalPages: 0
+};
+
+function renderData(response) {
+    const { data, pagination } = response;
+    if (!data) return;
+
+    // 이전 totalPages 저장 (비교용)
+    const prevTotalPages = this.pageState.totalPages;
+
+    // 페이지네이션 상태 업데이트
+    if (pagination) {
+        this.pageState.page = pagination.page;
+        this.pageState.total = pagination.total;
+        this.pageState.totalPages = pagination.totalPages;
+    }
+
+    this.tableInstance.setData(data);
+    this.updatePaginationUI(prevTotalPages);
+}
+
+function updatePaginationUI(prevTotalPages) {
+    const { page, total, totalPages, pageSize } = this.pageState;
+
+    // 페이지 정보 텍스트
+    const start = (page - 1) * pageSize + 1;
+    const end = Math.min(page * pageSize, total);
+    this.element.querySelector('.pagination-info').textContent = `${start}-${end} of ${total}`;
+
+    // prev/next 버튼 상태
+    this.element.querySelector('[data-action="prev"]').disabled = page <= 1;
+    this.element.querySelector('[data-action="next"]').disabled = page >= totalPages;
+
+    // totalPages 변경 시에만 버튼 재생성
+    if (prevTotalPages !== totalPages) {
+        const pageNumbers = this.element.querySelector('.page-numbers');
+        pageNumbers.innerHTML = Array.from({ length: totalPages }, (_, i) => i + 1)
+            .map(p => `<button class="pagination-btn" data-page="${p}">${p}</button>`)
+            .join('');
+    }
+
+    // active 클래스 토글
+    this.element.querySelectorAll('.pagination-btn[data-page]').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.page) === page);
+    });
+}
+```
+
+**Page 이벤트 핸들러** (이벤트 위임):
+
+```javascript
+// Page - before_load.js
+'@paginationClicked': ({ event, targetInstance }) => {
+    const btn = event.target.closest('.pagination-btn');
+    if (!btn) return;
+
+    const action = btn.dataset.action;
+    const pageNum = btn.dataset.page;
+
+    let newPage = targetInstance.pageState.page;
+    if (action === 'prev') newPage = Math.max(1, newPage - 1);
+    else if (action === 'next') newPage = Math.min(targetInstance.pageState.totalPages, newPage + 1);
+    else if (pageNum) newPage = parseInt(pageNum);
+
+    if (newPage !== targetInstance.pageState.page) {
+        targetInstance.pageState.page = newPage;
+        this.currentParams['topic'] = { ...this.currentParams['topic'], page: newPage };
+        GlobalDataPublisher.fetchAndPublish('topic', this, this.currentParams['topic']);
+    }
+}
+```
+
+**API 응답 구조**:
+
+```javascript
+{
+    data: [...],  // 현재 페이지 데이터
+    pagination: {
+        page: 3,
+        pageSize: 10,
+        total: 53,
+        totalPages: 6,
+        hasNext: true,
+        hasPrev: true
+    }
+}
+```
+
+### 9. 이벤트 바인딩과 event.preventDefault()
 
 WKit의 `bindEvents`는 **submit 이벤트에만** `event.preventDefault()`를 호출합니다.
 
@@ -1514,9 +1624,15 @@ Examples/example_master_01/
 
 ## 버전 정보
 
-**문서 버전**: 1.6.0
+**문서 버전**: 1.7.0
 **최종 업데이트**: 2025-12-08
 **주요 변경사항**:
+- v1.7.0: 페이지네이션 패턴 추가 (2025-12-08)
+  - 서버가 데이터 주체, 클라이언트는 렌더링만 담당
+  - `totalPages` 변경 시에만 버튼 재생성, 일반 페이지 이동 시 active 클래스만 토글
+  - `prevTotalPages !== totalPages` 비교로 불필요한 DOM 재생성 방지
+  - Page 이벤트 핸들러에서 이벤트 위임 패턴 사용
+  - API 응답 구조: `{ data, pagination: { page, pageSize, total, totalPages } }`
 - v1.6.0: 작업 규칙 및 Tabulator 가이드 추가 (2025-12-08)
   - **확인 없이 완료라고 말하지 않습니다 (거짓말 금지)** 규칙 추가
   - 코드 수정 후 반드시 실제 결과(스크린샷 등) 확인 필수

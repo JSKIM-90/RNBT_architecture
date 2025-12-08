@@ -2,13 +2,26 @@
  * Page - TransactionTable Component - register
  * Card Company Dashboard
  * Subscribes to: transactions
- * Events: @transactionFilterChanged, @tableRefreshClicked
+ * Events: @transactionFilterChanged, @tableRefreshClicked, @paginationChanged
  * Library: Tabulator
+ * Feature: Pagination support
  */
 
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents } = WKit;
 const { each } = fx;
+
+// ======================
+// PAGE STATE
+// ======================
+
+this.pageState = {
+    page: 1,
+    pageSize: 10,
+    category: 'all',
+    total: 0,
+    totalPages: 0
+};
 
 // ======================
 // TABULATOR INITIALIZATION
@@ -101,21 +114,95 @@ this.customEvents = {
         '.filter-select': '@transactionFilterChanged'
     },
     click: {
-        '.table-refresh-btn': '@tableRefreshClicked'
+        '.table-refresh-btn': '@tableRefreshClicked',
+        '.pagination-btn': '@paginationClicked'
     }
 };
 
 bindEvents(this, this.customEvents);
 
 // ======================
+// PAGINATION METHODS
+// ======================
+
+this.getPageParams = getPageParams.bind(this);
+this.updatePaginationUI = updatePaginationUI.bind(this);
+this.goToPage = goToPage.bind(this);
+
+function getPageParams() {
+    return {
+        page: this.pageState.page,
+        pageSize: this.pageState.pageSize,
+        category: this.pageState.category
+    };
+}
+
+function goToPage(newPage) {
+    if (newPage < 1 || newPage > this.pageState.totalPages) return;
+    this.pageState.page = newPage;
+}
+
+function updatePaginationUI(prevTotalPages) {
+    const { page, total, totalPages, pageSize } = this.pageState;
+
+    // 페이지 정보 텍스트 업데이트
+    const pageInfo = this.element.querySelector('.pagination-info');
+    if (pageInfo) {
+        const start = (page - 1) * pageSize + 1;
+        const end = Math.min(page * pageSize, total);
+        pageInfo.textContent = `${start}-${end} of ${total}`;
+    }
+
+    // prev/next 버튼 상태 업데이트
+    const prevBtn = this.element.querySelector('.pagination-btn[data-action="prev"]');
+    const nextBtn = this.element.querySelector('.pagination-btn[data-action="next"]');
+    if (prevBtn) prevBtn.disabled = page <= 1;
+    if (nextBtn) nextBtn.disabled = page >= totalPages;
+
+    // totalPages가 변경된 경우에만 버튼 재생성
+    const pageNumbers = this.element.querySelector('.page-numbers');
+    if (pageNumbers && prevTotalPages !== totalPages) {
+        pageNumbers.innerHTML = generatePageButtons(totalPages);
+    }
+
+    // active 클래스 토글
+    updateActiveButton.call(this, page);
+}
+
+function generatePageButtons(totalPages) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1)
+        .map(p => `<button class="pagination-btn" data-page="${p}">${p}</button>`)
+        .join('');
+}
+
+function updateActiveButton(currentPage) {
+    const pageButtons = this.element.querySelectorAll('.pagination-btn[data-page]');
+    pageButtons.forEach(btn => {
+        const btnPage = parseInt(btn.dataset.page);
+        btn.classList.toggle('active', btnPage === currentPage);
+    });
+}
+
+// ======================
 // RENDER FUNCTIONS
 // ======================
 
 function renderTransactions(response) {
-    const { data } = response;
-    console.log(`[TransactionTable] renderTransactions: ${data?.length || 0} items`);
+    const { data, pagination } = response;
+    console.log(`[TransactionTable] renderTransactions: ${data?.length || 0} items, page ${pagination?.page}/${pagination?.totalPages}`);
 
     if (!data || !this.tableInstance) return;
 
+    // 이전 totalPages 저장 (비교용)
+    const prevTotalPages = this.pageState.totalPages;
+
+    // 페이지네이션 상태 업데이트
+    if (pagination) {
+        this.pageState.page = pagination.page;
+        this.pageState.total = pagination.total;
+        this.pageState.totalPages = pagination.totalPages;
+    }
+
     this.tableInstance.setData(data);
+    this.updatePaginationUI(prevTotalPages);
 }

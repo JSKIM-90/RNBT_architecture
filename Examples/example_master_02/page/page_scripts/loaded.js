@@ -25,12 +25,12 @@ this.globalDataMappings = [
         refreshInterval: 30000
     },
 
-    // Transactions (refresh: 30s)
+    // Transactions (refresh: 30s, with pagination)
     {
         topic: 'transactions',
         datasetInfo: {
             datasetName: 'transactionapi',
-            param: { category: 'all' }
+            param: { page: 1, pageSize: 10, category: 'all' }
         },
         refreshInterval: 30000
     },

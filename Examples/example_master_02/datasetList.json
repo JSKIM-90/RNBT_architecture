@@ -58,9 +58,19 @@
       "delivery_type": "0",
       "param_info": [
         {
-          "param_name": "limit",
+          "param_name": "page",
           "param_type": "number",
-          "default_value": "20"
+          "default_value": "1"
+        },
+        {
+          "param_name": "pageSize",
+          "param_type": "number",
+          "default_value": "10"
+        },
+        {
+          "param_name": "category",
+          "param_type": "string",
+          "default_value": "all"
         }
       ],
       "data_type": "1",
@@ -68,10 +78,10 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Transactions API (Page/TransactionTable) - refresh every 30s",
+      "description": "Transactions API (Page/TransactionTable) - refresh every 30s, with pagination",
       "dataset_id": "card-transactions-001",
       "name": "cardTransactionsApi",
-      "rest_api": "{\"url\":\"http://localhost:3002/api/card/transactions?limit=#{limit}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3002/api/card/transactions?page=#{page}&pageSize=#{pageSize}&category=#{category}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",

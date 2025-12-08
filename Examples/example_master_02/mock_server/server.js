@@ -61,11 +61,13 @@ app.get('/api/card/summary', (req, res) => {
   }
 });
 
-// GET /api/card/transactions - Transaction list (30s interval)
+// GET /api/card/transactions - Transaction list (30s interval, with pagination)
 app.get('/api/card/transactions', (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const data = generateTransactions(limit);
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 10;
+    const category = req.query.category || 'all';
+    const data = generateTransactions(page, pageSize, category);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to generate transactions' });
@@ -109,7 +111,7 @@ app.get('/', (req, res) => {
       },
       page: {
         'GET /api/card/summary': 'Usage summary (refresh: 30s)',
-        'GET /api/card/transactions?limit=20': 'Transaction list (refresh: 30s)',
+        'GET /api/card/transactions?page=1&pageSize=10&category=all': 'Transaction list (refresh: 30s, paginated)',
         'GET /api/card/spending': 'Spending analysis (refresh: 60s)'
       }
     }
@@ -145,7 +147,7 @@ app.listen(PORT, () => {
   console.log(`    - GET http://localhost:${PORT}/api/card/alerts?limit=5`);
   console.log('  Page (SummaryPanel, TransactionTable, SpendingChart):');
   console.log(`    - GET http://localhost:${PORT}/api/card/summary`);
-  console.log(`    - GET http://localhost:${PORT}/api/card/transactions?limit=20`);
+  console.log(`    - GET http://localhost:${PORT}/api/card/transactions?page=1&pageSize=10&category=all`);
   console.log(`    - GET http://localhost:${PORT}/api/card/spending`);
   console.log('='.repeat(60));
 });

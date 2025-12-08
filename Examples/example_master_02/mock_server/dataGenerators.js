@@ -124,10 +124,22 @@ const merchants = [
   { name: 'Disney+', category: 'entertainment' }
 ];
 
-function generateTransactions(limit = 20) {
+// 전체 트랜잭션 데이터 (시뮬레이션용 캐시)
+let cachedTransactions = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 60000; // 1분
+
+function getAllTransactions() {
+  const now = Date.now();
+  if (cachedTransactions && cacheTimestamp && (now - cacheTimestamp) < CACHE_DURATION) {
+    return cachedTransactions;
+  }
+
+  // 총 53개 트랜잭션 생성 (페이지네이션 테스트용)
+  const total = 53;
   const transactions = [];
 
-  for (let i = 0; i < limit; i++) {
+  for (let i = 0; i < total; i++) {
     const merchant = randomItem(merchants);
     const isRefund = Math.random() > 0.9;
     const amount = isRefund
@@ -139,7 +151,7 @@ function generateTransactions(limit = 20) {
     date.setDate(date.getDate() - daysAgo);
 
     transactions.push({
-      id: `txn-${Date.now()}-${i}`,
+      id: `txn-${now}-${i}`,
       date: date.toISOString().split('T')[0],
       merchant: merchant.name,
       category: merchant.category,
@@ -147,7 +159,36 @@ function generateTransactions(limit = 20) {
     });
   }
 
-  return { data: transactions };
+  cachedTransactions = transactions;
+  cacheTimestamp = now;
+  return transactions;
+}
+
+function generateTransactions(page = 1, pageSize = 10, category = 'all') {
+  const allTransactions = getAllTransactions();
+
+  // 카테고리 필터링
+  const filtered = category === 'all'
+    ? allTransactions
+    : allTransactions.filter(t => t.category === category);
+
+  const total = filtered.length;
+  const totalPages = Math.ceil(total / pageSize);
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const data = filtered.slice(startIndex, endIndex);
+
+  return {
+    data,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    }
+  };
 }
 
 // ======================
