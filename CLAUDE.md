@@ -38,6 +38,21 @@
 - ❌ 가이드에 없는 스타일 임의 추가 (background, box-shadow 등)
 - ✅ 가이드에 있는 스타일만 정확히 적용
 
+**확인 없이 완료라고 말하지 않습니다 (거짓말 금지)**
+- 코드 수정 후 반드시 실제 결과를 확인합니다
+- 스크린샷 비교가 필요하면 캡처하고 직접 눈으로 확인합니다
+- "동일하다", "완료되었다"는 말은 실제로 확인한 후에만 합니다
+- 확인하지 않고 완료라고 말하는 것은 **거짓말**입니다
+- 빨리 끝내고 싶어서 임의로 마무리하는 것은 **최악의 행동**입니다
+
+**예시**:
+- ❌ 코드 수정 → 확인 없이 → "해결되었습니다"
+- ✅ 코드 수정 → 스크린샷 캡처 → 원본과 비교 → 확인 후 결과 보고
+- ❌ "동일해 보입니다" (실제 비교 안 함)
+- ✅ "스크린샷을 비교한 결과 헤더 정렬이 일치합니다" (실제 비교 후)
+- ❌ 작업을 빨리 끝내기 위해 확인 생략
+- ✅ 시간이 걸리더라도 정확하게 확인
+
 ---
 
 ## 핵심 모듈 구성
@@ -1323,6 +1338,49 @@ this.eventBusHandlers = {
 
 **해결**: `layout: 'fitData'`로 변경하여 테이블이 고정 너비를 갖도록 함
 
+### Tabulator 커스텀 스타일링 가이드
+
+Tabulator 기본 스타일을 재정의할 때 알아야 할 핵심 사항:
+
+| 요소 | 기본 문제 | 해결 방법 |
+|------|----------|----------|
+| `.tabulator-table` | `background: white` (흰색 배경) | `background: transparent` |
+| `.tabulator-row` | 기본 높이가 다름 | `min-height`, `height` 모두 지정 |
+| `.tabulator-col-title` | 우측 패딩 존재 (텍스트 중앙 정렬 방해) | `padding-right: 0 !important` |
+| 홀수/짝수 행 | 클래스로 구분 | `.tabulator-row-odd`, `.tabulator-row-even` 활용 |
+
+**예시: 투명 배경 + 커스텀 행 스타일**:
+```css
+/* 테이블 배경 투명화 */
+.tabulator .tabulator-table {
+    background: transparent;
+}
+
+/* 행 높이 고정 */
+.tabulator .tabulator-row {
+    background: transparent !important;
+    min-height: 28px;
+    height: 28px;
+}
+
+/* 헤더 텍스트 중앙 정렬 */
+.tabulator .tabulator-header .tabulator-col-title {
+    text-align: center;
+    padding-right: 0 !important;
+}
+
+/* 홀수/짝수 행 배경색 */
+.tabulator .tabulator-row.tabulator-row-odd .tabulator-cell {
+    background: rgba(59, 76, 70, 0.3) !important;
+}
+
+.tabulator .tabulator-row.tabulator-row-even .tabulator-cell {
+    background: rgba(59, 76, 70, 0.7) !important;
+}
+```
+
+**참고 문서**: https://tabulator.info/docs/6.3/style
+
 ---
 
 ## 향후 확장 가능성
@@ -1456,9 +1514,15 @@ example_master_01/
 
 ## 버전 정보
 
-**문서 버전**: 1.5.2
-**최종 업데이트**: 2025-12-02
+**문서 버전**: 1.6.0
+**최종 업데이트**: 2025-12-08
 **주요 변경사항**:
+- v1.6.0: 작업 규칙 및 Tabulator 가이드 추가 (2025-12-08)
+  - **확인 없이 완료라고 말하지 않습니다 (거짓말 금지)** 규칙 추가
+  - 코드 수정 후 반드시 실제 결과(스크린샷 등) 확인 필수
+  - 빨리 끝내고 싶어서 임의로 마무리하는 것은 최악의 행동
+  - Tabulator 커스텀 스타일링 가이드 추가 (트러블슈팅 섹션)
+  - 주요 CSS 오버라이드: `.tabulator-table` 배경, `.tabulator-row` 높이, `.tabulator-col-title` 패딩
 - v1.5.2: Preview 컨테이너 스타일 CONTAINER_STYLES.md 준수 원칙 추가 (2025-12-02)
   - Preview 파일의 `#component-container` 스타일은 CONTAINER_STYLES.md를 따라야 함
   - 임의의 고정값 대신 MD에 명시된 값 사용 (예: `calc((100vh - 60px) / 2)`)
