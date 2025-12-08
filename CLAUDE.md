@@ -1447,7 +1447,7 @@ WKit.enableDebugMode({
 
 **구조**:
 ```
-example_basic_01/
+Examples/example_basic_01/
 ├── page/
 │   ├── page_scripts/          # 페이지 라이프사이클
 │   └── components/            # SensorPanel, AlertList, TrendChart
@@ -1469,7 +1469,7 @@ example_basic_01/
 
 **구조**:
 ```
-example_master_01/
+Examples/example_master_01/
 ├── master/
 │   ├── common_component/      # 페이지 스크립트 대체
 │   └── components/            # Header, Sidebar
@@ -1532,7 +1532,7 @@ example_master_01/
   - 모든 예제의 CSS 파일을 컨테이너 ID 중심 nesting으로 변경
   - preview.html 파일의 inline CSS도 동일하게 nesting 적용
   - `&:hover`, `&[data-*]` 등 중첩 선택자 활용
-  - 변환된 파일: example_basic_01, example_master_01, example_master_02 (총 24개 파일)
+  - 변환된 파일: Examples/example_basic_01, Examples/example_master_01, Examples/example_master_02 (총 24개 파일)
 - v1.5.0: Cleanup 순서 대칭화 및 3D 컴포넌트 정리 개선 (2025-12-02)
   - `disposeAllThreeResources`에서 3D 컴포넌트 일괄 정리 (subscriptions, customEvents, datasetInfo)
   - 3D 컴포넌트는 DOM이 아니라 destroy 콜백 없음 → 페이지에서 일괄 정리
@@ -1544,8 +1544,8 @@ example_master_01/
   - 적용 기준 및 일반화 패턴 문서화
   - 3D Raycasting 설정에 실제 적용
 - v1.3.0: 예제 폴더 구조화 및 문서 정비 (2025-11-28)
-  - example_basic_01: Page Only 아키텍처 (IoT 대시보드)
-  - example_master_01: Master + Page 아키텍처 (대시보드)
+  - Examples/example_basic_01: Page Only 아키텍처 (IoT 대시보드)
+  - Examples/example_master_01: Master + Page 아키텍처 (대시보드)
   - datasetList.json v3.2.0 포맷 통일
   - 에러 처리 패턴: Guard clause + 외부 라이브러리만 try-catch
   - ResizeObserver 패턴 (차트 컴포넌트)
