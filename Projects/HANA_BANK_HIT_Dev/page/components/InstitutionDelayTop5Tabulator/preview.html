@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>타 기관 지연 TOP5 (Tabulator) - Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a1a;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Container: Figma 선택 요소 크기 */
+        #institution-delay-top5-tabulator-container {
+            width: 478px;
+            height: 254px;
+            overflow: auto;
+        }
+
+        /* Component Styles */
+        #institution-delay-top5-tabulator-container {
+            .institution-delay-top5-tabulator {
+                background: rgba(42, 42, 42, 0.5);
+                border: 0.3px solid #778985;
+                border-radius: 16px;
+                padding: 14px 24px 16px 24px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                position: relative;
+                width: 100%;
+                height: 100%;
+                font-family: 'Pretendard', sans-serif;
+            }
+
+            .institution-delay-top5-tabulator::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                box-shadow: 4px 4px 4px 0px inset rgba(0, 0, 0, 0.06);
+                border-radius: 16px;
+            }
+
+            .header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                height: 38px;
+                width: 100%;
+            }
+
+            .title {
+                display: flex;
+                align-items: center;
+                gap: 9px;
+            }
+
+            .title-icon {
+                width: 16.68px;
+                height: 18.27px;
+            }
+
+            .title-text {
+                font-weight: 600;
+                font-size: 18px;
+                color: #e9ebeb;
+                white-space: nowrap;
+            }
+
+            .table-container {
+                flex: 1;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            /* Tabulator Custom Theme */
+            .tabulator {
+                background: transparent;
+                border: 1px solid #3b4c46;
+                border-radius: 0 3.8px 3.8px 0;
+                font-family: 'Pretendard', sans-serif;
+                font-size: 14px;
+            }
+
+            .tabulator .tabulator-header {
+                background: transparent;
+                border-bottom: none;
+            }
+
+            .tabulator .tabulator-header .tabulator-col {
+                background: #3b4c46;
+                border-right: 0.95px solid transparent;
+                border-radius: 6px;
+                margin-right: 0.95px;
+            }
+
+            .tabulator .tabulator-header .tabulator-col:last-child {
+                margin-right: 0;
+            }
+
+            .tabulator .tabulator-header .tabulator-col-content {
+                padding: 3.36px 12.33px;
+            }
+
+            .tabulator .tabulator-header .tabulator-col-title {
+                font-weight: 600;
+                font-size: 13px;
+                color: #e4e4e4;
+                text-align: center;
+                white-space: nowrap;
+                overflow: visible;
+                text-overflow: clip;
+            }
+
+            .tabulator .tabulator-header .tabulator-col .tabulator-col-sorter {
+                display: none;
+            }
+
+            .tabulator .tabulator-tableholder {
+                background: transparent;
+            }
+
+            .tabulator .tabulator-row {
+                background: transparent;
+                border-bottom: 1px solid transparent;
+                min-height: 32px;
+            }
+
+            .tabulator .tabulator-row:nth-child(odd) {
+                background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                            linear-gradient(90deg, rgba(59, 76, 70, 0.3) 0%, rgba(59, 76, 70, 0.3) 100%);
+            }
+
+            .tabulator .tabulator-row:nth-child(even) {
+                background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                            linear-gradient(90deg, rgba(59, 76, 70, 0.7) 0%, rgba(59, 76, 70, 0.7) 100%);
+            }
+
+            .tabulator .tabulator-row:hover {
+                background: rgba(91, 220, 198, 0.1);
+            }
+
+            .tabulator .tabulator-cell {
+                border-right: 0.75px dashed #004e42;
+                padding: 5.7px 10px;
+                font-weight: 500;
+                font-size: 14px;
+                color: #f1f1f1;
+                letter-spacing: -0.28px;
+            }
+
+            .tabulator .tabulator-cell:last-child {
+                border-right: none;
+            }
+
+            .tabulator .tabulator-cell.category-cell {
+                font-size: 11px;
+                font-weight: 600;
+                text-align: center;
+                padding: 0 6px;
+                line-height: 12px;
+            }
+
+            .tabulator .tabulator-cell.category-cell.electronic {
+                color: #5bdcc6;
+                background: linear-gradient(180deg, rgba(147, 242, 227, 0.1) 0%, rgba(147, 242, 227, 0) 100%),
+                            linear-gradient(90deg, rgba(215, 237, 230, 0.1) 0%, rgba(215, 237, 230, 0.1) 100%);
+                box-shadow: 1px 0px 0px 0px inset rgba(13, 239, 203, 0.5),
+                            -3px 0px 6px 0px inset rgba(0, 0, 0, 0.35);
+                border-radius: 4px 0 0 4px;
+            }
+
+            .tabulator .tabulator-cell.category-cell.openbanking {
+                color: #5bbadc;
+                background: linear-gradient(180deg, rgba(147, 228, 242, 0) 0%, rgba(147, 228, 242, 0.1) 100%),
+                            linear-gradient(90deg, rgba(215, 237, 230, 0.1) 0%, rgba(215, 237, 230, 0.1) 100%);
+                box-shadow: 1px 0px 0px 0px inset rgba(13, 231, 239, 0.5),
+                            -3px 0px 6px 0px inset rgba(0, 0, 0, 0.35);
+                border-radius: 4px 0 0 4px;
+            }
+
+            .tabulator .tabulator-cell.name-cell {
+                font-size: 13px;
+                color: #e9ebeb;
+                text-align: center;
+                letter-spacing: -0.26px;
+            }
+
+            .tabulator .tabulator-cell.number-cell {
+                text-align: right;
+            }
+
+            .tabulator .tabulator-placeholder {
+                color: #778985;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="institution-delay-top5-tabulator-container">
+        <div class="institution-delay-top5-tabulator">
+            <!-- Header -->
+            <div class="header">
+                <div class="title">
+                    <img class="title-icon" src="assets/icon-cube.svg" alt="icon">
+                    <span class="title-text">타 기관 지연 TOP5</span>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="table-container" id="tabulator-preview"></div>
+        </div>
+    </div>
+
+    <script>
+        // Mock data for preview (Figma 데이터 기반)
+        const mockData = [
+            { category: 'electronic', name: '국민은행', timeout: 1009, delay: 0, inquiry: 0, deposit: 0 },
+            { category: 'openbanking', name: '카카오뱅크', timeout: 834, delay: 0, inquiry: 0, deposit: 0 },
+            { category: 'electronic', name: '지역농협', timeout: 819, delay: 0, inquiry: 0, deposit: 0 },
+            { category: 'openbanking', name: '농협은행', timeout: 677, delay: 0, inquiry: 0, deposit: 0 },
+            { category: 'openbanking', name: '우리은행', timeout: 623, delay: 1, inquiry: 0, deposit: 0 }
+        ];
+
+        // Initialize Tabulator
+        document.addEventListener('DOMContentLoaded', () => {
+            const table = new Tabulator('#tabulator-preview', {
+                layout: 'fitColumns',
+                height: '100%',
+                placeholder: '데이터가 없습니다',
+                rowHeight: 32,
+                headerHeight: 24,
+                data: mockData,
+                columns: [
+                    {
+                        title: '',
+                        field: 'category',
+                        width: 40,
+                        hozAlign: 'center',
+                        headerSort: false,
+                        formatter: function(cell) {
+                            const value = cell.getValue();
+                            cell.getElement().classList.add('category-cell');
+                            cell.getElement().classList.add(value);
+
+                            if (value === 'electronic') {
+                                return '전자';
+                            } else {
+                                return '<span style="display:flex;flex-direction:column;align-items:center;line-height:12px;"><span>오픈</span><span>뱅킹</span></span>';
+                            }
+                        }
+                    },
+                    {
+                        title: '기관명',
+                        field: 'name',
+                        width: 93,
+                        hozAlign: 'center',
+                        headerHozAlign: 'center',
+                        formatter: function(cell) {
+                            cell.getElement().classList.add('name-cell');
+                            return cell.getValue();
+                        }
+                    },
+                    {
+                        title: 'time_out',
+                        field: 'timeout',
+                        hozAlign: 'right',
+                        headerHozAlign: 'center',
+                        formatter: function(cell) {
+                            cell.getElement().classList.add('number-cell');
+                            const value = cell.getValue();
+                            return value !== undefined ? value.toLocaleString() : '0';
+                        }
+                    },
+                    {
+                        title: '지연',
+                        field: 'delay',
+                        hozAlign: 'right',
+                        headerHozAlign: 'center',
+                        formatter: function(cell) {
+                            cell.getElement().classList.add('number-cell');
+                            const value = cell.getValue();
+                            return value !== undefined ? value.toLocaleString() : '0';
+                        }
+                    },
+                    {
+                        title: '조회대행',
+                        field: 'inquiry',
+                        hozAlign: 'right',
+                        headerHozAlign: 'center',
+                        formatter: function(cell) {
+                            cell.getElement().classList.add('number-cell');
+                            const value = cell.getValue();
+                            return value !== undefined ? value.toLocaleString() : '0';
+                        }
+                    },
+                    {
+                        title: '입지대행',
+                        field: 'deposit',
+                        hozAlign: 'right',
+                        headerHozAlign: 'center',
+                        formatter: function(cell) {
+                            cell.getElement().classList.add('number-cell');
+                            const value = cell.getValue();
+                            return value !== undefined ? value.toLocaleString() : '0';
+                        }
+                    }
+                ],
+                rowClick: function(e, row) {
+                    console.log('Row clicked:', row.getData());
+                }
+            });
+        });
+    </script>
+</body>
+</html>

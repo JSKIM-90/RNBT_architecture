@@ -1,0 +1,200 @@
+/* Institution Delay TOP5 Tabulator Component */
+/* Font: Pretendard */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+#institution-delay-top5-tabulator-container {
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    .institution-delay-top5-tabulator {
+        background: rgba(42, 42, 42, 0.5);
+        border: 0.3px solid #778985;
+        border-radius: 16px;
+        padding: 14px 24px 16px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        font-family: 'Pretendard', sans-serif;
+    }
+
+    /* Inner shadow overlay */
+    .institution-delay-top5-tabulator::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        box-shadow: 4px 4px 4px 0px inset rgba(0, 0, 0, 0.06);
+        border-radius: 16px;
+    }
+
+    /* Header */
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 38px;
+        width: 100%;
+    }
+
+    .title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .title-icon {
+        width: 16.68px;
+        height: 18.27px;
+    }
+
+    .title-text {
+        font-weight: 600;
+        font-size: 18px;
+        color: #e9ebeb;
+        white-space: nowrap;
+    }
+
+    /* Table Container */
+    .table-container {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* ===========================
+     * Tabulator Custom Theme
+     * Figma 디자인에 맞춘 스타일링
+     * =========================== */
+
+    .tabulator {
+        background: transparent;
+        border: 1px solid #3b4c46;
+        border-radius: 0 3.8px 3.8px 0;
+        font-family: 'Pretendard', sans-serif;
+    }
+
+    /* Header Row */
+    .tabulator .tabulator-header {
+        background: transparent;
+        border-bottom: none;
+    }
+
+    .tabulator .tabulator-header .tabulator-col {
+        background: #3b4c46;
+        border-right: 0.95px solid transparent;
+        border-radius: 6px;
+        margin-right: 0.95px;
+    }
+
+    .tabulator .tabulator-header .tabulator-col:last-child {
+        margin-right: 0;
+    }
+
+    .tabulator .tabulator-header .tabulator-col-content {
+        padding: 3.36px 12.33px;
+    }
+
+    .tabulator .tabulator-header .tabulator-col-title {
+        font-weight: 600;
+        font-size: 13px;
+        color: #e4e4e4;
+        text-align: center;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    /* Hide sort arrows - optional */
+    .tabulator .tabulator-header .tabulator-col .tabulator-col-sorter {
+        display: none;
+    }
+
+    /* Data Rows */
+    .tabulator .tabulator-tableholder {
+        background: transparent;
+    }
+
+    .tabulator .tabulator-row {
+        background: transparent;
+        border-bottom: 1px solid transparent;
+    }
+
+    .tabulator .tabulator-row:nth-child(odd) {
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                    linear-gradient(90deg, rgba(59, 76, 70, 0.3) 0%, rgba(59, 76, 70, 0.3) 100%);
+    }
+
+    .tabulator .tabulator-row:nth-child(even) {
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.3) 100%),
+                    linear-gradient(90deg, rgba(59, 76, 70, 0.7) 0%, rgba(59, 76, 70, 0.7) 100%);
+    }
+
+    .tabulator .tabulator-row:hover {
+        background: rgba(91, 220, 198, 0.1);
+    }
+
+    /* Cells */
+    .tabulator .tabulator-cell {
+        border-right: 0.75px dashed #004e42;
+        padding: 5.7px 10px;
+        font-weight: 500;
+        font-size: 14px;
+        color: #f1f1f1;
+        letter-spacing: -0.28px;
+    }
+
+    .tabulator .tabulator-cell:last-child {
+        border-right: none;
+    }
+
+    /* Category cell (first column) */
+    .tabulator .tabulator-cell.category-cell {
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+        padding: 0 6px;
+    }
+
+    .tabulator .tabulator-cell.category-cell.electronic {
+        color: #5bdcc6;
+        background: linear-gradient(180deg, rgba(147, 242, 227, 0.1) 0%, rgba(147, 242, 227, 0) 100%),
+                    linear-gradient(90deg, rgba(215, 237, 230, 0.1) 0%, rgba(215, 237, 230, 0.1) 100%);
+        box-shadow: 1px 0px 0px 0px inset rgba(13, 239, 203, 0.5),
+                    -3px 0px 6px 0px inset rgba(0, 0, 0, 0.35);
+        border-radius: 4px 0 0 4px;
+    }
+
+    .tabulator .tabulator-cell.category-cell.openbanking {
+        color: #5bbadc;
+        background: linear-gradient(180deg, rgba(147, 228, 242, 0) 0%, rgba(147, 228, 242, 0.1) 100%),
+                    linear-gradient(90deg, rgba(215, 237, 230, 0.1) 0%, rgba(215, 237, 230, 0.1) 100%);
+        box-shadow: 1px 0px 0px 0px inset rgba(13, 231, 239, 0.5),
+                    -3px 0px 6px 0px inset rgba(0, 0, 0, 0.35);
+        border-radius: 4px 0 0 4px;
+    }
+
+    /* Name cell */
+    .tabulator .tabulator-cell.name-cell {
+        font-size: 13px;
+        color: #e9ebeb;
+        text-align: center;
+        letter-spacing: -0.26px;
+    }
+
+    /* Number cells - right aligned */
+    .tabulator .tabulator-cell.number-cell {
+        text-align: right;
+    }
+
+    /* Placeholder */
+    .tabulator .tabulator-placeholder {
+        color: #778985;
+        font-size: 14px;
+    }
+}
