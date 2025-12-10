@@ -106,6 +106,33 @@
             border-radius: 4px;
         }
 
+        #sensor-detail-popup-container .popup-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #sensor-detail-popup-container .popup-refresh {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            color: #8b95a5;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        #sensor-detail-popup-container .popup-refresh:hover {
+            background: #374151;
+            color: #3b82f6;
+        }
+
+        #sensor-detail-popup-container .popup-refresh.loading {
+            animation: spin 1s linear infinite;
+        }
+
         #sensor-detail-popup-container .popup-close {
             width: 36px;
             height: 36px;
@@ -353,6 +380,11 @@
         #sensor-detail-popup-container .btn-primary:hover {
             background: #2563eb;
         }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -368,7 +400,10 @@
                         <h3 class="popup-title">Rack A-01</h3>
                         <span class="popup-zone">Zone-A</span>
                     </div>
-                    <button class="popup-close" data-action="close">&times;</button>
+                    <div class="popup-actions">
+                        <button class="popup-refresh" data-action="refresh" title="Refresh">&#8635;</button>
+                        <button class="popup-close" data-action="close">&times;</button>
+                    </div>
                 </div>
 
                 <div class="popup-body">
@@ -544,6 +579,18 @@
         // Event listeners
         document.querySelectorAll('[data-action="close"]').forEach(btn => {
             btn.addEventListener('click', hidePopup);
+        });
+
+        document.querySelector('[data-action="refresh"]').addEventListener('click', (e) => {
+            const btn = e.target.closest('.popup-refresh');
+            btn.classList.add('loading');
+
+            // Simulate API call
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                renderChart();
+                alert('Data refreshed! (In runtime, this fetches latest data from API)');
+            }, 1000);
         });
 
         document.querySelector('[data-action="configure"]').addEventListener('click', () => {

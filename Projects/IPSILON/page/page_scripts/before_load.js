@@ -24,10 +24,11 @@ this.eventBusHandlers = {
         console.log('[Page] Sensor clicked:', sensorId);
 
         // Fetch sensor detail with history
-        const response = await fetchData(this, 'sensorDetail', { id: sensorId });
+        const result = await fetchData(this, 'sensorDetail', { id: sensorId });
+        const { data } = result?.response || {};
 
-        if (response?.data) {
-            const { sensor, history } = response.data;
+        if (data) {
+            const { sensor, history } = data;
 
             // Get popup instance and show detail
             const iter = makeIterator(this);
@@ -62,11 +63,36 @@ this.eventBusHandlers = {
         btn.classList.add('active');
 
         // Fetch new history data
-        const response = await fetchData(this, 'sensorDetail', { id: sensorId, period });
+        const result = await fetchData(this, 'sensorDetail', { id: sensorId, period });
+        const { data } = result?.response || {};
 
-        if (response?.data?.history) {
+        if (data?.history) {
             // Re-render chart with new data
-            targetInstance.showDetail(targetInstance.currentSensor, response.data.history);
+            targetInstance.showDetail(targetInstance.currentSensor, data.history);
+        }
+    },
+
+    // SensorDetailPopup: Refresh button clicked
+    '@refreshDetailClicked': async ({ event, targetInstance }) => {
+        const sensorId = targetInstance.currentSensor?.id;
+        if (!sensorId) return;
+
+        console.log('[Page] Refresh detail:', sensorId);
+
+        // Show loading state
+        const refreshBtn = event.target.closest('.popup-refresh');
+        if (refreshBtn) refreshBtn.classList.add('loading');
+
+        // Fetch latest data
+        const result = await fetchData(this, 'sensorDetail', { id: sensorId });
+        const { data } = result?.response || {};
+
+        // Remove loading state
+        if (refreshBtn) refreshBtn.classList.remove('loading');
+
+        if (data) {
+            const { sensor, history } = data;
+            targetInstance.showDetail(sensor, history);
         }
     },
 

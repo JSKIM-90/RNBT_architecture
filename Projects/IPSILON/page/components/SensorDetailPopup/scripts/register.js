@@ -7,6 +7,7 @@
  *
  * Events:
  * - @popupClosed
+ * - @refreshDetailClicked
  * - @periodChanged (period)
  * - @configureClicked (sensorId)
  */
@@ -20,6 +21,7 @@ function initComponent() {
     this.customEvents = {
         click: {
             '[data-action="close"]': '@popupClosed',
+            '[data-action="refresh"]': '@refreshDetailClicked',
             '.chart-btn[data-period]': '@periodChanged',
             '[data-action="configure"]': '@configureClicked'
         }

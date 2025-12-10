@@ -66,6 +66,33 @@
         border-radius: 4px;
     }
 
+    & .popup-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    & .popup-refresh {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: transparent;
+        color: #8b95a5;
+        font-size: 20px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: all 0.2s;
+
+        &:hover {
+            background: #374151;
+            color: #3b82f6;
+        }
+
+        &.loading {
+            animation: spin 1s linear infinite;
+        }
+    }
+
     & .popup-close {
         width: 36px;
         height: 36px;
@@ -328,5 +355,10 @@
         &:hover {
             background: #2563eb;
         }
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
     }
 }
