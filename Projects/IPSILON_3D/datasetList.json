@@ -1,0 +1,21 @@
+{
+  "version": "3.2.0",
+  "data": [
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Single sensor detail with history (on-demand)",
+      "dataset_id": "sensor-detail-001",
+      "name": "sensorDetail",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/sensor/:id/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    }
+  ],
+  "datasource": []
+}
