@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SensorDetailPopup Preview</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f1219;
+            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .demo-controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+        }
+
+        .demo-btn {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            background: #3b82f6;
+            color: #ffffff;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .demo-btn:hover {
+            background: #2563eb;
+        }
+
+        #sensor-detail-popup-container {
+            /* Layout (from CONTAINER_STYLES.md) */
+            width: auto !important;
+            height: auto !important;
+            padding: 0 !important;
+            overflow: visible !important;
+
+            /* Visual */
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        #sensor-detail-popup-container .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        #sensor-detail-popup-container .popup-container {
+            width: 700px;
+            max-height: 90vh;
+            background: #1e2332;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #sensor-detail-popup-container .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            background: #252b3d;
+            border-bottom: 1px solid #2d3548;
+        }
+
+        #sensor-detail-popup-container .popup-title-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #sensor-detail-popup-container .popup-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        #sensor-detail-popup-container .popup-zone {
+            font-size: 12px;
+            color: #8b95a5;
+            background: #1a1f2e;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        #sensor-detail-popup-container .popup-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: transparent;
+            color: #8b95a5;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        #sensor-detail-popup-container .popup-close:hover {
+            background: #374151;
+            color: #ffffff;
+        }
+
+        #sensor-detail-popup-container .popup-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        #sensor-detail-popup-container .current-status-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        #sensor-detail-popup-container .status-card {
+            background: #252b3d;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        #sensor-detail-popup-container .status-card.temperature { border-top: 3px solid #f59e0b; }
+        #sensor-detail-popup-container .status-card.humidity { border-top: 3px solid #3b82f6; }
+        #sensor-detail-popup-container .status-card.status { border-top: 3px solid #10b981; }
+
+        #sensor-detail-popup-container .status-label {
+            font-size: 12px;
+            color: #8b95a5;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        #sensor-detail-popup-container .status-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        #sensor-detail-popup-container .temp-unit,
+        #sensor-detail-popup-container .humidity-unit {
+            font-size: 18px;
+            color: #8b95a5;
+        }
+
+        #sensor-detail-popup-container .threshold-info {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #6b7280;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        #sensor-detail-popup-container .threshold-warning { color: #fbbf24; }
+        #sensor-detail-popup-container .threshold-critical { color: #f87171; }
+
+        #sensor-detail-popup-container .status-badge-large {
+            display: inline-block;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 20px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        #sensor-detail-popup-container .status-badge-large[data-status="normal"] {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+        }
+
+        #sensor-detail-popup-container .status-badge-large[data-status="warning"] {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        #sensor-detail-popup-container .status-badge-large[data-status="critical"] {
+            background: rgba(248, 113, 113, 0.15);
+            color: #f87171;
+        }
+
+        #sensor-detail-popup-container .last-updated-info {
+            margin-top: 8px;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        #sensor-detail-popup-container .chart-section {
+            background: #252b3d;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        #sensor-detail-popup-container .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        #sensor-detail-popup-container .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        #sensor-detail-popup-container .chart-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        #sensor-detail-popup-container .chart-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            background: #1a1f2e;
+            color: #8b95a5;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #sensor-detail-popup-container .chart-btn:hover {
+            background: #374151;
+            color: #ffffff;
+        }
+
+        #sensor-detail-popup-container .chart-btn.active {
+            background: #3b82f6;
+            color: #ffffff;
+        }
+
+        #sensor-detail-popup-container .chart-container {
+            height: 200px;
+            width: 100%;
+        }
+
+        #sensor-detail-popup-container .alert-section {
+            background: #252b3d;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        #sensor-detail-popup-container .alert-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0 0 12px 0;
+        }
+
+        #sensor-detail-popup-container .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        #sensor-detail-popup-container .alert-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #1a1f2e;
+            border-radius: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        #sensor-detail-popup-container .alert-item[data-severity="warning"] {
+            border-left-color: #fbbf24;
+        }
+
+        #sensor-detail-popup-container .alert-item[data-severity="critical"] {
+            border-left-color: #f87171;
+        }
+
+        #sensor-detail-popup-container .alert-content {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #sensor-detail-popup-container .alert-message {
+            font-size: 13px;
+            color: #e0e6ed;
+        }
+
+        #sensor-detail-popup-container .alert-time {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        #sensor-detail-popup-container .popup-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px;
+            background: #252b3d;
+            border-top: 1px solid #2d3548;
+        }
+
+        #sensor-detail-popup-container .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #sensor-detail-popup-container .btn-secondary {
+            background: #374151;
+            color: #e0e6ed;
+        }
+
+        #sensor-detail-popup-container .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        #sensor-detail-popup-container .btn-primary {
+            background: #3b82f6;
+            color: #ffffff;
+        }
+
+        #sensor-detail-popup-container .btn-primary:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-controls">
+        <button class="demo-btn" onclick="showPopup()">Show Popup</button>
+    </div>
+
+    <div id="sensor-detail-popup-container">
+        <div class="popup-overlay" style="display: none;">
+            <div class="popup-container">
+                <div class="popup-header">
+                    <div class="popup-title-area">
+                        <h3 class="popup-title">Rack A-01</h3>
+                        <span class="popup-zone">Zone-A</span>
+                    </div>
+                    <button class="popup-close" data-action="close">&times;</button>
+                </div>
+
+                <div class="popup-body">
+                    <div class="current-status-section">
+                        <div class="status-card temperature">
+                            <div class="status-label">Temperature</div>
+                            <div class="status-value">
+                                <span class="current-temp">29.5</span>
+                                <span class="temp-unit">&deg;C</span>
+                            </div>
+                            <div class="threshold-info">
+                                <span class="threshold-warning">Warning: <span class="threshold-warning-val">28&deg;C</span></span>
+                                <span class="threshold-critical">Critical: <span class="threshold-critical-val">35&deg;C</span></span>
+                            </div>
+                        </div>
+
+                        <div class="status-card humidity">
+                            <div class="status-label">Humidity</div>
+                            <div class="status-value">
+                                <span class="current-humidity">52</span>
+                                <span class="humidity-unit">%</span>
+                            </div>
+                        </div>
+
+                        <div class="status-card status">
+                            <div class="status-label">Status</div>
+                            <div class="status-badge-large" data-status="warning">warning</div>
+                            <div class="last-updated-info">
+                                Last updated: <span class="detail-last-updated">12/10 14:30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <div class="chart-header">
+                            <h4 class="chart-title">Temperature History (24h)</h4>
+                            <div class="chart-controls">
+                                <button class="chart-btn active" data-period="24h">24h</button>
+                                <button class="chart-btn" data-period="7d">7d</button>
+                                <button class="chart-btn" data-period="30d">30d</button>
+                            </div>
+                        </div>
+                        <div class="chart-container" id="temp-chart"></div>
+                    </div>
+
+                    <div class="alert-section">
+                        <h4 class="alert-title">Recent Alerts</h4>
+                        <div class="alert-list">
+                            <div class="alert-item" data-severity="warning">
+                                <span class="alert-icon">⚡</span>
+                                <div class="alert-content">
+                                    <span class="alert-message">Temperature reached 29.5°C (warning)</span>
+                                    <span class="alert-time">12/10 14:15</span>
+                                </div>
+                            </div>
+                            <div class="alert-item" data-severity="critical">
+                                <span class="alert-icon">⚠️</span>
+                                <div class="alert-content">
+                                    <span class="alert-message">Temperature reached 36.2°C (critical)</span>
+                                    <span class="alert-time">12/10 10:42</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="popup-footer">
+                    <button class="btn btn-secondary" data-action="close">Close</button>
+                    <button class="btn btn-primary" data-action="configure">Configure Threshold</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        function showPopup() {
+            const overlay = document.querySelector('.popup-overlay');
+            overlay.style.display = 'flex';
+            renderChart();
+        }
+
+        function hidePopup() {
+            const overlay = document.querySelector('.popup-overlay');
+            overlay.style.display = 'none';
+        }
+
+        function renderChart() {
+            const chartContainer = document.getElementById('temp-chart');
+
+            if (!chart) {
+                chart = echarts.init(chartContainer);
+            }
+
+            // Generate mock history data
+            const timestamps = [];
+            const temperatures = [];
+            const now = new Date();
+
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 3600000);
+                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
+
+                const baseTemp = 24 + Math.sin(i / 4) * 3;
+                const noise = (Math.random() - 0.5) * 2;
+                temperatures.push(Math.round((baseTemp + noise) * 10) / 10);
+            }
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#1e2332',
+                    borderColor: '#2d3548',
+                    textStyle: { color: '#e0e6ed' }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '10%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: timestamps,
+                    axisLine: { lineStyle: { color: '#2d3548' } },
+                    axisLabel: { color: '#8b95a5', fontSize: 10 }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { lineStyle: { color: '#2d3548' } },
+                    axisLabel: { color: '#8b95a5', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#2d3548', type: 'dashed' } }
+                },
+                series: [
+                    {
+                        name: 'Temperature',
+                        type: 'line',
+                        data: temperatures,
+                        smooth: true,
+                        lineStyle: { color: '#3b82f6', width: 2 },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                                { offset: 1, color: 'rgba(59, 130, 246, 0.05)' }
+                            ])
+                        },
+                        itemStyle: { color: '#3b82f6' }
+                    },
+                    {
+                        name: 'Warning',
+                        type: 'line',
+                        data: timestamps.map(() => 28),
+                        lineStyle: { color: '#fbbf24', width: 1, type: 'dashed' },
+                        itemStyle: { color: '#fbbf24' },
+                        symbol: 'none'
+                    },
+                    {
+                        name: 'Critical',
+                        type: 'line',
+                        data: timestamps.map(() => 35),
+                        lineStyle: { color: '#f87171', width: 1, type: 'dashed' },
+                        itemStyle: { color: '#f87171' },
+                        symbol: 'none'
+                    }
+                ]
+            };
+
+            chart.setOption(option);
+        }
+
+        // Event listeners
+        document.querySelectorAll('[data-action="close"]').forEach(btn => {
+            btn.addEventListener('click', hidePopup);
+        });
+
+        document.querySelector('[data-action="configure"]').addEventListener('click', () => {
+            alert('Configure threshold (Feature not implemented)');
+        });
+
+        document.querySelectorAll('.chart-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                renderChart();
+            });
+        });
+
+        // Close on overlay click
+        document.querySelector('.popup-overlay').addEventListener('click', (e) => {
+            if (e.target.classList.contains('popup-overlay')) {
+                hidePopup();
+            }
+        });
+    </script>
+</body>
+</html>

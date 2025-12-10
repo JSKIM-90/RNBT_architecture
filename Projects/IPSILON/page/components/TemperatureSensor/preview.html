@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TemperatureSensor Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f1219;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #temperature-sensor-container {
+            /* Layout (from CONTAINER_STYLES.md) */
+            width: 100% !important;
+            height: calc(100vh - 100px) !important;
+            padding: 20px !important;
+            overflow: auto !important;
+
+            /* Visual */
+            background: #1a1f2e;
+            color: #e0e6ed;
+            font-family: 'Segoe UI', sans-serif;
+            border-radius: 12px;
+        }
+
+        #temperature-sensor-container .sensor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #2d3548;
+        }
+
+        #temperature-sensor-container .sensor-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+            color: #ffffff;
+        }
+
+        #temperature-sensor-container .sensor-summary {
+            display: flex;
+            gap: 20px;
+        }
+
+        #temperature-sensor-container .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        #temperature-sensor-container .summary-item.normal { color: #4ade80; }
+        #temperature-sensor-container .summary-item.warning { color: #fbbf24; }
+        #temperature-sensor-container .summary-item.critical { color: #f87171; }
+
+        #temperature-sensor-container .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        #temperature-sensor-container .status-dot.normal { background: #4ade80; }
+        #temperature-sensor-container .status-dot.warning { background: #fbbf24; }
+        #temperature-sensor-container .status-dot.critical { background: #f87171; animation: pulse 1.5s infinite; }
+
+        #temperature-sensor-container .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        #temperature-sensor-container .sensor-card {
+            background: #242937;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        #temperature-sensor-container .sensor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border-color: #3b82f6;
+        }
+
+        #temperature-sensor-container .sensor-card[data-status="normal"] {
+            border-left: 4px solid #4ade80;
+        }
+
+        #temperature-sensor-container .sensor-card[data-status="warning"] {
+            border-left: 4px solid #fbbf24;
+            background: #2a2520;
+        }
+
+        #temperature-sensor-container .sensor-card[data-status="critical"] {
+            border-left: 4px solid #f87171;
+            background: #2a2025;
+            animation: critical-pulse 2s infinite;
+        }
+
+        #temperature-sensor-container .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        #temperature-sensor-container .sensor-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        #temperature-sensor-container .sensor-zone {
+            font-size: 12px;
+            color: #8b95a5;
+            background: #1a1f2e;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        #temperature-sensor-container .card-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        #temperature-sensor-container .temperature-display {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        #temperature-sensor-container .temp-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        #temperature-sensor-container .temp-unit {
+            font-size: 18px;
+            color: #8b95a5;
+        }
+
+        #temperature-sensor-container .humidity-display {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #60a5fa;
+            font-size: 14px;
+        }
+
+        #temperature-sensor-container .humidity-icon::before {
+            content: "\uD83D\uDCA7";
+        }
+
+        #temperature-sensor-container .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid #2d3548;
+        }
+
+        #temperature-sensor-container .status-badge {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+        }
+
+        #temperature-sensor-container .status-badge[data-status="normal"] {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+        }
+
+        #temperature-sensor-container .status-badge[data-status="warning"] {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        #temperature-sensor-container .status-badge[data-status="critical"] {
+            background: rgba(248, 113, 113, 0.15);
+            color: #f87171;
+        }
+
+        #temperature-sensor-container .last-updated {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes critical-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(248, 113, 113, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="temperature-sensor-container">
+        <div class="sensor-header">
+            <h2 class="sensor-title">Temperature Monitoring</h2>
+            <div class="sensor-summary">
+                <span class="summary-item normal">
+                    <span class="status-dot normal"></span>
+                    Normal: <span class="count-normal">8</span>
+                </span>
+                <span class="summary-item warning">
+                    <span class="status-dot warning"></span>
+                    Warning: <span class="count-warning">3</span>
+                </span>
+                <span class="summary-item critical">
+                    <span class="status-dot critical"></span>
+                    Critical: <span class="count-critical">1</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="sensor-grid">
+            <!-- Sensor cards will be rendered here -->
+        </div>
+
+        <template id="sensor-card-template">
+            <div class="sensor-card" data-sensor-id="">
+                <div class="card-header">
+                    <span class="sensor-name"></span>
+                    <span class="sensor-zone"></span>
+                </div>
+                <div class="card-body">
+                    <div class="temperature-display">
+                        <span class="temp-value"></span>
+                        <span class="temp-unit"></span>
+                    </div>
+                    <div class="humidity-display">
+                        <span class="humidity-icon"></span>
+                        <span class="humidity-value"></span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <span class="status-badge"></span>
+                    <span class="last-updated"></span>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <script>
+        // Mock data for preview
+        const mockData = {
+            sensors: [
+                { id: 'sensor-001', name: 'Rack A-01', zone: 'Zone-A', temperature: 24.5, humidity: 45, status: 'normal', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-002', name: 'Server A-02', zone: 'Zone-A', temperature: 23.8, humidity: 48, status: 'normal', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-003', name: 'Storage A-03', zone: 'Zone-B', temperature: 29.2, humidity: 52, status: 'warning', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-004', name: 'Network A-04', zone: 'Zone-B', temperature: 25.1, humidity: 44, status: 'normal', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-005', name: 'Rack B-01', zone: 'Zone-C', temperature: 36.8, humidity: 58, status: 'critical', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-006', name: 'Server B-02', zone: 'Zone-C', temperature: 28.5, humidity: 46, status: 'warning', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-007', name: 'Storage B-03', zone: 'Zone-D', temperature: 24.2, humidity: 50, status: 'normal', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-008', name: 'Network B-04', zone: 'Zone-D', temperature: 25.8, humidity: 47, status: 'normal', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-009', name: 'Rack C-01', zone: 'Zone-A', temperature: 26.3, humidity: 43, status: 'normal', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-010', name: 'Server C-02', zone: 'Zone-B', temperature: 30.1, humidity: 55, status: 'warning', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-011', name: 'Storage C-03', zone: 'Zone-C', temperature: 24.9, humidity: 49, status: 'normal', lastUpdated: new Date().toISOString() },
+                { id: 'sensor-012', name: 'Network C-04', zone: 'Zone-D', temperature: 23.5, humidity: 51, status: 'normal', lastUpdated: new Date().toISOString() }
+            ],
+            summary: { total: 12, normal: 8, warning: 3, critical: 1, avgTemperature: 26.1 }
+        };
+
+        function formatTime(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function renderSensors(data) {
+            const { sensors, summary } = data;
+
+            // Update summary
+            document.querySelector('.count-normal').textContent = summary.normal;
+            document.querySelector('.count-warning').textContent = summary.warning;
+            document.querySelector('.count-critical').textContent = summary.critical;
+
+            // Render cards
+            const grid = document.querySelector('.sensor-grid');
+            const template = document.querySelector('#sensor-card-template');
+
+            grid.innerHTML = '';
+
+            sensors.forEach(sensor => {
+                const card = template.content.cloneNode(true);
+                const cardEl = card.querySelector('.sensor-card');
+
+                cardEl.dataset.sensorId = sensor.id;
+                cardEl.dataset.status = sensor.status;
+
+                card.querySelector('.sensor-name').textContent = sensor.name;
+                card.querySelector('.sensor-zone').textContent = sensor.zone;
+                card.querySelector('.temp-value').textContent = sensor.temperature.toFixed(1);
+                card.querySelector('.temp-unit').textContent = '\u00B0C';
+                card.querySelector('.humidity-value').textContent = `${sensor.humidity}%`;
+
+                const badge = card.querySelector('.status-badge');
+                badge.textContent = sensor.status;
+                badge.dataset.status = sensor.status;
+
+                card.querySelector('.last-updated').textContent = formatTime(sensor.lastUpdated);
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Initial render
+        renderSensors(mockData);
+
+        // Click handler for preview
+        document.querySelector('.sensor-grid').addEventListener('click', (e) => {
+            const card = e.target.closest('.sensor-card');
+            if (card) {
+                alert(`Sensor clicked: ${card.dataset.sensorId}\n(In runtime, this opens the detail popup)`);
+            }
+        });
+    </script>
+</body>
+</html>

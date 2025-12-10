@@ -1,0 +1,45 @@
+<!-- Temperature Sensor Grid Component -->
+<div class="sensor-header">
+    <h2 class="sensor-title">Temperature Monitoring</h2>
+    <div class="sensor-summary">
+        <span class="summary-item normal">
+            <span class="status-dot normal"></span>
+            Normal: <span class="count-normal">0</span>
+        </span>
+        <span class="summary-item warning">
+            <span class="status-dot warning"></span>
+            Warning: <span class="count-warning">0</span>
+        </span>
+        <span class="summary-item critical">
+            <span class="status-dot critical"></span>
+            Critical: <span class="count-critical">0</span>
+        </span>
+    </div>
+</div>
+
+<div class="sensor-grid">
+    <!-- Dynamic sensor cards will be rendered here -->
+</div>
+
+<template id="sensor-card-template">
+    <div class="sensor-card" data-sensor-id="">
+        <div class="card-header">
+            <span class="sensor-name"></span>
+            <span class="sensor-zone"></span>
+        </div>
+        <div class="card-body">
+            <div class="temperature-display">
+                <span class="temp-value"></span>
+                <span class="temp-unit"></span>
+            </div>
+            <div class="humidity-display">
+                <span class="humidity-icon"></span>
+                <span class="humidity-value"></span>
+            </div>
+        </div>
+        <div class="card-footer">
+            <span class="status-badge"></span>
+            <span class="last-updated"></span>
+        </div>
+    </div>
+</template>

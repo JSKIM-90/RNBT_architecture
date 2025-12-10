@@ -1,0 +1,197 @@
+#temperature-sensor-container {
+    /* Layout (from CONTAINER_STYLES.md) */
+    width: 100% !important;
+    height: calc(100vh - 100px) !important;
+    padding: 20px !important;
+    overflow: auto !important;
+
+    /* Visual */
+    background: #1a1f2e;
+    color: #e0e6ed;
+    font-family: 'Segoe UI', sans-serif;
+
+    /* Header */
+    & .sensor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #2d3548;
+    }
+
+    & .sensor-title {
+        font-size: 24px;
+        font-weight: 600;
+        margin: 0;
+        color: #ffffff;
+    }
+
+    & .sensor-summary {
+        display: flex;
+        gap: 20px;
+    }
+
+    & .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+
+        &.normal { color: #4ade80; }
+        &.warning { color: #fbbf24; }
+        &.critical { color: #f87171; }
+    }
+
+    & .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+
+        &.normal { background: #4ade80; }
+        &.warning { background: #fbbf24; }
+        &.critical { background: #f87171; animation: pulse 1.5s infinite; }
+    }
+
+    /* Grid */
+    & .sensor-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 16px;
+    }
+
+    /* Card */
+    & .sensor-card {
+        background: #242937;
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border-color: #3b82f6;
+        }
+
+        &[data-status="normal"] {
+            border-left: 4px solid #4ade80;
+        }
+
+        &[data-status="warning"] {
+            border-left: 4px solid #fbbf24;
+            background: #2a2520;
+        }
+
+        &[data-status="critical"] {
+            border-left: 4px solid #f87171;
+            background: #2a2025;
+            animation: critical-pulse 2s infinite;
+        }
+    }
+
+    & .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    & .sensor-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+
+    & .sensor-zone {
+        font-size: 12px;
+        color: #8b95a5;
+        background: #1a1f2e;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    & .card-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    & .temperature-display {
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    & .temp-value {
+        font-size: 36px;
+        font-weight: 700;
+        color: #ffffff;
+    }
+
+    & .temp-unit {
+        font-size: 18px;
+        color: #8b95a5;
+    }
+
+    & .humidity-display {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: #60a5fa;
+        font-size: 14px;
+    }
+
+    & .humidity-icon::before {
+        content: "\uD83D\uDCA7";
+    }
+
+    & .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid #2d3548;
+    }
+
+    & .status-badge {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 12px;
+        text-transform: uppercase;
+
+        &[data-status="normal"] {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+        }
+
+        &[data-status="warning"] {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+        }
+
+        &[data-status="critical"] {
+            background: rgba(248, 113, 113, 0.15);
+            color: #f87171;
+        }
+    }
+
+    & .last-updated {
+        font-size: 11px;
+        color: #6b7280;
+    }
+
+    /* Animations */
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    @keyframes critical-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(248, 113, 113, 0); }
+    }
+}
