@@ -5,7 +5,7 @@
  * Responsibilities:
  * - Register event bus handlers
  * - Setup 3D raycasting
- * - Handle sensor click -> fetch detail -> show popup
+ * - Handle sensor click -> fetch data (parallel) -> show popup
  */
 
 const { onEventBusHandlers, initThreeRaycasting, fetchData, getInstanceByName, makeIterator, withSelector } = WKit;
@@ -20,22 +20,25 @@ this.eventBusHandlers = {
         console.log('[Page] 3D Sensor clicked:', targetInstance.id);
         console.log('[Page] Intersected object:', event.intersects[0]?.object);
 
-        const { datasetInfo } = targetInstance;
-        if (!datasetInfo) return;
+        const sensorId = targetInstance.id;
 
-        const { datasetName, param } = datasetInfo;
-        const result = await fetchData(this, datasetName, param);
-        const { data } = result?.response || {};
+        // 3개 API 병렬 호출
+        const [sensorResult, historyResult, alertsResult] = await Promise.all([
+            fetchData(this, 'sensor', { id: sensorId }),
+            fetchData(this, 'sensorHistory', { id: sensorId }),
+            fetchData(this, 'sensorAlerts', { id: sensorId })
+        ]);
 
-        if (data) {
-            const { sensor, history } = data;
+        const sensor = sensorResult?.response?.data;
+        const history = historyResult?.response?.data;
+        const alerts = alertsResult?.response?.data;
 
-            // Get popup instance and show detail
+        if (sensor && history) {
             const iter = makeIterator(this);
             const popup = getInstanceByName('SensorDetailPopup', iter);
 
             if (popup) {
-                popup.showDetail(sensor, history);
+                popup.showDetail(sensor, history, alerts);
             }
         }
     },
@@ -62,12 +65,12 @@ this.eventBusHandlers = {
         targetInstance.element.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
-        // Fetch new history data
-        const result = await fetchData(this, 'sensorDetail', { id: sensorId, period });
-        const { data } = result?.response || {};
+        // history만 다시 조회
+        const historyResult = await fetchData(this, 'sensorHistory', { id: sensorId, period });
+        const history = historyResult?.response?.data;
 
-        if (data?.history) {
-            targetInstance.showDetail(targetInstance.currentSensor, data.history);
+        if (history) {
+            targetInstance.updateChart(history);
         }
     },
 
@@ -82,16 +85,21 @@ this.eventBusHandlers = {
         const refreshBtn = event.target.closest('.popup-refresh');
         if (refreshBtn) refreshBtn.classList.add('loading');
 
-        // Fetch latest data
-        const result = await fetchData(this, 'sensorDetail', { id: sensorId });
-        const { data } = result?.response || {};
+        // sensor + history 다시 조회 (alerts는 선택적)
+        const [sensorResult, historyResult] = await Promise.all([
+            fetchData(this, 'sensor', { id: sensorId }),
+            fetchData(this, 'sensorHistory', { id: sensorId })
+        ]);
 
         // Remove loading state
         if (refreshBtn) refreshBtn.classList.remove('loading');
 
-        if (data) {
-            const { sensor, history } = data;
-            targetInstance.showDetail(sensor, history);
+        const sensor = sensorResult?.response?.data;
+        const history = historyResult?.response?.data;
+
+        if (sensor && history) {
+            targetInstance.updateSensor(sensor);
+            targetInstance.updateChart(history);
         }
     },
 

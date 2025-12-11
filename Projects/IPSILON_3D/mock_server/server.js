@@ -36,7 +36,7 @@ function generateSensor(id) {
     return {
         id,
         name: `Sensor ${id}`,
-        zone: `Zone-${String.fromCharCode(65 + (parseInt(id.split('-')[1]) % 4))}`,
+        zone: `Zone-${String.fromCharCode(65 + (parseInt(id.split('-')[1] || '0') % 4))}`,
         temperature,
         humidity,
         status,
@@ -64,9 +64,20 @@ function generateHistory(sensorId, period = '24h') {
         temperatures.push(Math.round((baseTemp + noise) * 10) / 10);
     }
 
-    // Generate some alerts
+    return {
+        sensorId,
+        period,
+        timestamps,
+        temperatures,
+        thresholds
+    };
+}
+
+function generateAlerts(sensorId) {
+    const now = new Date();
     const alerts = [];
     const alertCount = Math.floor(Math.random() * 4);
+
     for (let i = 0; i < alertCount; i++) {
         const hoursAgo = Math.floor(Math.random() * 24);
         const alertTime = new Date(now.getTime() - hoursAgo * 3600000);
@@ -86,10 +97,6 @@ function generateHistory(sensorId, period = '24h') {
 
     return {
         sensorId,
-        period,
-        timestamps,
-        temperatures,
-        thresholds,
         alerts
     };
 }
@@ -98,7 +105,7 @@ function generateHistory(sensorId, period = '24h') {
 // API ENDPOINTS
 // ======================
 
-// GET /api/sensor/:id - 단일 센서 상세 (기본)
+// GET /api/sensor/:id - 센서 현재 상태
 app.get('/api/sensor/:id', (req, res) => {
     const { id } = req.params;
     const sensor = generateSensor(id);
@@ -107,21 +114,25 @@ app.get('/api/sensor/:id', (req, res) => {
     res.json({ data: sensor });
 });
 
-// GET /api/sensor/:id/history - 센서 히스토리 (차트용)
+// GET /api/sensor/:id/history - 온도 히스토리
 app.get('/api/sensor/:id/history', (req, res) => {
     const { id } = req.params;
     const { period = '24h' } = req.query;
 
-    const sensor = generateSensor(id);
     const history = generateHistory(id, period);
 
     console.log(`[${new Date().toISOString()}] GET /api/sensor/${id}/history?period=${period}`);
-    res.json({
-        data: {
-            sensor,
-            history
-        }
-    });
+    res.json({ data: history });
+});
+
+// GET /api/sensor/:id/alerts - 알림 목록
+app.get('/api/sensor/:id/alerts', (req, res) => {
+    const { id } = req.params;
+
+    const alerts = generateAlerts(id);
+
+    console.log(`[${new Date().toISOString()}] GET /api/sensor/${id}/alerts`);
+    res.json({ data: alerts });
 });
 
 // ======================
@@ -134,8 +145,8 @@ app.listen(PORT, () => {
     console.log(`  Running on http://localhost:${PORT}`);
     console.log(`========================================`);
     console.log(`\nAvailable endpoints:`);
-    console.log(`  GET /api/sensor/:id              - Single sensor detail`);
-    console.log(`  GET /api/sensor/:id/history?period=24h|7d|30d`);
-    console.log(`\nNote: 3D sensors are identified by their component ID`);
+    console.log(`  GET /api/sensor/:id          - Sensor current status`);
+    console.log(`  GET /api/sensor/:id/history  - Temperature history`);
+    console.log(`  GET /api/sensor/:id/alerts   - Alert list`);
     console.log(`\n`);
 });

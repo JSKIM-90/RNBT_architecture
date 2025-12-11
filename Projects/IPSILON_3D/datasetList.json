@@ -11,10 +11,40 @@
       "page_id": "PAGE",
       "query": "",
       "query_type": "",
-      "description": "Single sensor detail with history (on-demand)",
-      "dataset_id": "sensor-detail-001",
-      "name": "sensorDetail",
+      "description": "Sensor current status (on-demand)",
+      "dataset_id": "sensor-001",
+      "name": "sensor",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/sensor/:id\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Temperature history (on-demand)",
+      "dataset_id": "sensor-history-001",
+      "name": "sensorHistory",
       "rest_api": "{\"url\":\"http://localhost:3003/api/sensor/:id/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Sensor alerts (on-demand)",
+      "dataset_id": "sensor-alerts-001",
+      "name": "sensorAlerts",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/sensor/:id/alerts\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
   ],
   "datasource": []

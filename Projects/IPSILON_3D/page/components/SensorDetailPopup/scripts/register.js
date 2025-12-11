@@ -2,8 +2,11 @@
  * SensorDetailPopup - register.js
  *
  * Methods exposed to Page:
- * - showDetail(sensorData, historyData)
- * - hideDetail()
+ * - showDetail(sensor, history, alerts)  // 팝업 열기
+ * - hideDetail()                         // 팝업 닫기
+ * - updateSensor(sensor)                 // 센서 정보만 갱신
+ * - updateChart(history)                 // 차트만 갱신
+ * - updateAlerts(alerts)                 // 알림만 갱신
  *
  * Events:
  * - @popupClosed
@@ -34,6 +37,9 @@ function initComponent() {
     // Bind methods (exposed to Page)
     this.showDetail = showDetail.bind(this);
     this.hideDetail = hideDetail.bind(this);
+    this.updateSensor = updateSensor.bind(this);
+    this.updateChart = updateChart.bind(this);
+    this.updateAlerts = updateAlerts.bind(this);
 
     // Setup
     bindEvents(this, this.customEvents);
@@ -50,39 +56,28 @@ function initComponent() {
     console.log('[SensorDetailPopup] Registered');
 }
 
-function showDetail(sensorData, historyData) {
+// ======================
+// PUBLIC METHODS
+// ======================
+
+function showDetail(sensor, history, alerts) {
     const overlay = this.element.querySelector('.popup-overlay');
-    this.currentSensor = sensorData;
 
-    // Fill sensor info
-    this.element.querySelector('.popup-title').textContent = sensorData.name;
-    this.element.querySelector('.popup-zone').textContent = sensorData.zone;
-    this.element.querySelector('.current-temp').textContent = sensorData.temperature.toFixed(1);
-    this.element.querySelector('.temp-unit').textContent = '\u00B0C';
-    this.element.querySelector('.current-humidity').textContent = sensorData.humidity;
-    this.element.querySelector('.threshold-warning-val').textContent = `${sensorData.threshold.warning}\u00B0C`;
-    this.element.querySelector('.threshold-critical-val').textContent = `${sensorData.threshold.critical}\u00B0C`;
+    // 센서 정보 렌더링
+    updateSensor.call(this, sensor);
 
-    const badge = this.element.querySelector('.status-badge-large');
-    badge.textContent = sensorData.status;
-    badge.dataset.status = sensorData.status;
-
-    this.element.querySelector('.detail-last-updated').textContent = formatTime(sensorData.lastUpdated);
-
-    // Render chart
-    if (historyData) {
-        renderChart.call(this, historyData);
+    // 차트 렌더링
+    if (history) {
+        updateChart.call(this, history);
     }
 
-    // Render alerts
-    if (historyData?.alerts) {
-        renderAlerts.call(this, historyData.alerts);
-    }
+    // 알림 렌더링
+    updateAlerts.call(this, alerts);
 
     // Show popup
     overlay.style.display = 'flex';
 
-    console.log('[SensorDetailPopup] Showing detail for:', sensorData.id);
+    console.log('[SensorDetailPopup] Showing detail for:', sensor.id);
 }
 
 function hideDetail() {
@@ -93,7 +88,29 @@ function hideDetail() {
     console.log('[SensorDetailPopup] Hidden');
 }
 
-function renderChart(historyData) {
+function updateSensor(sensor) {
+    if (!sensor) return;
+
+    this.currentSensor = sensor;
+
+    this.element.querySelector('.popup-title').textContent = sensor.name;
+    this.element.querySelector('.popup-zone').textContent = sensor.zone;
+    this.element.querySelector('.current-temp').textContent = sensor.temperature.toFixed(1);
+    this.element.querySelector('.temp-unit').textContent = '\u00B0C';
+    this.element.querySelector('.current-humidity').textContent = sensor.humidity;
+    this.element.querySelector('.threshold-warning-val').textContent = `${sensor.threshold.warning}\u00B0C`;
+    this.element.querySelector('.threshold-critical-val').textContent = `${sensor.threshold.critical}\u00B0C`;
+
+    const badge = this.element.querySelector('.status-badge-large');
+    badge.textContent = sensor.status;
+    badge.dataset.status = sensor.status;
+
+    this.element.querySelector('.detail-last-updated').textContent = formatTime(sensor.lastUpdated);
+}
+
+function updateChart(history) {
+    if (!history) return;
+
     const chartContainer = this.element.querySelector('.chart-container');
 
     // Initialize chart if not exists
@@ -101,7 +118,7 @@ function renderChart(historyData) {
         this.chart = echarts.init(chartContainer);
     }
 
-    const { timestamps, temperatures, thresholds } = historyData;
+    const { timestamps, temperatures, thresholds } = history;
 
     const option = {
         tooltip: {
@@ -166,11 +183,13 @@ function renderChart(historyData) {
     this.chart.setOption(option);
 }
 
-function renderAlerts(alerts) {
+function updateAlerts(alertsData) {
     const alertList = this.element.querySelector('.alert-list');
     const template = this.element.querySelector('#alert-item-template');
 
-    if (!alerts || alerts.length === 0) {
+    const alerts = alertsData?.alerts || [];
+
+    if (alerts.length === 0) {
         alertList.innerHTML = '<div class="no-alerts">No recent alerts</div>';
         return;
     }
@@ -192,6 +211,10 @@ function renderAlerts(alerts) {
         })
     );
 }
+
+// ======================
+// HELPER FUNCTIONS
+// ======================
 
 function formatTime(isoString) {
     const date = new Date(isoString);
