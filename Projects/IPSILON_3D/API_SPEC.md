@@ -8,6 +8,8 @@
 
 | API | 호출 시점 | 컴포넌트 | 기능 |
 |-----|----------|----------|------|
+| `GET /api/assets` | 페이지 로드 | Page | 전체 자산 목록 조회 |
+| `GET /api/assets?type=sensor` | 필터 선택 | Page | 타입별 자산 조회 |
 | `GET /api/sensor/:id` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 센서 현재 상태 표시 |
 | `GET /api/sensor/:id/history` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 차트 렌더링 |
 | `GET /api/sensor/:id/alerts` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 알림 목록 표시 |
@@ -16,7 +18,92 @@
 
 ---
 
-## 1. 센서 현재 상태 조회
+## 1. 전체 자산 조회
+
+데이터센터 내 모든 자산 목록을 조회합니다.
+
+### Request
+
+```
+GET /api/assets
+GET /api/assets?type=sensor
+GET /api/assets?type=sensor,server
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| type | string | - | 자산 타입 필터 (콤마로 복수 지정 가능) |
+
+**지원하는 타입:**
+- `sensor` - 온도/습도 센서
+- `server` - 서버 장비
+- `rack` - 랙
+- `cooling` - 냉각 장치 (CRAC)
+- `power` - 전력 장치 (PDU)
+- `network` - 네트워크 장비 (스위치)
+
+### Response
+
+```json
+{
+  "data": {
+    "assets": [
+      {
+        "id": "sensor-001",
+        "type": "sensor",
+        "name": "Temperature Sensor A-1",
+        "zone": "Zone-A",
+        "status": "normal"
+      },
+      {
+        "id": "server-001",
+        "type": "server",
+        "name": "Server A-1",
+        "zone": "Zone-A",
+        "status": "normal"
+      }
+    ],
+    "summary": {
+      "total": 30,
+      "byType": {
+        "sensor": 12,
+        "server": 8,
+        "rack": 4,
+        "cooling": 2,
+        "power": 2,
+        "network": 2
+      },
+      "byStatus": {
+        "normal": 26,
+        "warning": 3,
+        "critical": 1
+      }
+    }
+  }
+}
+```
+
+### Response Fields - Asset
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | 자산 ID |
+| type | string | 자산 타입 |
+| name | string | 자산 이름 |
+| zone | string | 존 (Zone-A ~ Zone-D) |
+| status | string | 상태 (`normal` \| `warning` \| `critical`) |
+
+### Response Fields - Summary
+
+| Field | Type | Description |
+|-------|------|-------------|
+| total | number | 전체 자산 수 |
+| byType | object | 타입별 자산 수 |
+| byStatus | object | 상태별 자산 수 |
+
+---
+
+## 2. 센서 현재 상태 조회
 
 단일 센서의 현재 상태를 조회합니다.
 

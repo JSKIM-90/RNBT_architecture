@@ -102,8 +102,106 @@ function generateAlerts(sensorId) {
 }
 
 // ======================
+// ASSET DATA
+// ======================
+
+const ASSET_TYPES = ['sensor', 'server', 'rack', 'cooling', 'power', 'network'];
+const ZONES = ['Zone-A', 'Zone-B', 'Zone-C', 'Zone-D'];
+
+// 고정된 자산 목록 (실제로는 DB에서 관리)
+const ASSETS = [
+    // Sensors (12개)
+    ...Array.from({ length: 12 }, (_, i) => ({
+        id: `sensor-${String(i + 1).padStart(3, '0')}`,
+        type: 'sensor',
+        name: `Temperature Sensor ${String.fromCharCode(65 + Math.floor(i / 3))}-${(i % 3) + 1}`,
+        zone: ZONES[i % 4],
+        status: ['normal', 'normal', 'normal', 'warning', 'critical'][Math.floor(Math.random() * 5)]
+    })),
+    // Servers (8개)
+    ...Array.from({ length: 8 }, (_, i) => ({
+        id: `server-${String(i + 1).padStart(3, '0')}`,
+        type: 'server',
+        name: `Server ${String.fromCharCode(65 + Math.floor(i / 2))}-${(i % 2) + 1}`,
+        zone: ZONES[i % 4],
+        status: ['normal', 'normal', 'warning'][Math.floor(Math.random() * 3)]
+    })),
+    // Racks (4개)
+    ...Array.from({ length: 4 }, (_, i) => ({
+        id: `rack-${String(i + 1).padStart(3, '0')}`,
+        type: 'rack',
+        name: `Rack ${String.fromCharCode(65 + i)}`,
+        zone: ZONES[i],
+        status: 'normal'
+    })),
+    // Cooling (2개)
+    ...Array.from({ length: 2 }, (_, i) => ({
+        id: `cooling-${String(i + 1).padStart(3, '0')}`,
+        type: 'cooling',
+        name: `CRAC Unit ${i + 1}`,
+        zone: ZONES[i * 2],
+        status: 'normal'
+    })),
+    // Power (2개)
+    ...Array.from({ length: 2 }, (_, i) => ({
+        id: `power-${String(i + 1).padStart(3, '0')}`,
+        type: 'power',
+        name: `PDU ${String.fromCharCode(65 + i)}`,
+        zone: ZONES[i * 2],
+        status: 'normal'
+    })),
+    // Network (2개)
+    ...Array.from({ length: 2 }, (_, i) => ({
+        id: `network-${String(i + 1).padStart(3, '0')}`,
+        type: 'network',
+        name: `Switch ${String.fromCharCode(65 + i)}`,
+        zone: ZONES[i * 2],
+        status: 'normal'
+    }))
+];
+
+function generateAssetsSummary(assets) {
+    const byType = {};
+    const byStatus = { normal: 0, warning: 0, critical: 0 };
+
+    assets.forEach(asset => {
+        byType[asset.type] = (byType[asset.type] || 0) + 1;
+        byStatus[asset.status] = (byStatus[asset.status] || 0) + 1;
+    });
+
+    return {
+        total: assets.length,
+        byType,
+        byStatus
+    };
+}
+
+// ======================
 // API ENDPOINTS
 // ======================
+
+// GET /api/assets - 전체 자산 조회 (타입별 필터 지원)
+app.get('/api/assets', (req, res) => {
+    const { type } = req.query;
+
+    let filteredAssets = ASSETS;
+
+    // 타입 필터
+    if (type) {
+        const types = type.split(',');
+        filteredAssets = ASSETS.filter(asset => types.includes(asset.type));
+    }
+
+    const summary = generateAssetsSummary(filteredAssets);
+
+    console.log(`[${new Date().toISOString()}] GET /api/assets${type ? `?type=${type}` : ''} - ${filteredAssets.length} assets`);
+    res.json({
+        data: {
+            assets: filteredAssets,
+            summary
+        }
+    });
+});
 
 // GET /api/sensor/:id - 센서 현재 상태
 app.get('/api/sensor/:id', (req, res) => {
@@ -145,6 +243,8 @@ app.listen(PORT, () => {
     console.log(`  Running on http://localhost:${PORT}`);
     console.log(`========================================`);
     console.log(`\nAvailable endpoints:`);
+    console.log(`  GET /api/assets              - All assets (with summary)`);
+    console.log(`  GET /api/assets?type=sensor  - Filter by type`);
     console.log(`  GET /api/sensor/:id          - Sensor current status`);
     console.log(`  GET /api/sensor/:id/history  - Temperature history`);
     console.log(`  GET /api/sensor/:id/alerts   - Alert list`);
