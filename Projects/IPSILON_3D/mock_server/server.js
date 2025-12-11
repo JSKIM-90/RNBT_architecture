@@ -180,6 +180,18 @@ function generateAssetsSummary(assets) {
 // API ENDPOINTS
 // ======================
 
+// GET /api/assets/summary - Summary만 반환 (전체 자산 기준)
+app.get('/api/assets/summary', (req, res) => {
+    const summary = generateAssetsSummary(ASSETS);
+
+    console.log(`[${new Date().toISOString()}] GET /api/assets/summary`);
+    res.json({
+        data: {
+            summary
+        }
+    });
+});
+
 // GET /api/assets - 전체 자산 조회 (타입별 필터 지원)
 app.get('/api/assets', (req, res) => {
     const { type } = req.query;
@@ -243,6 +255,7 @@ app.listen(PORT, () => {
     console.log(`  Running on http://localhost:${PORT}`);
     console.log(`========================================`);
     console.log(`\nAvailable endpoints:`);
+    console.log(`  GET /api/assets/summary      - Summary only (no assets)`);
     console.log(`  GET /api/assets              - All assets (with summary)`);
     console.log(`  GET /api/assets?type=sensor  - Filter by type`);
     console.log(`  GET /api/sensor/:id          - Sensor current status`);

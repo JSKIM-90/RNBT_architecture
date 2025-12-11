@@ -8,8 +8,9 @@
 
 | API | 호출 시점 | 컴포넌트 | 기능 |
 |-----|----------|----------|------|
+| `GET /api/assets/summary` | 페이지 초기화 | Page | Summary만 조회 (타입 목록) |
 | `GET /api/assets` | 페이지 로드 | Page | 전체 자산 목록 조회 |
-| `GET /api/assets?type=sensor` | 필터 선택 | Page | 타입별 자산 조회 |
+| `GET /api/assets?type=sensor` | 타입 펼침 | Page | 해당 타입 자산만 조회 |
 | `GET /api/sensor/:id` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 센서 현재 상태 표시 |
 | `GET /api/sensor/:id/history` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 차트 렌더링 |
 | `GET /api/sensor/:id/alerts` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 알림 목록 표시 |
@@ -18,9 +19,61 @@
 
 ---
 
-## 1. 전체 자산 조회
+## 1. 자산 Summary 조회
 
-데이터센터 내 모든 자산 목록을 조회합니다.
+페이지 초기화 시 타입별/상태별 자산 수만 조회합니다. (자산 목록 없음)
+
+### Request
+
+```
+GET /api/assets/summary
+```
+
+### Response
+
+```json
+{
+  "data": {
+    "summary": {
+      "total": 30,
+      "byType": {
+        "sensor": 12,
+        "server": 8,
+        "rack": 4,
+        "cooling": 2,
+        "power": 2,
+        "network": 2
+      },
+      "byStatus": {
+        "normal": 26,
+        "warning": 3,
+        "critical": 1
+      }
+    }
+  }
+}
+```
+
+### Response Fields - Summary
+
+| Field | Type | Description |
+|-------|------|-------------|
+| total | number | 전체 자산 수 |
+| byType | object | 타입별 자산 수 |
+| byStatus | object | 상태별 자산 수 |
+
+### 사용 시점
+
+```
+프론트 초기화 → GET /api/assets/summary (타입 목록 표시)
+사용자가 sensor 펼침 → GET /api/assets?type=sensor (해당 타입 자산만)
+```
+
+---
+
+## 2. 전체 자산 조회
+
+데이터센터 내 자산 목록을 조회합니다. 타입 필터 지원.
 
 ### Request
 
@@ -83,6 +136,22 @@ GET /api/assets?type=sensor,server
 }
 ```
 
+**참고:** `?type=sensor` 필터 사용 시 summary도 **필터링된 자산 기준**으로 계산됩니다.
+
+```json
+// GET /api/assets?type=sensor 응답 예시
+{
+  "data": {
+    "assets": [...],  // sensor 타입만 12개
+    "summary": {
+      "total": 12,
+      "byType": { "sensor": 12 },
+      "byStatus": { "normal": 8, "warning": 3, "critical": 1 }
+    }
+  }
+}
+```
+
 ### Response Fields - Asset
 
 | Field | Type | Description |
@@ -97,13 +166,13 @@ GET /api/assets?type=sensor,server
 
 | Field | Type | Description |
 |-------|------|-------------|
-| total | number | 전체 자산 수 |
+| total | number | (필터링된) 자산 수 |
 | byType | object | 타입별 자산 수 |
 | byStatus | object | 상태별 자산 수 |
 
 ---
 
-## 2. 센서 현재 상태 조회
+## 3. 센서 현재 상태 조회
 
 단일 센서의 현재 상태를 조회합니다.
 
@@ -163,7 +232,7 @@ GET /api/sensor/:id
 
 ---
 
-## 2. 온도 히스토리 조회
+## 4. 온도 히스토리 조회
 
 센서의 과거 온도 데이터를 조회합니다. (차트 렌더링용)
 
@@ -226,7 +295,7 @@ GET /api/sensor/:id/history
 
 ---
 
-## 3. 알림 목록 조회
+## 5. 알림 목록 조회
 
 센서의 최근 알림 목록을 조회합니다.
 
