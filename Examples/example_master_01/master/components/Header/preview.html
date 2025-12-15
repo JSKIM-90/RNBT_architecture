@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Component Preview</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Container Style (from CONTAINER_STYLES.md) */
+        #component-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            z-index: 100;
+        }
+    </style>
+    <link rel="stylesheet" href="styles/component.css">
+</head>
+<body>
+    <!-- Component Container -->
+    <div id="component-container">
+        <div class="header">
+            <!-- Logo -->
+            <div class="header-logo">
+                <span class="logo-icon">M</span>
+                <span class="logo-text">Master App</span>
+            </div>
+
+            <!-- Navigation Menu (Dynamic) -->
+            <nav class="header-nav">
+                <ul class="nav-list"></ul>
+            </nav>
+
+            <!-- User Info (Dynamic) -->
+            <div class="header-user">
+                <img class="user-avatar" src="" alt="User Avatar">
+                <span class="user-name"></span>
+                <button class="user-menu">▼</button>
+            </div>
+
+            <!-- Templates -->
+            <template id="nav-item-template">
+                <li class="nav-item" data-menu-id="">
+                    <a class="nav-link" href="#">
+                        <span class="nav-icon"></span>
+                        <span class="nav-label"></span>
+                    </a>
+                </li>
+            </template>
+        </div>
+    </div>
+
+    <!-- Mock Data -->
+    <script>
+        const MOCK_DATA = {
+            userInfo: {
+                data: {
+                    name: 'John Doe',
+                    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John'
+                }
+            },
+            menu: {
+                items: [
+                    { id: 1, label: 'Dashboard', icon: '📊', href: '#', active: true },
+                    { id: 2, label: 'Analytics', icon: '📈', href: '#', active: false },
+                    { id: 3, label: 'Reports', icon: '📋', href: '#', active: false },
+                    { id: 4, label: 'Settings', icon: '⚙️', href: '#', active: false }
+                ]
+            }
+        };
+    </script>
+
+    <!-- Render Functions (from scripts/register.js) -->
+    <script>
+        const container = document.getElementById('component-container');
+
+        function renderUserInfo(response) {
+            const { data } = response;
+            console.log(`[Header] renderUserInfo:`, data);
+
+            if (!data) return;
+
+            const avatarEl = container.querySelector('.user-avatar');
+            const nameEl = container.querySelector('.user-name');
+
+            if (avatarEl) avatarEl.src = data.avatar;
+            if (nameEl) nameEl.textContent = data.name;
+        }
+
+        function renderMenu(response) {
+            const { items } = response;
+            console.log(`[Header] renderMenu:`, items);
+
+            if (!items) return;
+
+            const template = container.querySelector('#nav-item-template');
+            const navList = container.querySelector('.nav-list');
+
+            if (!template || !navList) return;
+
+            navList.innerHTML = '';
+
+            items.forEach(item => {
+                const clone = template.content.cloneNode(true);
+                const li = clone.querySelector('.nav-item');
+                const link = clone.querySelector('.nav-link');
+                const icon = clone.querySelector('.nav-icon');
+                const label = clone.querySelector('.nav-label');
+
+                li.dataset.menuId = item.id;
+                if (item.active) li.classList.add('active');
+
+                link.href = item.href;
+                icon.textContent = item.icon;
+                label.textContent = item.label;
+
+                navList.appendChild(clone);
+            });
+        }
+
+        // Execute rendering
+        renderUserInfo(MOCK_DATA.userInfo);
+        renderMenu(MOCK_DATA.menu);
+    </script>
+</body>
+</html>

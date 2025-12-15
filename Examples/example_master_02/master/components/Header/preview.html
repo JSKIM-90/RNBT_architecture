@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Component Preview - Card Company Dashboard</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Container Style (from CONTAINER_STYLES.md) */
+        #component-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            z-index: 100;
+        }
+    </style>
+    <link rel="stylesheet" href="styles/component.css">
+</head>
+<body>
+    <!-- Component Container -->
+    <div id="component-container">
+        <div class="header">
+            <!-- Logo -->
+            <div class="header-logo">
+                <span class="logo-icon">C</span>
+                <span class="logo-text">CardPay</span>
+            </div>
+
+            <!-- Card Info (Dynamic) -->
+            <div class="header-card-info">
+                <span class="card-number"></span>
+                <span class="card-holder"></span>
+            </div>
+
+            <!-- Navigation Menu (Dynamic) -->
+            <nav class="header-nav">
+                <ul class="nav-list"></ul>
+            </nav>
+
+            <!-- User Info (Dynamic) -->
+            <div class="header-user">
+                <img class="user-avatar" src="" alt="User Avatar">
+                <span class="user-name"></span>
+                <button class="user-menu">▼</button>
+            </div>
+
+            <!-- Templates -->
+            <template id="nav-item-template">
+                <li class="nav-item" data-menu-id="">
+                    <a class="nav-link" href="#">
+                        <span class="nav-icon"></span>
+                        <span class="nav-label"></span>
+                    </a>
+                </li>
+            </template>
+        </div>
+    </div>
+
+    <!-- Mock Data -->
+    <script>
+        const MOCK_DATA = {
+            cardInfo: {
+                data: {
+                    cardNumber: '**** **** **** 1234',
+                    cardHolder: 'JOHN DOE',
+                    avatar: 'https://i.pravatar.cc/150?img=3',
+                    userName: 'John Doe'
+                }
+            },
+            menu: {
+                items: [
+                    { id: 'dashboard', icon: '📊', label: 'Dashboard', href: '#', active: true },
+                    { id: 'transactions', icon: '💳', label: 'Transactions', href: '#', active: false },
+                    { id: 'rewards', icon: '🎁', label: 'Rewards', href: '#', active: false },
+                    { id: 'settings', icon: '⚙️', label: 'Settings', href: '#', active: false }
+                ]
+            }
+        };
+    </script>
+
+    <!-- Render Functions (from scripts/register.js) -->
+    <script>
+        const container = document.getElementById('component-container');
+
+        function renderCardInfo(response) {
+            const { data } = response;
+            console.log(`[Header] renderCardInfo:`, data);
+
+            if (!data) return;
+
+            const cardNumberEl = container.querySelector('.card-number');
+            const cardHolderEl = container.querySelector('.card-holder');
+            const avatarEl = container.querySelector('.user-avatar');
+            const nameEl = container.querySelector('.user-name');
+
+            if (cardNumberEl) cardNumberEl.textContent = data.cardNumber;
+            if (cardHolderEl) cardHolderEl.textContent = data.cardHolder;
+            if (avatarEl) avatarEl.src = data.avatar;
+            if (nameEl) nameEl.textContent = data.userName;
+        }
+
+        function renderMenu(response) {
+            const { items } = response;
+            console.log(`[Header] renderMenu:`, items);
+
+            if (!items) return;
+
+            const template = container.querySelector('#nav-item-template');
+            const navList = container.querySelector('.nav-list');
+
+            if (!template || !navList) return;
+
+            navList.innerHTML = '';
+
+            items.forEach(item => {
+                const clone = template.content.cloneNode(true);
+                const li = clone.querySelector('.nav-item');
+                const link = clone.querySelector('.nav-link');
+                const icon = clone.querySelector('.nav-icon');
+                const label = clone.querySelector('.nav-label');
+
+                li.dataset.menuId = item.id;
+                if (item.active) li.classList.add('active');
+
+                link.href = item.href;
+                icon.textContent = item.icon;
+                label.textContent = item.label;
+
+                navList.appendChild(clone);
+            });
+        }
+
+        // Execute rendering
+        renderCardInfo(MOCK_DATA.cardInfo);
+        renderMenu(MOCK_DATA.menu);
+    </script>
+</body>
+</html>

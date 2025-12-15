@@ -1,0 +1,36 @@
+<div class="transaction-table">
+    <!-- Header -->
+    <div class="panel-header">
+        <div class="panel-title-group">
+            <h3 class="panel-title">Recent Transactions</h3>
+            <p class="panel-subtitle">Your latest card transactions</p>
+        </div>
+        <div class="panel-actions">
+            <select class="filter-select">
+                <option value="all">All Categories</option>
+                <option value="shopping">Shopping</option>
+                <option value="food">Food & Dining</option>
+                <option value="transport">Transport</option>
+                <option value="entertainment">Entertainment</option>
+            </select>
+            <button class="btn-refresh table-refresh-btn">Refresh</button>
+        </div>
+    </div>
+
+    <!-- Tabulator Container -->
+    <div class="table-container"></div>
+
+    <!-- Pagination -->
+    <div class="pagination-container">
+        <div class="pagination-info">1-10 of 0</div>
+        <div class="pagination-controls">
+            <button class="pagination-btn pagination-nav" data-action="prev" disabled>
+                <span class="pagination-arrow">‹</span>
+            </button>
+            <div class="page-numbers"></div>
+            <button class="pagination-btn pagination-nav" data-action="next">
+                <span class="pagination-arrow">›</span>
+            </button>
+        </div>
+    </div>
+</div>

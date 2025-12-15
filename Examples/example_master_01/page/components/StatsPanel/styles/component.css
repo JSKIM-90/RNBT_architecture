@@ -1,0 +1,128 @@
+/* StatsPanel Component Styles */
+#component-container {
+    .stats-panel {
+        height: 100%;
+        min-height: 280px;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        background: #f1f5f9;
+    }
+
+    /* Header */
+    .stats-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+
+    .stats-title {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .stats-controls {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .period-filter {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #475569;
+        background: white;
+        cursor: pointer;
+
+        &:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+    }
+
+    .refresh-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: white;
+        background: #4f46e5;
+        cursor: pointer;
+        transition: background 0.2s;
+
+        &:hover {
+            background: #4338ca;
+        }
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    /* Stat Card */
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+        &[data-stat-key="visitors"] .stat-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        &[data-stat-key="pageViews"] .stat-icon {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        &[data-stat-key="sessions"] .stat-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        &[data-stat-key="bounceRate"] .stat-icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #64748b;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+}
