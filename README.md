@@ -41,11 +41,52 @@
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### 레이어 다이어그램
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     User Script Layer                   │
+│  (Component register/destroy, Page lifecycle scripts)   │
+└──────────────────┬──────────────────────────────────────┘
+                   │
+┌──────────────────┴──────────────────────────────────────┐
+│                   Framework Layer                        │
+├──────────────────────────────────────────────────────────┤
+│  WKit.js (Facade)                                        │
+│  ├─ Data Mapping Pipeline                               │
+│  ├─ 2D Event Binding (delegate pattern)                 │
+│  ├─ 3D Event Binding (raycasting)                       │
+│  └─ Resource Management                                 │
+├──────────────────────────────────────────────────────────┤
+│  WEventBus.js (Pub-Sub)                                  │
+│  └─ Component Communication                             │
+├──────────────────────────────────────────────────────────┤
+│  GlobalDataPublisher.js (Data Layer)                     │
+│  └─ Topic-based Data Sharing                            │
+├──────────────────────────────────────────────────────────┤
+│  fx.js (FP Utilities)                                    │
+│  └─ Functional Programming Toolkit                      │
+└──────────────────┬──────────────────────────────────────┘
+                   │
+┌──────────────────┴──────────────────────────────────────┐
+│                   Runtime Layer                          │
+│  (Browser APIs, Three.js, DOM, Data Service)            │
+└─────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## 핵심 모듈 (Utils/)
 
 ### fx.js - 함수형 프로그래밍 라이브러리
+
+**패턴**: Functional Programming (FP)
+
+**주요 기능**:
+- `curry`, `pipe`, `go`, `reduce`, `map`, `filter` 등 FP 유틸리티
+- Lazy Evaluation (`L` 네임스페이스)
+- Promise 기반 비동기 처리
+- 동시성 처리 (`C` 네임스페이스 - catchNoop)
 
 ```javascript
 // 파이프라인 기반 데이터 처리
@@ -53,34 +94,158 @@ fx.go(
     data,
     fx.map(transform),
     fx.filter(predicate),
-    fx.each(process)
+    fx.take(10)
+);
+
+// Lazy Evaluation (메모리 효율적)
+fx.go(
+    largeArray,
+    fx.L.map(expensiveOperation),  // Lazy
+    fx.L.filter(predicate),        // Lazy
+    fx.take(10)                    // 10개만 평가
 );
 ```
 
 ### WEventBus.js - 이벤트 버스
 
+**패턴**: Pub-Sub (Publisher-Subscriber)
+
+**주요 기능**:
+- `on`, `off`, `emit`, `once`
+- 컴포넌트 간 느슨한 결합 제공
+- 커스텀 이벤트 전파
+
 ```javascript
-// 컴포넌트 간 느슨한 결합
-WEventBus.emit('@myEvent', { event, targetInstance });
-WEventBus.on('@myEvent', handler);
+// 이벤트 발행
+WEventBus.emit('@myClickEvent', { event, targetInstance });
+
+// 이벤트 구독
+WEventBus.on('@myClickEvent', handler);
 ```
 
 ### GlobalDataPublisher.js - 글로벌 데이터 발행 시스템
 
+**패턴**: Topic-based Pub-Sub + Data Layer
+
+**주요 기능**:
+- Topic 기반 데이터 매핑 등록 (`registerMapping`)
+- 데이터 fetch 후 구독자에게 자동 전파 (`fetchAndPublish`)
+- 동적 param 업데이트 지원 (param 병합)
+- 구독 관리 (`subscribe`, `unsubscribe`)
+- 페이지 레벨 공유 데이터 관리
+- 데이터셋별 독립적인 auto-refresh 주기 설정 가능
+
 ```javascript
-// Topic 기반 pub-sub
-GlobalDataPublisher.registerMapping({ topic, datasetInfo });
-GlobalDataPublisher.subscribe(topic, instance, handler);
-GlobalDataPublisher.fetchAndPublish(topic, page);
+// 1. 매핑 등록
+GlobalDataPublisher.registerMapping({
+    topic: 'users',
+    datasetInfo: { datasetName: 'dummyjson', param: {...} }
+});
+
+// 2. 데이터 fetch & 발행
+GlobalDataPublisher.fetchAndPublish('users', page);
+
+// 3. 컴포넌트 구독
+GlobalDataPublisher.subscribe('users', instance, handler);
 ```
 
 ### WKit.js - 통합 유틸리티 킷
 
+**패턴**: Facade + Utility + Resource Management
+
+#### 2D 이벤트 바인딩
+- 이벤트 위임 패턴 (`bindEvents`, `delegate`)
+- 동적 DOM 이벤트 처리
+
 ```javascript
-// 이벤트 바인딩, 데이터 fetch, 리소스 관리
-WKit.bindEvents(instance, customEvents);
-WKit.fetchData(page, datasetName, param);
-WKit.dispose3DTree(element);
+WKit.bindEvents(instance, {
+    click: {
+        '.navbar-brand': '@triggerNavbarTitle',
+        '.nav-link': '@triggerNavLink'
+    }
+});
+```
+
+#### 3D 이벤트 바인딩
+- Three.js Raycasting 기반 (`bind3DEvents`, `initThreeRaycasting`)
+- 3D 객체 클릭 이벤트 처리
+- **단일 Canvas 아키텍처**: 모든 3D 컴포넌트가 하나의 Scene 공유
+- **컴포넌트 식별**: appendElement.eventListener로 컴포넌트 구분
+
+#### 리소스 관리
+- 3D 객체 메모리 해제 (`dispose3DTree`)
+- Geometry, Material, Texture 자동 dispose
+
+#### 헬퍼 함수
+- Iterator 생성 (`makeIterator`)
+- 인스턴스 검색 (`getInstanceByName`, `getInstanceById`)
+- 데이터 fetch (`fetchData`)
+- 이벤트 발행 (`emitEvent`)
+- 제어 흐름 추상화 (`withSelector`)
+
+---
+
+## 핵심 설계 패턴
+
+### 1. 함수형 프로그래밍 (FP)
+
+파이프라인 기반 데이터 처리로 코드의 가독성과 재사용성 향상
+
+```javascript
+fx.go(
+    Object.entries(instance.subscriptions),
+    fx.each(([topic, fnList]) =>
+        fx.each(fn => subscribe(topic, instance, instance[fn]), fnList)
+    )
+);
+```
+
+### 2. 이벤트 기반 아키텍처
+
+컴포넌트 간 느슨한 결합으로 확장성과 유지보수성 확보
+
+```javascript
+// 발행자
+WEventBus.emit('@myClickEvent', { event, targetInstance });
+
+// 구독자
+WEventBus.on('@myClickEvent', async ({ event, targetInstance }) => {
+    const { datasetInfo } = targetInstance;
+    if (datasetInfo) {
+        const { datasetName, param } = datasetInfo;
+        const data = await WKit.fetchData(page, datasetName, param);
+        // 처리 로직
+    }
+});
+```
+
+### 3. 이벤트 위임 패턴
+
+동적으로 생성되는 DOM 요소에 대한 효율적인 이벤트 처리
+
+```javascript
+function delegate(instance, eventName, selector, handler) {
+    const emitEvent = (event) => {
+        const target = event.target.closest(selector);
+        if (target && instance.element.contains(target)) {
+            return handler.call(target, event);
+        }
+    };
+    instance.element.addEventListener(eventName, emitEvent);
+}
+```
+
+### 4. Topic 기반 데이터 매핑
+
+중앙 집중식 데이터 관리로 컴포넌트 간 데이터 공유 효율화
+
+```javascript
+// 페이지에서 등록
+GlobalDataPublisher.registerMapping({ topic: 'users', datasetInfo });
+GlobalDataPublisher.fetchAndPublish('users', page);
+
+// 컴포넌트에서 구독
+GlobalDataPublisher.subscribe('users', this, this.renderTable);
 ```
 
 ---
@@ -133,6 +298,14 @@ WKit.dispose3DTree(element);
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### 컴포넌트 라이프사이클
+
+- `register` → `completed` → `destroy`
+
+### 페이지 라이프사이클
+
+- `before_load` → `loaded` → `before_unload`
 
 ### 각 단계의 역할
 
@@ -219,6 +392,29 @@ GlobalDataPublisher.fetchAndPublish('userInfo', this.page);  // this.page = mast
 └────────────────┘     └─────────────────────┘     └────────────────┘
 ```
 
+### 전체 데이터 흐름
+
+```
+[Page - before_load]
+  → 이벤트 핸들러 등록 (onEventBusHandlers)
+  → Raycasting 초기화 (initThreeRaycasting)
+
+[Component - register]
+  → GlobalDataPublisher.subscribe() (구독 등록)
+  → 이벤트 바인딩 (bindEvents, bind3DEvents)
+
+[Page - loaded] (모든 컴포넌트 completed 후)
+  → GlobalDataPublisher.registerMapping()
+  → GlobalDataPublisher.fetchAndPublish()
+  → 구독자들에게 데이터 자동 전파
+
+[User Interaction]
+  → DOM Event
+  → delegate() → WEventBus.emit()
+  → Page EventBus Handler
+  → WKit.fetchData() → 데이터 처리 (primitive 조합)
+```
+
 ### 실행 순서
 
 ```
@@ -228,6 +424,238 @@ GlobalDataPublisher.fetchAndPublish('userInfo', this.page);  // this.page = mast
 4. [GlobalDataPublisher] fetch data from API
 5. [GlobalDataPublisher] publish to all subscribers
 6. [Component] renderStats(data) 자동 호출
+```
+
+---
+
+## 런타임 스캐폴드 패턴
+
+### Component Script 패턴
+
+#### 2D 컴포넌트 등록 (이벤트 바인딩)
+
+```javascript
+const { bindEvents } = WKit;
+
+initComponent.call(this);
+
+function initComponent() {
+    this.customEvents = getCustomEvents.call(this);
+    this.myMethod = myMethod.bind(this);
+    bindEvents(this, this.customEvents);
+}
+
+function getCustomEvents() {
+    return {
+        click: {
+            [`selector`]: '@myEvent'
+        }
+    };
+}
+
+function myMethod(data) {
+    console.log(`[myMethod] ${this.name}`, data);
+}
+```
+
+#### 공통 구독 컴포넌트 (2D/3D)
+
+**특징**: 한 topic에 여러 핸들러 등록 가능
+
+```javascript
+const { subscribe } = GlobalDataPublisher;
+const { each } = fx;
+
+// Subscription schema (배열로 여러 핸들러 등록 가능)
+this.subscriptions = {
+    users: ['renderUserTable', 'updateUserCount'],
+    products: ['renderProductList']
+};
+
+// Handler functions (bind to this)
+this.renderUserTable = renderUserTable.bind(this);
+this.updateUserCount = updateUserCount.bind(this);
+this.renderProductList = renderProductList.bind(this);
+
+// Subscribe to topics
+fx.go(
+    Object.entries(this.subscriptions),
+    each(([topic, fnList]) =>
+        each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+    )
+);
+
+function renderUserTable(data) {
+    console.log(`[Render Table] ${this.name}`, data);
+}
+
+function updateUserCount(data) {
+    console.log(`[Update Count] ${this.name}`, data.length);
+}
+```
+
+#### 3D 컴포넌트 (이벤트 바인딩)
+
+```javascript
+const { bind3DEvents } = WKit;
+
+// Event schema
+this.customEvents = {
+    click: '@3dObjectClicked'
+};
+
+// Data source info (optional)
+this.datasetInfo = {
+    datasetName: 'myDataset',
+    param: {
+        type: 'geometry',
+        id: this.id
+    }
+};
+
+// Bind 3D events
+bind3DEvents(this, this.customEvents);
+```
+
+#### 컴포넌트 Destroy
+
+**이벤트 제거**:
+```javascript
+const { removeCustomEvents } = WKit;
+
+onInstanceUnLoad.call(this);
+
+function onInstanceUnLoad() {
+    removeCustomEvents(this, this.customEvents);
+}
+```
+
+**구독 해제 포함**:
+```javascript
+const { unsubscribe } = GlobalDataPublisher;
+
+onInstanceUnLoad.call(this);
+
+function onInstanceUnLoad() {
+    clearSubscribe(this);
+}
+
+function clearSubscribe(instance) {
+    fx.go(
+        Object.entries(instance.subscriptions),
+        fx.each(([topic, _]) => unsubscribe(topic, instance))
+    );
+}
+```
+
+### Page Script 패턴
+
+#### before_load
+
+**용도**: 컴포넌트 생성 전 초기 설정 (이벤트 핸들러, Raycasting)
+
+```javascript
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
+
+// Setup event bus handlers
+this.eventBusHandlers = {
+    '@buttonClicked': async ({ event, targetInstance }) => {
+        console.log('[Page] Button clicked:', event, targetInstance);
+    },
+
+    '@3dObjectClicked': async ({ event, targetInstance }) => {
+        const { datasetInfo } = targetInstance;
+
+        if (datasetInfo) {
+            const { datasetName, param } = datasetInfo;
+            const data = await fetchData(this, datasetName, param);
+            console.log('[Page] 3D Object clicked - Data:', data);
+        }
+    }
+};
+
+// Register event handlers
+onEventBusHandlers(this.eventBusHandlers);
+
+// Setup Three.js raycasting (for 3D events)
+this.raycastingEventType = 'click';
+this.raycastingEventHandler = initThreeRaycasting(this.element, this.raycastingEventType);
+```
+
+#### loaded
+
+**용도**: 모든 컴포넌트 completed 후 데이터 발행
+
+```javascript
+const { each } = fx;
+
+// Define global data mappings
+this.globalDataMappings = [
+    {
+        topic: 'users',
+        datasetInfo: {
+            datasetName: 'myapi',
+            param: { dataType: 'users', limit: 20 }
+        }
+    },
+    {
+        topic: 'products',
+        datasetInfo: {
+            datasetName: 'myapi',
+            param: { dataType: 'products', category: 'all' }
+        }
+    }
+];
+
+// Register and fetch data for all topics
+fx.go(
+    this.globalDataMappings,
+    each(GlobalDataPublisher.registerMapping),
+    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
+);
+
+// Advanced: Dynamic param updates
+// fetchAndPublish(topic, this, { limit: 50 });  // Merges with registered param
+```
+
+#### before_unload
+
+```javascript
+const { go, map } = fx;
+const { makeIterator, dispose3DTree, clearSceneBackground, offEventBusHandlers } = WKit;
+
+onPageUnLoad.call(this);
+
+function onPageUnLoad() {
+    clearEventBus.call(this);
+    clearDataPublisher.call(this);
+    clearThreeInstances.call(this);
+}
+
+function clearEventBus() {
+    offEventBusHandlers.call(this, this.eventBusHandlers);
+    this.eventBusHandlers = null;
+}
+
+function clearDataPublisher() {
+    go(
+        this.globalDataMappings,
+        map(({ topic }) => topic),
+        each(GlobalDataPublisher.unregisterMapping)
+    );
+}
+
+function clearThreeInstances() {
+    const { scene } = wemb.threeElements;
+    go(
+        makeIterator(this, 'threeLayer'),
+        map(({ appendElement }) => dispose3DTree(appendElement))
+    );
+
+    clearSceneBackground(scene);
+    this.element.removeEventListener(this.raycastingEventType, this.raycastingEventHandler);
+    this.raycastingEventHandler = null;
+}
 ```
 
 ---
@@ -298,6 +726,228 @@ this.renderMethod = null;
 
 ---
 
+## 설계 철학
+
+### Primitive Building Blocks 원칙
+
+**프레임워크는 최소한의 primitive만 제공하고, 조합은 사용자에게 맡긴다**
+
+#### 철학
+- ✅ **DO**: 범용적이고 재사용 가능한 primitive 제공
+  - `WKit.fetchData(page, datasetName, param)` - 데이터 fetch
+  - `WKit.getInstanceByName(name, iter)` - 인스턴스 검색
+  - `WKit.makeIterator(page, ...layers)` - iterator 생성
+
+- ❌ **DON'T**: 특정 비즈니스 로직을 조합한 고수준 함수 제공
+
+#### 장점
+- 코드 흐름이 명확해짐
+- 사용자가 필요한 만큼만 사용
+- 디버깅 용이
+- 프레임워크 API 표면 최소화
+
+### Higher-Order Function으로 제어 흐름 추상화
+
+**`if` 문을 함수로 감싸서 재사용 가능한 패턴으로 만든다**
+
+```javascript
+// WKit에서 제공하는 HOF
+const withSelector = (element, selector, fn) => {
+    const target = element.querySelector(selector);
+    return target ? fn(target) : null;
+};
+
+// 선언적 사용
+WKit.withSelector(this.element, 'canvas', canvas => {
+    // canvas가 존재할 때만 실행
+});
+```
+
+#### 적용 기준
+
+| 조건 | 설명 |
+|------|------|
+| **반복되는 null 체크** | 동일한 요소를 여러 곳에서 검사 |
+| **전제조건과 순회 대상이 다름** | `if (canvas)` 후 `events.forEach()` |
+| **컨텍스트 전달 필요** | 검사 결과를 콜백에서 사용 |
+
+---
+
+## 주요 특징
+
+### 1. 선언적 스크립트 작성
+사용자가 에디터에서 register/destroy 스크립트만 작성하면 프레임워크가 자동으로 실행
+
+### 2. 자동 라이프사이클 관리
+프레임워크가 자동으로 init/cleanup 호출하여 메모리 누수 방지
+
+### 3. 함수형 조합
+fx.js 기반 파이프라인으로 복잡한 로직을 간결하게 표현
+
+### 4. 메모리 안전성
+- 3D 리소스 자동 dispose (geometry, material, texture)
+- 이벤트 리스너 정리
+- GlobalDataPublisher 구독 해제
+
+### 5. 느슨한 결합
+EventBus와 GlobalDataPublisher로 컴포넌트 독립성 보장
+
+### 6. 2D/3D 통합
+DOM 이벤트와 Three.js 이벤트를 일관된 방식으로 처리
+
+### 7. 컴포넌트 정형화
+스키마 기반 템플릿으로 도메인 컴포넌트 추가 용이
+- customEvents, subscriptions 스키마만 정의
+- 5-10분이면 새 컴포넌트 추가 가능
+
+### 8. 페이지의 Orchestration 역할
+페이지는 순수한 조율 계층으로 비즈니스 로직 집중
+- 컴포넌트 간 연결 고리 정의
+- 데이터 흐름 제어 (globalDataMappings)
+- 이벤트 처리 위임 (eventBusHandlers)
+
+### 9. 데이터셋별 Auto-Refresh
+각 데이터의 특성에 맞는 독립적인 갱신 주기 지원
+- 실시간 데이터(주문, 알림): 짧은 주기 (3초)
+- 통계 데이터(리포트): 긴 주기 (30초+)
+
+---
+
+## 베스트 프랙티스
+
+### 1. 컴포넌트 스크립트 작성
+
+**DO**:
+```javascript
+// 메서드 바인딩
+this.myMethod = myMethod.bind(this);
+
+// 명시적 정리
+function onInstanceUnLoad() {
+    WKit.removeCustomEvents(this, this.customEvents);
+}
+```
+
+**DON'T**:
+```javascript
+// 정리 로직 누락 (메모리 누수)
+```
+
+### 2. 이벤트 네이밍
+
+**DO**:
+```javascript
+// @ 접두사로 커스텀 이벤트 명시
+'@myClickEvent'
+'@productSelected'
+```
+
+**DON'T**:
+```javascript
+// 브라우저 기본 이벤트와 혼동 가능
+'click'  // ❌
+'myEvent'  // ❌
+```
+
+### 3. 리소스 정리
+
+**DO**:
+```javascript
+// before_unload에서 모든 리소스 정리
+function onPageUnLoad() {
+    clearEventBus.call(this);
+    clearDataPublisher.call(this);
+    clearThreeInstances.call(this);
+}
+```
+
+### 4. HTML dataset 활용
+
+**DO**:
+```javascript
+// 동적 렌더링 시 dataset에 식별자 저장
+this.renderUsers = function(users) {
+    return users.map((user, index) => `
+        <div class="user-card"
+             data-index="${index}"
+             data-user-id="${user.id}">
+            ${user.name}
+        </div>
+    `).join('');
+}.bind(this);
+
+// 이벤트 핸들러에서 dataset 활용
+'@userClicked': ({ event, targetInstance }) => {
+    const { index, userId } = event.target.dataset;
+    const user = targetInstance.users[index];
+}
+```
+
+### 5. 컴포넌트 메소드 위임
+
+**DO**:
+```javascript
+// Page - Orchestration만 집중
+'@userClicked': async ({ userId }) => {
+    const user = await fetchData(this, 'users', { id: userId });
+    userDetailPanel.showUserDetail(user);  // 위임!
+}
+
+// Component - 도메인 로직 소유
+this.showUserDetail = function(user) {
+    const enriched = this.enrichUserData(user);
+    this.updateUI(enriched);
+}.bind(this);
+```
+
+### 6. 페이지네이션 패턴
+
+**핵심 원칙**: 서버가 데이터 주체, 클라이언트는 렌더링만 담당
+
+```javascript
+this.pageState = {
+    page: 1,
+    pageSize: 10,
+    total: 0,
+    totalPages: 0
+};
+
+function renderData(response) {
+    const { data, pagination } = response;
+    if (!data) return;
+
+    const prevTotalPages = this.pageState.totalPages;
+
+    if (pagination) {
+        this.pageState.page = pagination.page;
+        this.pageState.totalPages = pagination.totalPages;
+    }
+
+    this.tableInstance.setData(data);
+
+    // totalPages 변경 시에만 버튼 재생성
+    if (prevTotalPages !== this.pageState.totalPages) {
+        // 버튼 재생성
+    }
+}
+```
+
+### 7. 이벤트 바인딩과 event.preventDefault()
+
+WKit의 `bindEvents`는 **submit 이벤트에만** `event.preventDefault()`를 호출합니다.
+
+```javascript
+// ⚠️ 비동기 핸들러 - await 전에 호출 필수
+'@linkClicked': async ({ event }) => {
+    event.preventDefault();  // ✅ await 전에 호출
+
+    const data = await fetchData(...);
+    // ...
+}
+```
+
+---
+
 ## 에러 처리 패턴
 
 ### Guard Clause (권장)
@@ -360,6 +1010,71 @@ function renderChart(response) {
 
 ---
 
+## 트러블슈팅
+
+### 이벤트가 발생하지 않는 경우
+
+1. 이벤트 이름 확인 (`@` 접두사)
+2. WEventBus에 핸들러 등록 여부 확인
+3. 브라우저 콘솔에서 `@eventHandler` 로그 확인
+
+### 데이터가 표시되지 않는 경우
+
+1. GlobalDataPublisher 매핑 등록 확인
+2. 구독 설정 확인
+3. 데이터셋 이름과 파라미터 확인
+
+### 메모리 누수 의심 시
+
+1. before_unload에서 모든 리소스 정리 확인
+2. 3D 객체 dispose 확인
+3. 이벤트 리스너 제거 확인
+
+### Tabulator 무한 resize 루프
+
+**증상**: 테이블 컬럼이 계속 크기가 변함
+
+**원인**: `layout: 'fitColumns'`와 컨테이너의 CSS `fit-content` 속성 충돌
+
+**해결**: `layout: 'fitData'`로 변경하여 테이블이 고정 너비를 갖도록 함
+
+### Tabulator 커스텀 스타일링
+
+| 요소 | 기본 문제 | 해결 방법 |
+|------|----------|----------|
+| `.tabulator-table` | `background: white` | `background: transparent` |
+| `.tabulator-row` | 기본 높이가 다름 | `min-height`, `height` 모두 지정 |
+| `.tabulator-col-title` | 우측 패딩 존재 | `padding-right: 0 !important` |
+
+---
+
+## 컴포넌트 구조: Figma 선택 요소 = 컨테이너
+
+웹 빌더는 컴포넌트마다 **div 컨테이너**를 기본 단위로 가집니다.
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  Figma 링크 제공 = 컴포넌트 단위 선택                                  │
+│                                                                      │
+│  - Figma 선택 요소의 가장 바깥 = div 컨테이너                          │
+│  - Figma 선택 요소의 크기 = 컨테이너 크기                              │
+│  - 내부 요소 = innerHTML (Figma 스타일 그대로)                        │
+│                                                                      │
+│  <div id="component-container">   ← Figma 선택 요소 크기              │
+│      <!-- innerHTML -->           ← Figma 내부 요소 (스타일 그대로)    │
+│  </div>                                                              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**컨테이너 크기 규칙:**
+
+| 상황 | 컨테이너 크기 |
+|------|-------------|
+| CONTAINER_STYLES.md 없음 | Figma 선택 요소 크기 (고정) |
+| CONTAINER_STYLES.md 있음 | 레이아웃 기반 크기로 재정의 |
+
+---
+
 ## 폴더 구조
 
 ```
@@ -372,26 +1087,33 @@ RNBT_architecture/
 │
 ├── Runtime_Scaffold_code_sample/   # 스캐폴드 템플릿
 │
-├── example_basic_01/               # Page Only 예제 (IoT 대시보드)
-│   ├── page/
-│   │   ├── page_scripts/
-│   │   └── components/
-│   ├── mock_server/
-│   ├── datasetList.json
-│   └── DESIGN_PROCESS.md
+├── Examples/
+│   ├── example_basic_01/           # Page Only 예제 (IoT 대시보드)
+│   │   ├── page/
+│   │   │   ├── page_scripts/
+│   │   │   └── components/
+│   │   ├── mock_server/
+│   │   ├── datasetList.json
+│   │   └── README.md
+│   │
+│   ├── example_master_01/          # Master + Page 예제
+│   │   ├── master/
+│   │   │   ├── common_component/
+│   │   │   └── components/
+│   │   ├── page/
+│   │   │   ├── page_scripts/
+│   │   │   └── components/
+│   │   ├── mock_server/
+│   │   ├── datasetList.json
+│   │   └── README.md
+│   │
+│   └── example_master_02/          # 확장 예제
 │
-├── example_master_01/              # Master + Page 예제
-│   ├── master/
-│   │   ├── common_component/
-│   │   └── components/
-│   ├── page/
-│   │   ├── page_scripts/
-│   │   └── components/
-│   ├── mock_server/
-│   ├── datasetList.json
-│   └── README.md
+├── Projects/                       # 실제 프로젝트
 │
-├── CLAUDE.md                       # 상세 기술 문서
+├── Analysis/                       # 분석 문서
+│
+├── CLAUDE.md                       # 작업 지침
 └── README.md                       # 이 파일
 ```
 
@@ -434,15 +1156,68 @@ RNBT_architecture/
 
 ---
 
-## 상세 문서
+## 향후 확장 가능성
 
-- [CLAUDE.md](./CLAUDE.md) - 프레임워크 상세 기술 문서
-- [example_basic_01/DESIGN_PROCESS.md](./example_basic_01/DESIGN_PROCESS.md) - Page Only 설계 문서
-- [example_master_01/README.md](./example_master_01/README.md) - Master + Page 설계 문서
+### 1. 플러그인 시스템
+```javascript
+WKit.registerPlugin('myPlugin', {
+    onPageLoad() { ... },
+    onComponentRegister() { ... }
+});
+```
+
+### 2. 상태 관리 통합
+```javascript
+WKit.connectToStore(instance, mapStateToProps);
+```
+
+### 3. 타입 안전성
+```javascript
+interface DataMappingSchema {
+    ownerId: string;
+    datasetInfo: DatasetInfo;
+}
+```
+
+### 4. 디버깅 도구
+```javascript
+WKit.enableDebugMode({
+    showEventFlow: true,
+    trackDataMapping: true
+});
+```
 
 ---
 
-## 버전
+## 참고 자료
 
-- **문서 버전**: 1.0.0
-- **최종 업데이트**: 2025-11-28
+### 파일 참조
+- `fx.js` - 함수형 프로그래밍 유틸리티
+- `WEventBus.js` - 이벤트 버스 구현
+- `GlobalDataPublisher.js` - 데이터 발행 시스템
+- `WKit.js` - 통합 유틸리티 킷
+- `Runtime_Scaffold_code_sample/` - 런타임 스크립트 예제
+
+### 핵심 함수 참조
+- `WKit.bindEvents` - 2D 이벤트 바인딩
+- `WKit.bind3DEvents` - 3D 이벤트 바인딩
+- `WKit.fetchData` - 데이터 fetch primitive
+- `WKit.getInstanceByName` - 인스턴스 검색 primitive
+- `WKit.dispose3DTree` - 3D 리소스 정리
+- `GlobalDataPublisher.fetchAndPublish` - 데이터 fetch & 발행
+
+---
+
+## 버전 정보
+
+**문서 버전**: 2.0.0
+**최종 업데이트**: 2025-12-15
+
+### 주요 변경사항
+
+- v2.0.0: 문서 구조 재편 (2025-12-15)
+  - CLAUDE.md의 설계 내용을 README.md로 통합
+  - CLAUDE.md는 작업 지침만 포함하도록 분리
+  - 중복 내용 제거 및 일원화
+
+- v1.0.0: 초기 문서 작성 (2025-11-28)
