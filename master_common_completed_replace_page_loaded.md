@@ -239,6 +239,25 @@ comInstanceList.forEach((instance: WVComponent) => {
 
 **핵심**: completed가 실행되지 않았더라도, register 시점에 DOM과 innerHTML이 이미 준비되어 있으므로 subscribe handler에서 DOM 조작이 가능함
 
+#### ⚠️ 중요: completed 실행 순서는 무관함
+
+```typescript
+// forEach로 순차 실행되지만, 순서에 의존하면 안 됨
+comInstanceList.forEach((instance: WVComponent) => {
+  instance.dispatchWScriptEvent(WVComponentScriptEvent.COMPLETED);
+});
+```
+
+**실행 순서가 무관한 이유**:
+1. **subscribe는 register에서 완료**: completed 전에 모든 컴포넌트의 subscribe가 등록됨
+2. **DOM은 register에서 준비**: completed 전에 모든 DOM이 삽입되고 innerHTML이 설정됨
+3. **fetchAndPublish는 동기적 발행이 아님**: fetch 완료 후 모든 subscriber에게 전달
+
+**따라서**:
+- common_component가 먼저 completed되어 fetchAndPublish를 호출해도
+- Header/Sidebar의 subscribe handler가 정상 호출됨 (register에서 이미 등록됨)
+- 순서에 의존하는 로직을 작성하지 말 것
+
 ---
 
 ### 근거 6: 마스터 레이어의 3D 리소스 안전성
@@ -480,5 +499,8 @@ offEventBusHandlers(this, this.eventBusHandlers);
 
 ## 버전 정보
 
-- 문서 버전: 1.1.0
+- 문서 버전: 1.2.0
 - 최종 업데이트: 2025-11-28
+- 변경사항:
+  - v1.2.0: completed 실행 순서 무관함 명시 (근거 5에 추가)
+  - v1.1.0: 초기 버전

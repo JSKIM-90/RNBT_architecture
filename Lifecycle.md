@@ -62,8 +62,12 @@
 | `beforeUnLoad` | `BEFORE_UNLOAD` | 이전 페이지 언로드 전 | 리소스 정리 준비 |
 | `unLoaded` | `UNLOADED` | 이전 페이지 언로드 후 | 리소스 정리 완료 |
 | `beforeLoad` | `BEFORE_LOAD` | 새 페이지 로드 전 | 이벤트 핸들러 등록 |
-| `ready` | `READY` | 컴포넌트 생성 완료 | DOM 접근 가능 |
+| `ready` | `READY` | 컴포넌트 생성 완료 | DOM 접근 가능 (사용 안 함*) |
 | `loaded` | `LOADED` | 리소스 로드 완료 | 데이터 발행, API 호출 |
+
+> **`ready` 이벤트 사용 안 함**: `ready`는 모든 컴포넌트 DOM 생성 후 발생하지만, 실제로는 `loaded` 시점에 데이터 발행이 이루어져야 합니다.
+> 컴포넌트의 `register`에서 이미 DOM 접근이 가능하고, 구독 등록 및 이벤트 바인딩을 처리합니다.
+> 따라서 `ready.js` 템플릿은 제공하지 않으며, 대부분의 경우 `loaded.js`만 사용합니다.
 
 ### 컴포넌트 이벤트 (WVComponentScriptEvent)
 
@@ -263,5 +267,7 @@ comInstanceList.forEach((instance: WVComponent) => {
 
 ## 버전 정보
 
-- 문서 버전: 1.0.0
+- 문서 버전: 1.1.0
 - 최종 업데이트: 2025-11-28
+- 변경사항:
+  - v1.1.0: `ready` 이벤트 사용 안 함 명시 (`loaded`로 대체)

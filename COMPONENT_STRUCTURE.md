@@ -52,6 +52,42 @@
 | CONTAINER_STYLES.md 있음 | 해당 문서 값 사용 (레이아웃 기반) |
 | CONTAINER_STYLES.md 없음 | Figma 선택 요소 크기 사용 (고정) |
 
+### CONTAINER_STYLES.md 적용 방법
+
+**CONTAINER_STYLES.md는 마크다운 문서입니다.** CSS 파일이 아닙니다.
+
+**적용 과정**:
+1. 전체 레이아웃 설계 시 CONTAINER_STYLES.md에 각 컴포넌트의 컨테이너 크기 정의
+2. 개발자가 preview.html 작성 시 MD 문서의 값을 **수동으로 복사**
+3. 런타임에서는 에디터가 컨테이너 크기를 관리 (MD 문서는 참고용)
+
+```markdown
+<!-- CONTAINER_STYLES.md 예시 -->
+## StatsPanel
+- width: 100%
+- height: calc((100vh - 60px) / 2)
+- padding: 20px
+- overflow: auto
+
+## VisitorChart
+- width: 100%
+- height: calc((100vh - 60px) / 2)
+```
+
+```html
+<!-- preview.html에서 수동 적용 -->
+<style>
+#stats-panel-container {
+    width: 100%;
+    height: calc((100vh - 60px) / 2);
+    padding: 20px;
+    overflow: auto;
+}
+</style>
+```
+
+**핵심**: CONTAINER_STYLES.md는 **설계 문서**이며, 자동으로 CSS에 반영되지 않습니다.
+
 ```css
 /* CONTAINER_STYLES.md 있는 경우 */
 #component-container {
@@ -126,23 +162,33 @@ container.innerHTML = 사용자 정의 HTML
 
 ## 파일 구성
 
-하나의 컴포넌트는 다음 파일들로 구성됩니다:
+하나의 컴포넌트는 다음 구조로 구성됩니다:
+
+```
+ComponentName/
+├─ views/component.html       # 내부 요소 HTML
+├─ styles/component.css       # 내부 요소 스타일
+├─ scripts/
+│   ├─ register.js            # 초기화 로직
+│   └─ destroy.js             # 정리 로직
+└─ preview.html               # 독립 테스트
+```
 
 | 파일 | 역할 |
 |------|------|
-| `ComponentName.html` | 내부 요소 HTML (views/) |
-| `ComponentName.css` | 내부 요소 스타일 (styles/) |
-| `ComponentName_register.js` | 초기화 로직 (scripts/) |
-| `ComponentName_destroy.js` | 정리 로직 (scripts/) |
-| `ComponentName_preview.html` | 독립 테스트용 (optional) |
+| `views/component.html` | 내부 요소 HTML |
+| `styles/component.css` | 내부 요소 스타일 |
+| `scripts/register.js` | 초기화 로직 |
+| `scripts/destroy.js` | 정리 로직 |
+| `preview.html` | 독립 테스트용 |
 
-컨테이너 스타일은 `CONTAINER_STYLES.md`에서 통합 관리합니다.
+> **Note**: 컴포넌트 폴더명이 이미 ComponentName이므로 내부 파일명에 중복 불필요
 
 ---
 
 ## 컴포넌트 템플릿
 
-### HTML (views/ComponentName.html)
+### HTML (views/component.html)
 
 ```html
 <div class="component-name">
@@ -150,7 +196,7 @@ container.innerHTML = 사용자 정의 HTML
 </div>
 ```
 
-### CSS (styles/ComponentName.css)
+### CSS (styles/component.css)
 
 ```css
 /* 컨테이너 ID 중심 nesting 구조 */
@@ -164,7 +210,7 @@ container.innerHTML = 사용자 정의 HTML
 }
 ```
 
-### Preview (ComponentName_preview.html)
+### Preview (preview.html)
 
 ```html
 <!DOCTYPE html>
@@ -222,6 +268,9 @@ container.innerHTML = 사용자 정의 HTML
 
 ---
 
-**버전**: 2.0.0
+**버전**: 2.2.0
 **작성일**: 2025-12-04
-**변경사항**: Figma 스타일 그대로 유지 원칙 명확화, height: 100% 패턴 제거, 컨테이너 크기 규칙 추가
+**변경사항**:
+- v2.2.0: CONTAINER_STYLES.md 적용 방법 명시 (수동 복사)
+- v2.1.0: 파일 구조 통일 (scripts/ 폴더, 파일명 간결화)
+- v2.0.0: Figma 스타일 그대로 유지 원칙 명확화, height: 100% 패턴 제거, 컨테이너 크기 규칙 추가

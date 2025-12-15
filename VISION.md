@@ -25,9 +25,9 @@
 │    ├─ Figma MCP Server로 디자인 정보 추출                        │
 │    ├─ Playwright CLI로 스크린샷 자동화                           │
 │    └─ 컴포넌트 구조에 맞춘 HTML/CSS 생성                         │
-│        ├─ views/ComponentName.html                              │
-│        ├─ styles/ComponentName.css                              │
-│        └─ ComponentName_preview.html                            │
+│        ├─ views/component.html                                  │
+│        ├─ styles/component.css                                  │
+│        └─ preview.html                                          │
 └────────────────────────┬────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -128,14 +128,15 @@ Claude Code (HTML/CSS 생성)
 
 ```
 ComponentName/
-├─ views/ComponentName.html       # 내부 요소 HTML
-├─ styles/ComponentName.css       # 내부 요소 스타일
-├─ components/
-│   ├─ ComponentName_register.js  # 초기화 로직
-│   ├─ ComponentName_destroy.js   # 정리 로직
-│   └─ ComponentName_preview.html # 독립 테스트
-└─ CONTAINER_STYLES.md            # 컨테이너 크기 스타일
+├─ views/component.html       # 내부 요소 HTML
+├─ styles/component.css       # 내부 요소 스타일
+├─ scripts/
+│   ├─ register.js            # 초기화 로직
+│   └─ destroy.js             # 정리 로직
+└─ preview.html               # 독립 테스트
 ```
+
+> **Note**: 컴포넌트 폴더명이 이미 ComponentName이므로 내부 파일명에 중복 불필요
 
 ### 페이지 자산
 
@@ -161,5 +162,7 @@ page/
 
 ---
 
-**버전**: 1.0.0
+**버전**: 1.1.0
 **작성일**: 2025-12-02
+**변경사항**:
+- v1.1.0: 파일 구조 통일 (scripts/ 폴더, 파일명 간결화)

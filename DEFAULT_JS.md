@@ -207,7 +207,10 @@ fx.go(
     this.globalDataMappings,
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => this.currentParams[topic] = {}),
-    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this))
+    each(({ topic }) =>
+        GlobalDataPublisher.fetchAndPublish(topic, this)
+            .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
+    )
 );
 
 // ======================
@@ -226,7 +229,7 @@ this.startAllIntervals = () => {
                         topic,
                         this,
                         this.currentParams[topic] || {}
-                    );
+                    ).catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
                 }, refreshInterval);
             }
         })
@@ -416,7 +419,10 @@ fx.go(
     each(GlobalDataPublisher.registerMapping),
     each(({ topic }) => this.currentParams[topic] = {}),
     // 주의: this.page 사용!
-    each(({ topic }) => GlobalDataPublisher.fetchAndPublish(topic, this.page))
+    each(({ topic }) =>
+        GlobalDataPublisher.fetchAndPublish(topic, this.page)
+            .catch(err => console.error(`[fetchAndPublish:${topic}]`, err))
+    )
 );
 
 // ======================
@@ -435,7 +441,7 @@ this.startAllIntervals = () => {
                         topic,
                         this.page,  // 주의: this.page 사용!
                         this.currentParams[topic] || {}
-                    );
+                    ).catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
                 }, refreshInterval);
             }
         })
@@ -489,20 +495,46 @@ this.refreshIntervals = null;
 
 ---
 
+## 에러 처리 가이드
+
+모든 `fetchAndPublish` 호출에는 `.catch()`가 필수입니다:
+
+```javascript
+// 초기 fetch
+GlobalDataPublisher.fetchAndPublish(topic, this)
+    .catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
+
+// interval fetch
+setInterval(() => {
+    GlobalDataPublisher.fetchAndPublish(topic, this, params)
+        .catch(err => console.error(`[fetchAndPublish:${topic}]`, err));
+}, refreshInterval);
+```
+
+**이유**:
+- 유틸은 에러를 삼키지 않고 reject만 함
+- 도메인마다 실패 대응(재시도, fallback, 사용자 알림)이 다름
+- 호출자가 컨텍스트에 맞게 처리하는 것이 확장성과 가시성 측면에서 안전
+
+상세: [`ERROR_HANDLING.md`](ERROR_HANDLING.md) 참조
+
+---
+
 ## 사용법
 
 ### 1. 새 컴포넌트 생성
 
 ```bash
-# 1. 퍼블리싱 파일 준비
-views/MyComponent.html
-styles/MyComponent.css
+# 1. 컴포넌트 폴더 생성
+MyComponent/
+├─ views/component.html      # 퍼블리싱 파일
+├─ styles/component.css      # 퍼블리싱 파일
+├─ scripts/
+│   ├─ register.js           # 위 템플릿 복사
+│   └─ destroy.js            # 위 템플릿 복사
+└─ preview.html              # 독립 테스트
 
-# 2. Default JS 복사
-components/MyComponent_register.js  ← 위 템플릿 복사
-components/MyComponent_destroy.js   ← 위 템플릿 복사
-
-# 3. 사용자 정의 추가
+# 2. 사용자 정의 추가
 - subscriptions에 topic 추가
 - customEvents에 이벤트 추가
 - 렌더링 함수 구현
@@ -566,13 +598,15 @@ this.customEvents = {
 
 - [`COMPONENT_STRUCTURE.md`](COMPONENT_STRUCTURE.md) - 컴포넌트 구조 (컨테이너 + 내부 요소)
 - [`PROJECT_TEMPLATE.md`](PROJECT_TEMPLATE.md) - 프로젝트 설계 패턴 상세
+- [`ERROR_HANDLING.md`](ERROR_HANDLING.md) - fetchAndPublish 에러 처리 가이드
 - [`CLAUDE.md`](CLAUDE.md) - 전체 프레임워크 설명
 
 ---
 
-**버전**: 1.4.0
+**버전**: 1.5.0
 **작성일**: 2025-12-02
 **변경사항**:
+- v1.5.0: 에러 처리 필수화 (.catch() 추가), 파일 구조 통일 (scripts/ 폴더)
 - v1.4.0: 3D 컴포넌트 destroy.js 제거 - `disposeAllThreeResources()`에서 일괄 정리
 - v1.3.0: 문서 구조 재정리 - 섹션 번호 추가, 컴포넌트 destroy.js 위치 수정
 - v1.2.0: `WKit.withSelector` 사용으로 변경 (선택자 외부 주입)
