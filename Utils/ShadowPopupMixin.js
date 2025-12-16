@@ -8,6 +8,7 @@
  * - 팝업 표시/숨김
  * - 내부 요소 쿼리
  * - 이벤트 바인딩 헬퍼
+ * - 차트 인스턴스 관리 (ECharts)
  *
  * 사용법:
  *   const { applyShadowPopupMixin } = ShadowPopupMixin;
@@ -16,6 +17,12 @@
  *       getStyles: () => '.popup { ... }',
  *       onCreated: (shadowRoot) => { ... }
  *   });
+ *
+ * 차트 사용:
+ *   this.createChart('.chart-container');  // echarts.init + ResizeObserver
+ *   this.updateChart('.chart-container', option);  // setOption
+ *   this.getChart('.chart-container');  // 인스턴스 조회
+ *   // destroyPopup() 호출 시 차트 자동 정리
  *
  * ─────────────────────────────────────────────────────────────
  * 스타일 분리 검증 (2025-12-16)
@@ -51,7 +58,8 @@ ShadowPopupMixin.applyShadowPopupMixin = function(instance, options) {
     instance._popup = {
         host: null,
         shadowRoot: null,
-        eventCleanups: []
+        eventCleanups: [],
+        charts: new Map(),           // selector → { chart, resizeObserver }
     };
 
     /**
@@ -147,10 +155,80 @@ ShadowPopupMixin.applyShadowPopupMixin = function(instance, options) {
         });
     };
 
+    // ======================
+    // CHART HELPERS
+    // ======================
+
+    /**
+     * Shadow DOM 내부에 ECharts 인스턴스 생성
+     *
+     * @param {string} selector - 차트 컨테이너 선택자
+     * @returns {Object|null} ECharts 인스턴스
+     */
+    instance.createChart = function(selector) {
+        if (instance._popup.charts.has(selector)) {
+            return instance._popup.charts.get(selector).chart;
+        }
+
+        const container = instance.popupQuery(selector);
+        if (!container) {
+            console.warn(`[ShadowPopupMixin] Chart container not found: ${selector}`);
+            return null;
+        }
+
+        const chart = echarts.init(container);
+
+        const resizeObserver = new ResizeObserver(() => {
+            chart.resize();
+        });
+        resizeObserver.observe(container);
+
+        instance._popup.charts.set(selector, { chart, resizeObserver });
+
+        return chart;
+    };
+
+    /**
+     * 차트 인스턴스 조회
+     *
+     * @param {string} selector - 차트 컨테이너 선택자
+     * @returns {Object|null} ECharts 인스턴스
+     */
+    instance.getChart = function(selector) {
+        return instance._popup.charts.get(selector)?.chart || null;
+    };
+
+    /**
+     * 차트 옵션 업데이트
+     *
+     * @param {string} selector - 차트 컨테이너 선택자
+     * @param {Object} option - ECharts option
+     */
+    instance.updateChart = function(selector, option) {
+        const chart = instance.getChart(selector);
+        if (!chart) {
+            console.warn(`[ShadowPopupMixin] Chart not found: ${selector}`);
+            return;
+        }
+
+        try {
+            chart.setOption(option);
+        } catch (e) {
+            console.error(`[ShadowPopupMixin] Chart setOption error:`, e);
+        }
+    };
+
     /**
      * 팝업 및 리소스 정리
      */
     instance.destroyPopup = function() {
+        // 차트 정리
+        instance._popup.charts.forEach(({ chart, resizeObserver }) => {
+            resizeObserver.disconnect();
+            chart.dispose();
+        });
+        instance._popup.charts.clear();
+
         // 이벤트 정리
         instance._popup.eventCleanups.forEach(cleanup => cleanup());
         instance._popup.eventCleanups = [];

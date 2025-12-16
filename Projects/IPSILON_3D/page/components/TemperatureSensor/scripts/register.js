@@ -20,7 +20,8 @@ function initComponent() {
     // 1. 데이터 정의
     // ======================
     this.datasetInfo = [
-        { datasetName: 'sensor', param: { id: this.id } }
+        { datasetName: 'sensor', param: { id: this.id } },
+        { datasetName: 'sensorHistory', param: { id: this.id } }
     ];
 
     // ======================
@@ -42,7 +43,35 @@ function initComponent() {
     });
 
     // ======================
-    // 4. Public Methods
+    // 4. Data Config (API 필드 매핑)
+    // ======================
+    const sensorConfig = {
+        nameKey: 'name',
+        zoneKey: 'zone',
+        tempKey: 'temperature',
+        humidityKey: 'humidity',
+        statusKey: 'status'
+    };
+
+    const historyConfig = {
+        xKey: 'timestamps',
+        yKey: 'temperatures'
+    };
+
+    // ======================
+    // 5. Chart Config (스타일)
+    // ======================
+    const chartStyleConfig = {
+        color: '#3b82f6',
+        smooth: true,
+        areaStyle: true
+    };
+
+    this.renderSensorInfo = renderSensorInfo.bind(this, sensorConfig);
+    this.renderChart = renderChartData.bind(this, { ...historyConfig, ...chartStyleConfig });
+
+    // ======================
+    // 6. Public Methods
     // ======================
     this.showDetail = showDetail.bind(this);
     this.hideDetail = hideDetail.bind(this);
@@ -55,23 +84,39 @@ function initComponent() {
 // ======================
 
 async function showDetail() {
-    // 데이터 조회
-    const result = await fetchData(this.page, 'sensor', { id: this.id });
-    const sensor = result?.response?.data;
-
-    if (!sensor) return;
-
-    // 팝업 표시 + 데이터 렌더링
     this.showPopup();
 
-    this.popupQuery('.sensor-name').textContent = sensor.name;
-    this.popupQuery('.sensor-zone').textContent = sensor.zone;
-    this.popupQuery('.sensor-temp').textContent = `${sensor.temperature.toFixed(1)}°C`;
-    this.popupQuery('.sensor-humidity').textContent = `${sensor.humidity}%`;
+    // 센서 기본 정보 조회 + 렌더링
+    const sensorResult = await fetchData(this.page, 'sensor', { id: this.id });
+    const sensor = sensorResult?.response?.data;
+    if (sensor) {
+        this.renderSensorInfo(sensor);
+    }
+
+    // 히스토리 데이터 조회 + 차트 렌더링
+    const historyResult = await fetchData(this.page, 'sensorHistory', { id: this.id });
+    const history = historyResult?.response?.data;
+    if (history) {
+        this.renderChart(history);
+    }
+}
+
+function renderSensorInfo(config, data) {
+    const { nameKey, zoneKey, tempKey, humidityKey, statusKey } = config;
+
+    this.popupQuery('.sensor-name').textContent = data[nameKey];
+    this.popupQuery('.sensor-zone').textContent = data[zoneKey];
+    this.popupQuery('.sensor-temp').textContent = `${data[tempKey].toFixed(1)}°C`;
+    this.popupQuery('.sensor-humidity').textContent = `${data[humidityKey]}%`;
 
     const statusEl = this.popupQuery('.sensor-status');
-    statusEl.textContent = sensor.status;
-    statusEl.dataset.status = sensor.status;
+    statusEl.textContent = data[statusKey];
+    statusEl.dataset.status = data[statusKey];
+}
+
+function renderChartData(config, data) {
+    const option = getLineChartOption(config, data);
+    this.updateChart('.chart-container', option);
 }
 
 function hideDetail() {
@@ -79,10 +124,65 @@ function hideDetail() {
 }
 
 // ======================
+// CHART OPTION BUILDER
+// ======================
+
+function getLineChartOption(config, data) {
+    const { xKey, yKey, color, smooth, areaStyle } = config;
+
+    return {
+        grid: {
+            left: 40,
+            right: 16,
+            top: 16,
+            bottom: 24
+        },
+        xAxis: {
+            type: 'category',
+            data: data[xKey],
+            axisLine: { lineStyle: { color: '#333' } },
+            axisLabel: { color: '#888', fontSize: 10 }
+        },
+        yAxis: {
+            type: 'value',
+            axisLine: { show: false },
+            axisLabel: { color: '#888', fontSize: 10 },
+            splitLine: { lineStyle: { color: '#333' } }
+        },
+        series: [{
+            type: 'line',
+            data: data[yKey],
+            smooth: smooth,
+            symbol: 'none',
+            lineStyle: { color: color, width: 2 },
+            areaStyle: areaStyle ? {
+                color: {
+                    type: 'linear',
+                    x: 0, y: 0, x2: 0, y2: 1,
+                    colorStops: [
+                        { offset: 0, color: hexToRgba(color, 0.3) },
+                        { offset: 1, color: hexToRgba(color, 0) }
+                    ]
+                }
+            } : null
+        }]
+    };
+}
+
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+// ======================
 // POPUP LIFECYCLE
 // ======================
 
 function onPopupCreated() {
+    this.createChart('.chart-container');
+
     this.bindPopupEvents({
         click: {
             '.close-btn': () => this.hideDetail()
@@ -115,6 +215,10 @@ function getPopupHTML() {
             <div class="info-row">
                 <span class="label">Status</span>
                 <span class="sensor-status"></span>
+            </div>
+            <div class="chart-section">
+                <div class="chart-title">Temperature Trend</div>
+                <div class="chart-container"></div>
             </div>
         </div>
     </div>
@@ -220,6 +324,23 @@ function getPopupStyles() {
 .sensor-status[data-status="critical"] {
     background: rgba(248, 113, 113, 0.2);
     color: #f87171;
+}
+
+.chart-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #333;
+}
+
+.chart-title {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.chart-container {
+    width: 100%;
+    height: 150px;
 }
     `;
 }
