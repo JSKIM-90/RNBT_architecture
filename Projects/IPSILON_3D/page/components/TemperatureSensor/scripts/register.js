@@ -1,11 +1,7 @@
 /*
  * TemperatureSensor - Self-Contained 3D Component
  *
- * 자기 완결 컴포넌트 패턴:
- * - 3D 모델 클릭 이벤트 처리
- * - Shadow DOM 기반 팝업 (CSS 자동 격리)
- * - 내부에서 fetchData 호출 및 차트 렌더링
- * - Page는 어떤 메서드를 호출할지만 결정
+ * ShadowPopupMixin을 사용한 자기 완결 컴포넌트
  *
  * Events:
  *   @sensorClicked - 센서 클릭 시 발행
@@ -18,12 +14,13 @@
  */
 
 const { bind3DEvents, fetchData } = WKit;
+const { applyShadowPopupMixin } = ShadowPopupMixin;
 
 initComponent.call(this);
 
 function initComponent() {
     // ======================
-    // DATA SOURCE DEFINITIONS (복수)
+    // DATA SOURCE DEFINITIONS
     // ======================
     this.datasetInfo = [
         { datasetName: 'sensor', param: { id: this.id } },
@@ -41,16 +38,22 @@ function initComponent() {
     bind3DEvents(this, this.customEvents);
 
     // ======================
-    // INTERNAL STATE
+    // SHADOW POPUP MIXIN 적용
     // ======================
-    this.popupHost = null;
-    this.shadowRoot = null;
-    this.chart = null;
-    this.currentSensor = null;
-    this.resizeObserver = null;
+    applyShadowPopupMixin(this, {
+        getHTML: getPopupHTML,
+        getStyles: getPopupStyles,
+        onCreated: onPopupCreated,
+        onDestroy: onPopupDestroy
+    });
 
     // ======================
-    // PUBLIC METHODS (Page에서 호출)
+    // INTERNAL STATE
+    // ======================
+    this.currentSensor = null;
+
+    // ======================
+    // PUBLIC METHODS
     // ======================
     this.showDetail = showDetail.bind(this);
     this.hideDetail = hideDetail.bind(this);
@@ -58,13 +61,9 @@ function initComponent() {
     this.focusCamera = focusCamera.bind(this);
 
     // Internal methods
-    this.createPopup = createPopup.bind(this);
     this.updateSensor = updateSensor.bind(this);
     this.updateChart = updateChart.bind(this);
     this.updateAlerts = updateAlerts.bind(this);
-    this.bindPopupEvents = bindPopupEvents.bind(this);
-    this.getPopupStyles = getPopupStyles.bind(this);
-    this.getPopupHTML = getPopupHTML.bind(this);
 
     console.log('[TemperatureSensor 3D] Registered (Self-Contained):', this.id);
 }
@@ -76,7 +75,7 @@ function initComponent() {
 async function showDetail() {
     console.log('[TemperatureSensor] showDetail - fetching data for:', this.id);
 
-    // 3개 API 병렬 호출 (컴포넌트 내부에서 직접)
+    // 3개 API 병렬 호출
     const [sensorResult, historyResult, alertsResult] = await Promise.all([
         fetchData(this.page, 'sensor', { id: this.id }),
         fetchData(this.page, 'sensorHistory', { id: this.id }),
@@ -92,129 +91,103 @@ async function showDetail() {
         return;
     }
 
-    // Shadow DOM 팝업 생성/표시
-    this.createPopup();
+    // 팝업 표시 (믹스인 메서드)
+    this.showPopup();
+
+    // 데이터 렌더링
     this.updateSensor(sensor);
     if (history) this.updateChart(history);
     this.updateAlerts(alerts);
 
-    this.popupHost.style.display = 'block';
     console.log('[TemperatureSensor] Detail popup shown');
 }
 
 function hideDetail() {
-    if (this.popupHost) {
-        this.popupHost.style.display = 'none';
-    }
+    this.hidePopup();
     this.currentSensor = null;
     console.log('[TemperatureSensor] Detail popup hidden');
 }
 
 function highlight() {
-    // 대안 시나리오: 3D 모델 하이라이트
     console.log('[TemperatureSensor] Highlight:', this.id);
     // TODO: Three.js 머티리얼 변경 등
 }
 
 function focusCamera() {
-    // 대안 시나리오: 카메라 포커스
     console.log('[TemperatureSensor] Focus camera on:', this.id);
     // TODO: 카메라 이동 애니메이션
 }
 
 // ======================
-// POPUP CREATION (Shadow DOM)
+// POPUP LIFECYCLE CALLBACKS
 // ======================
 
-function createPopup() {
-    if (this.popupHost) return; // 이미 생성됨
+function onPopupCreated(shadowRoot) {
+    // 이벤트 바인딩 (믹스인 헬퍼 사용)
+    this.bindPopupActions({
+        'close': () => this.hideDetail(),
+        'refresh': handleRefresh.bind(this),
+        'configure': handleConfigure.bind(this)
+    });
 
-    // Shadow DOM 호스트 생성
-    this.popupHost = document.createElement('div');
-    this.popupHost.id = `sensor-popup-${this.id}`;
-    this.shadowRoot = this.popupHost.attachShadow({ mode: 'open' });
+    // 기간 변경 버튼
+    this.bindPopupEvent('.chart-btn[data-period]', 'click', handlePeriodChange);
 
-    // Shadow DOM 내부에 스타일 + HTML 삽입
-    this.shadowRoot.innerHTML = `
-        <style>${this.getPopupStyles()}</style>
-        ${this.getPopupHTML()}
-    `;
-
-    // 페이지 요소에 추가 (웹 빌더 컨텍스트)
-    this.page.element.appendChild(this.popupHost);
-
-    // 이벤트 바인딩
-    this.bindPopupEvents();
-
-    // ResizeObserver for chart
-    const chartContainer = this.shadowRoot.querySelector('.chart-container');
-    if (chartContainer) {
-        this.resizeObserver = new ResizeObserver(() => {
-            if (this.chart) this.chart.resize();
-        });
-        this.resizeObserver.observe(chartContainer);
-    }
+    // 차트 초기화 (믹스인 메서드)
+    this.initPopupChart('.chart-container');
 
     console.log('[TemperatureSensor] Popup created with Shadow DOM');
 }
 
-function bindPopupEvents() {
-    const root = this.shadowRoot;
+function onPopupDestroy() {
+    this.currentSensor = null;
+}
 
-    // 닫기 버튼
-    root.querySelectorAll('[data-action="close"]').forEach(btn => {
-        btn.addEventListener('click', () => this.hideDetail());
+// ======================
+// EVENT HANDLERS
+// ======================
+
+async function handleRefresh(e) {
+    const refreshBtn = e.target.closest('[data-action="refresh"]');
+    if (refreshBtn) refreshBtn.classList.add('loading');
+
+    const [sensorResult, historyResult] = await Promise.all([
+        fetchData(this.page, 'sensor', { id: this.id }),
+        fetchData(this.page, 'sensorHistory', { id: this.id })
+    ]);
+
+    if (refreshBtn) refreshBtn.classList.remove('loading');
+
+    const sensor = sensorResult?.response?.data;
+    const history = historyResult?.response?.data;
+
+    if (sensor) this.updateSensor(sensor);
+    if (history) this.updateChart(history);
+}
+
+async function handlePeriodChange(e) {
+    const btn = e.target.closest('.chart-btn');
+    if (!btn) return;
+
+    const period = btn.dataset.period;
+
+    // Active 상태 변경
+    this.popupQueryAll('.chart-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 히스토리 재조회
+    const historyResult = await fetchData(this.page, 'sensorHistory', {
+        id: this.id,
+        period
     });
 
-    // 새로고침 버튼
-    const refreshBtn = root.querySelector('[data-action="refresh"]');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', async () => {
-            refreshBtn.classList.add('loading');
+    const history = historyResult?.response?.data;
+    if (history) this.updateChart(history);
+}
 
-            const [sensorResult, historyResult] = await Promise.all([
-                fetchData(this.page, 'sensor', { id: this.id }),
-                fetchData(this.page, 'sensorHistory', { id: this.id })
-            ]);
-
-            refreshBtn.classList.remove('loading');
-
-            const sensor = sensorResult?.response?.data;
-            const history = historyResult?.response?.data;
-
-            if (sensor) this.updateSensor(sensor);
-            if (history) this.updateChart(history);
-        });
-    }
-
-    // 기간 변경 버튼 (24h, 7d, 30d)
-    root.querySelectorAll('.chart-btn[data-period]').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const period = e.target.dataset.period;
-
-            // Active 상태 변경
-            root.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-
-            // 히스토리 재조회
-            const historyResult = await fetchData(this.page, 'sensorHistory', {
-                id: this.id,
-                period
-            });
-
-            const history = historyResult?.response?.data;
-            if (history) this.updateChart(history);
-        });
-    });
-
-    // Configure 버튼
-    const configBtn = root.querySelector('[data-action="configure"]');
-    if (configBtn) {
-        configBtn.addEventListener('click', () => {
-            console.log('[TemperatureSensor] Configure threshold for:', this.id);
-            alert(`Configure threshold for ${this.id}\n(Feature not implemented)`);
-        });
-    }
+function handleConfigure() {
+    console.log('[TemperatureSensor] Configure threshold for:', this.id);
+    alert(`Configure threshold for ${this.id}\n(Feature not implemented)`);
 }
 
 // ======================
@@ -225,32 +198,24 @@ function updateSensor(sensor) {
     if (!sensor) return;
 
     this.currentSensor = sensor;
-    const root = this.shadowRoot;
 
-    root.querySelector('.popup-title').textContent = sensor.name;
-    root.querySelector('.popup-zone').textContent = sensor.zone;
-    root.querySelector('.current-temp').textContent = sensor.temperature.toFixed(1);
-    root.querySelector('.temp-unit').textContent = '\u00B0C';
-    root.querySelector('.current-humidity').textContent = sensor.humidity;
-    root.querySelector('.threshold-warning-val').textContent = `${sensor.threshold.warning}\u00B0C`;
-    root.querySelector('.threshold-critical-val').textContent = `${sensor.threshold.critical}\u00B0C`;
+    this.popupQuery('.popup-title').textContent = sensor.name;
+    this.popupQuery('.popup-zone').textContent = sensor.zone;
+    this.popupQuery('.current-temp').textContent = sensor.temperature.toFixed(1);
+    this.popupQuery('.temp-unit').textContent = '\u00B0C';
+    this.popupQuery('.current-humidity').textContent = sensor.humidity;
+    this.popupQuery('.threshold-warning-val').textContent = `${sensor.threshold.warning}\u00B0C`;
+    this.popupQuery('.threshold-critical-val').textContent = `${sensor.threshold.critical}\u00B0C`;
 
-    const badge = root.querySelector('.status-badge-large');
+    const badge = this.popupQuery('.status-badge-large');
     badge.textContent = sensor.status;
     badge.dataset.status = sensor.status;
 
-    root.querySelector('.detail-last-updated').textContent = formatTime(sensor.lastUpdated);
+    this.popupQuery('.detail-last-updated').textContent = formatTime(sensor.lastUpdated);
 }
 
 function updateChart(history) {
     if (!history) return;
-
-    const chartContainer = this.shadowRoot.querySelector('.chart-container');
-
-    // Initialize chart if not exists
-    if (!this.chart) {
-        this.chart = echarts.init(chartContainer);
-    }
 
     const { timestamps, temperatures, thresholds } = history;
 
@@ -314,11 +279,12 @@ function updateChart(history) {
         ]
     };
 
-    this.chart.setOption(option);
+    // 믹스인 메서드 사용
+    this.setPopupChartOption(option);
 }
 
 function updateAlerts(alertsData) {
-    const alertList = this.shadowRoot.querySelector('.alert-list');
+    const alertList = this.popupQuery('.alert-list');
     const alerts = alertsData?.alerts || [];
 
     if (alerts.length === 0) {
@@ -375,7 +341,6 @@ function getPopupHTML() {
         </div>
 
         <div class="popup-body">
-            <!-- Current Status Section -->
             <div class="current-status-section">
                 <div class="status-card temperature">
                     <div class="status-label">Temperature</div>
@@ -406,7 +371,6 @@ function getPopupHTML() {
                 </div>
             </div>
 
-            <!-- History Chart Section -->
             <div class="chart-section">
                 <div class="chart-header">
                     <h4 class="chart-title">Temperature History (24h)</h4>
@@ -419,7 +383,6 @@ function getPopupHTML() {
                 <div class="chart-container"></div>
             </div>
 
-            <!-- Alert History Section -->
             <div class="alert-section">
                 <h4 class="alert-title">Recent Alerts</h4>
                 <div class="alert-list"></div>
@@ -436,19 +399,17 @@ function getPopupHTML() {
 }
 
 // ======================
-// POPUP STYLES (Shadow DOM 내부 - 자동 격리)
+// POPUP STYLES
 // ======================
 
 function getPopupStyles() {
     return `
-/* Reset for Shadow DOM */
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-/* Overlay */
 .popup-overlay {
     position: fixed;
     top: 0;
@@ -464,7 +425,6 @@ function getPopupStyles() {
     font-family: 'Segoe UI', sans-serif;
 }
 
-/* Container */
 .popup-container {
     width: 700px;
     max-height: 90vh;
@@ -476,7 +436,6 @@ function getPopupStyles() {
     flex-direction: column;
 }
 
-/* Header */
 .popup-header {
     display: flex;
     justify-content: space-between;
@@ -550,14 +509,12 @@ function getPopupStyles() {
     color: #ffffff;
 }
 
-/* Body */
 .popup-body {
     padding: 24px;
     overflow-y: auto;
     flex: 1;
 }
 
-/* Current Status Section */
 .current-status-section {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -590,8 +547,7 @@ function getPopupStyles() {
     color: #ffffff;
 }
 
-.temp-unit,
-.humidity-unit {
+.temp-unit, .humidity-unit {
     font-size: 18px;
     color: #8b95a5;
 }
@@ -638,7 +594,6 @@ function getPopupStyles() {
     color: #6b7280;
 }
 
-/* Chart Section */
 .chart-section {
     background: #252b3d;
     border-radius: 12px;
@@ -690,7 +645,6 @@ function getPopupStyles() {
     width: 100%;
 }
 
-/* Alert Section */
 .alert-section {
     background: #252b3d;
     border-radius: 12px;
@@ -758,7 +712,6 @@ function getPopupStyles() {
     padding: 20px;
 }
 
-/* Footer */
 .popup-footer {
     display: flex;
     justify-content: flex-end;
