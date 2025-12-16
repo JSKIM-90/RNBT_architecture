@@ -5,9 +5,11 @@
  *
  * 핵심 구조:
  * 1. datasetInfo - 데이터 정의
- * 2. customEvents - 이벤트 발행
- * 3. ShadowPopupMixin - 팝업 관리
+ * 2. Data Config - API 필드 매핑
+ * 3. 렌더링 함수 바인딩
  * 4. Public Methods - Page에서 호출
+ * 5. customEvents - 이벤트 발행
+ * 6. Popup - 오버라이드 가능 (getPopupHTML, getPopupStyles, onPopupCreated)
  */
 
 const { bind3DEvents, fetchData } = WKit;
@@ -20,12 +22,46 @@ function initComponent() {
     // 1. 데이터 정의
     // ======================
     this.datasetInfo = [
-        { datasetName: 'sensor', param: { id: this.id } },
-        { datasetName: 'sensorHistory', param: { id: this.id } }
+        { datasetName: 'sensor', param: { id: this.id }, render: ['renderSensorInfo'] },
+        { datasetName: 'sensorHistory', param: { id: this.id }, render: ['renderChart'] }
     ];
 
     // ======================
-    // 2. 이벤트 발행
+    // 2. Data Config (API 필드 매핑)
+    // ======================
+    this.sensorConfig = [
+        { key: 'name', selector: '.sensor-name' },
+        { key: 'zone', selector: '.sensor-zone' },
+        { key: 'temperature', selector: '.sensor-temp' },
+        { key: 'humidity', selector: '.sensor-humidity' },
+        { key: 'status', selector: '.sensor-status', dataset: 'status' }
+    ];
+
+    this.dataConfig = {
+        xKey: 'timestamps',
+        yKey: 'temperatures'
+    };
+
+    this.chartStyleConfig = {
+        color: '#3b82f6',
+        smooth: true,
+        areaStyle: true
+    };
+
+    // ======================
+    // 3. 렌더링 함수 바인딩
+    // ======================
+    this.renderSensorInfo = renderSensorInfo.bind(this, this.sensorConfig);
+    this.renderChart = renderChart.bind(this, { ...this.dataConfig, ...this.chartStyleConfig });
+
+    // ======================
+    // 4. Public Methods
+    // ======================
+    this.showDetail = showDetail.bind(this);
+    this.hideDetail = hideDetail.bind(this);
+
+    // ======================
+    // 5. 이벤트 발행
     // ======================
     this.customEvents = {
         click: '@sensorClicked'
@@ -34,47 +70,26 @@ function initComponent() {
     bind3DEvents(this, this.customEvents);
 
     // ======================
-    // 3. Shadow DOM 팝업 믹스인 적용
+    // 6. Popup (오버라이드 가능)
     // ======================
+    this.popupCreatedConfig = {
+        chartSelector: '.chart-container',
+        events: {
+            click: {
+                '.close-btn': () => this.hideDetail()
+            }
+        }
+    };
+
+    this.getPopupHTML = getPopupHTML.bind(this);
+    this.getPopupStyles = getPopupStyles.bind(this);
+    this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+
     applyShadowPopupMixin(this, {
-        getHTML: getPopupHTML,
-        getStyles: getPopupStyles,
-        onCreated: onPopupCreated
+        getHTML: this.getPopupHTML,
+        getStyles: this.getPopupStyles,
+        onCreated: this.onPopupCreated
     });
-
-    // ======================
-    // 4. Data Config (API 필드 매핑)
-    // ======================
-    const sensorConfig = {
-        nameKey: 'name',
-        zoneKey: 'zone',
-        tempKey: 'temperature',
-        humidityKey: 'humidity',
-        statusKey: 'status'
-    };
-
-    const historyConfig = {
-        xKey: 'timestamps',
-        yKey: 'temperatures'
-    };
-
-    // ======================
-    // 5. Chart Config (스타일)
-    // ======================
-    const chartStyleConfig = {
-        color: '#3b82f6',
-        smooth: true,
-        areaStyle: true
-    };
-
-    this.renderSensorInfo = renderSensorInfo.bind(this, sensorConfig);
-    this.renderChart = renderChartData.bind(this, { ...historyConfig, ...chartStyleConfig });
-
-    // ======================
-    // 6. Public Methods
-    // ======================
-    this.showDetail = showDetail.bind(this);
-    this.hideDetail = hideDetail.bind(this);
 
     console.log('[TemperatureSensor] Registered:', this.id);
 }
@@ -83,38 +98,32 @@ function initComponent() {
 // PUBLIC METHODS
 // ======================
 
-async function showDetail() {
+function showDetail() {
     this.showPopup();
-
-    // 센서 기본 정보 조회 + 렌더링
-    const sensorResult = await fetchData(this.page, 'sensor', { id: this.id });
-    const sensor = sensorResult?.response?.data;
-    if (sensor) {
-        this.renderSensorInfo(sensor);
-    }
-
-    // 히스토리 데이터 조회 + 차트 렌더링
-    const historyResult = await fetchData(this.page, 'sensorHistory', { id: this.id });
-    const history = historyResult?.response?.data;
-    if (history) {
-        this.renderChart(history);
-    }
+    fx.go(
+        this.datasetInfo,
+        fx.each(({ datasetName, param, render }) =>
+            fx.go(
+                fetchData(this.page, datasetName, param),
+                result => result?.response?.data,
+                data => data && render.forEach(fn => this[fn](data))
+            )
+        )
+    );
 }
 
 function renderSensorInfo(config, data) {
-    const { nameKey, zoneKey, tempKey, humidityKey, statusKey } = config;
-
-    this.popupQuery('.sensor-name').textContent = data[nameKey];
-    this.popupQuery('.sensor-zone').textContent = data[zoneKey];
-    this.popupQuery('.sensor-temp').textContent = `${data[tempKey].toFixed(1)}°C`;
-    this.popupQuery('.sensor-humidity').textContent = `${data[humidityKey]}%`;
-
-    const statusEl = this.popupQuery('.sensor-status');
-    statusEl.textContent = data[statusKey];
-    statusEl.dataset.status = data[statusKey];
+    fx.go(
+        config,
+        fx.each(({ key, selector, dataset }) => {
+            const el = this.popupQuery(selector);
+            el.textContent = data[key];
+            dataset && (el.dataset[dataset] = data[key]);
+        })
+    );
 }
 
-function renderChartData(config, data) {
+function renderChart(config, data) {
     const option = getLineChartOption(config, data);
     this.updateChart('.chart-container', option);
 }
@@ -180,14 +189,9 @@ function hexToRgba(hex, alpha) {
 // POPUP LIFECYCLE
 // ======================
 
-function onPopupCreated() {
-    this.createChart('.chart-container');
-
-    this.bindPopupEvents({
-        click: {
-            '.close-btn': () => this.hideDetail()
-        }
-    });
+function onPopupCreated({chartSelector, events}) {
+    chartSelector && this.createChart(chartSelector);
+    events && this.bindPopupEvents(events)
 }
 
 // ======================
