@@ -46,7 +46,8 @@ function initComponent() {
         xKey: 'timestamps',
         series: [
             { yKey: 'temperatures', color: '#3b82f6', smooth: true, areaStyle: true }
-        ]
+        ],
+        optionBuilder: getLineChartOption
     };
 
     // ======================
@@ -125,7 +126,8 @@ function renderSensorInfo(config, data) {
 }
 
 function renderChart(config, data) {
-    const option = getLineChartOption(config, data);
+    const { optionBuilder, ...chartConfig } = config;
+    const option = optionBuilder(chartConfig, data);
     this.updateChart('.chart-container', option);
 }
 
@@ -175,6 +177,37 @@ function getLineChartOption(config, data) {
                     ]
                 }
             } : null
+        }))
+    };
+}
+
+function getBarChartOption(config, data) {
+    const { xKey, series: seriesConfig } = config;
+
+    return {
+        grid: {
+            left: 40,
+            right: 16,
+            top: 16,
+            bottom: 24
+        },
+        xAxis: {
+            type: 'category',
+            data: data[xKey],
+            axisLine: { lineStyle: { color: '#333' } },
+            axisLabel: { color: '#888', fontSize: 10 }
+        },
+        yAxis: {
+            type: 'value',
+            axisLine: { show: false },
+            axisLabel: { color: '#888', fontSize: 10 },
+            splitLine: { lineStyle: { color: '#333' } }
+        },
+        series: seriesConfig.map(({ yKey, color, barWidth }) => ({
+            type: 'bar',
+            data: data[yKey],
+            barWidth: barWidth || '60%',
+            itemStyle: { color: color, borderRadius: [4, 4, 0, 0] }
         }))
     };
 }
