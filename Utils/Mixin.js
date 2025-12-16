@@ -1,7 +1,14 @@
 /*
- * ShadowPopupMixin.js
+ * Mixin.js
  *
- * 자기 완결 컴포넌트를 위한 Shadow DOM 팝업 믹스인
+ * 컴포넌트 기능 확장을 위한 Mixin 모음
+ *
+ * 사용법:
+ *   const { applyShadowPopupMixin } = Mixin;
+ *
+ * ─────────────────────────────────────────────────────────────
+ * applyShadowPopupMixin - Shadow DOM 팝업 믹스인
+ * ─────────────────────────────────────────────────────────────
  *
  * 핵심 기능:
  * - Shadow DOM 기반 팝업 생성 (CSS 자동 격리)
@@ -11,7 +18,6 @@
  * - 차트 인스턴스 관리 (ECharts)
  *
  * 사용법:
- *   const { applyShadowPopupMixin } = ShadowPopupMixin;
  *   applyShadowPopupMixin(this, {
  *       getHTML: () => '<div class="popup">...</div>',
  *       getStyles: () => '.popup { ... }',
@@ -46,12 +52,12 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-const ShadowPopupMixin = {};
+const Mixin = {};
 
 /**
  * 컴포넌트에 Shadow DOM 팝업 기능을 추가
  */
-ShadowPopupMixin.applyShadowPopupMixin = function(instance, options) {
+Mixin.applyShadowPopupMixin = function(instance, options) {
     const { getHTML, getStyles, onCreated } = options;
 
     // Internal state
@@ -172,7 +178,7 @@ ShadowPopupMixin.applyShadowPopupMixin = function(instance, options) {
 
         const container = instance.popupQuery(selector);
         if (!container) {
-            console.warn(`[ShadowPopupMixin] Chart container not found: ${selector}`);
+            console.warn(`[Mixin] Chart container not found: ${selector}`);
             return null;
         }
 
@@ -207,14 +213,14 @@ ShadowPopupMixin.applyShadowPopupMixin = function(instance, options) {
     instance.updateChart = function(selector, option) {
         const chart = instance.getChart(selector);
         if (!chart) {
-            console.warn(`[ShadowPopupMixin] Chart not found: ${selector}`);
+            console.warn(`[Mixin] Chart not found: ${selector}`);
             return;
         }
 
         try {
             chart.setOption(option);
         } catch (e) {
-            console.error(`[ShadowPopupMixin] Chart setOption error:`, e);
+            console.error(`[Mixin] Chart setOption error:`, e);
         }
     };
 

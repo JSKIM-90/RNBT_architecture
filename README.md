@@ -1075,7 +1075,7 @@ applyResizableMixin(this, { ... });
 // this에 세 가지 기능 모두 추가됨
 ```
 
-#### ShadowPopupMixin (Utils/)
+#### applyShadowPopupMixin (Mixin.js)
 
 Shadow DOM 기반 팝업 기능을 컴포넌트에 주입하는 Mixin입니다.
 
@@ -1094,7 +1094,7 @@ Shadow DOM 기반 팝업 기능을 컴포넌트에 주입하는 Mixin입니다.
 **사용법**
 
 ```javascript
-const { applyShadowPopupMixin } = ShadowPopupMixin;
+const { applyShadowPopupMixin } = Mixin;
 
 applyShadowPopupMixin(this, {
     getHTML: getPopupHTML,      // HTML 반환 함수
@@ -1137,12 +1137,12 @@ this.bindPopupEvents({
 - 여러 컴포넌트가 같은 데이터를 공유해야 하는 경우 → Topic 기반 구독 사용
 - 폴링/자동 갱신이 필요한 경우 → GlobalDataPublisher 사용
 
-#### 컴포넌트 구현 예시 (ShadowPopupMixin 사용)
+#### 컴포넌트 구현 예시 (applyShadowPopupMixin 사용)
 
 ```javascript
 // register.js
 const { bind3DEvents, fetchData } = WKit;
-const { applyShadowPopupMixin } = ShadowPopupMixin;
+const { applyShadowPopupMixin } = Mixin;
 
 initComponent.call(this);
 
@@ -1569,8 +1569,8 @@ WKit.enableDebugMode({
 - v2.2.0: Shadow DOM / Mixin 개념 설명 추가 (2025-12-16)
   - Shadow DOM 이해: Host/Shadow Root 관계, CSS 격리 원리
   - Mixin 패턴 이해: 상속/컴포지션과의 비교
-  - ShadowPopupMixin 소개: 이벤트 델리게이션 패턴 적용
-  - 컴포넌트 예시를 ShadowPopupMixin 사용 버전으로 업데이트
+  - applyShadowPopupMixin 소개: 이벤트 델리게이션 패턴 적용
+  - 컴포넌트 예시를 applyShadowPopupMixin 사용 버전으로 업데이트
 
 - v2.1.0: 자기 완결 컴포넌트 패턴 추가 (2025-12-16)
   - "8. 자기 완결 컴포넌트 패턴 (Self-Contained Component)" 섹션 추가

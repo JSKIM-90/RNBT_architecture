@@ -1,7 +1,7 @@
 /*
  * TemperatureSensor - Self-Contained 3D Component
  *
- * ShadowPopupMixin을 사용한 자기 완결 컴포넌트 예제
+ * applyShadowPopupMixin을 사용한 자기 완결 컴포넌트 예제
  *
  * 핵심 구조:
  * 1. datasetInfo - 데이터 정의
@@ -13,7 +13,7 @@
  */
 
 const { bind3DEvents, fetchData } = WKit;
-const { applyShadowPopupMixin } = ShadowPopupMixin;
+const { applyShadowPopupMixin } = Mixin;
 
 initComponent.call(this);
 
