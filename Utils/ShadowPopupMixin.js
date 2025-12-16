@@ -16,6 +16,27 @@
  *       getStyles: () => '.popup { ... }',
  *       onCreated: (shadowRoot) => { ... }
  *   });
+ *
+ * ─────────────────────────────────────────────────────────────
+ * 스타일 분리 검증 (2025-12-16)
+ * ─────────────────────────────────────────────────────────────
+ *
+ * Mixin은 컴포넌트의 스타일링에 관여하지 않음:
+ *
+ * | 영역                  | Mixin 관여 | 컴포넌트 결정 |
+ * |-----------------------|-----------|--------------|
+ * | Shadow DOM 내부 CSS   | ❌        | ✅ (getStyles) |
+ * | Shadow DOM 내부 HTML  | ❌        | ✅ (getHTML)   |
+ * | 선택자                | ❌        | ✅ (bindPopupEvents 인자) |
+ * | host의 display        | ✅        | -             |
+ *
+ * 유일한 제약:
+ * - showPopup(): host.style.display = 'block'
+ * - hidePopup(): host.style.display = 'none'
+ *
+ * 만약 opacity, visibility, transform 등 다른 방식의 표시/숨김이
+ * 필요하면 이 부분 수정 필요. 현재는 99%의 케이스에서 문제없음.
+ * ─────────────────────────────────────────────────────────────
  */
 
 const ShadowPopupMixin = {};
