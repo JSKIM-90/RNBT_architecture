@@ -2,6 +2,9 @@
 
 자기 완결 컴포넌트(Self-Contained Component) 개발 패턴 가이드입니다.
 
+> **Note**: 이 문서는 **3D + Popup + Chart 컴포넌트(TemperatureSensor)** 예시를 기반으로 작성되었습니다.
+> 다른 유형의 컴포넌트에는 일부 패턴이 적용되지 않을 수 있습니다.
+
 ---
 
 ## 핵심 개념
