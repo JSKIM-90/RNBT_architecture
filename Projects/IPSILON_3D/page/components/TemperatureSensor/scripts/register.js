@@ -29,15 +29,20 @@ function initComponent() {
     // ======================
     // 2. Data Config (API 필드 매핑)
     // ======================
-    this.sensorConfig = [
+    // 공통: 자산 기본 정보
+    this.baseInfoConfig = [
         { key: 'name', selector: '.sensor-name' },
         { key: 'zone', selector: '.sensor-zone' },
-        { key: 'temperature', selector: '.sensor-temp' },
-        { key: 'humidity', selector: '.sensor-humidity' },
-        { key: 'status', selector: '.sensor-status', dataset: 'status' }
+        { key: 'status', selector: '.sensor-status', dataAttr: 'status' }
     ];
 
-    this.dataConfig = {
+    // 도메인 특화: 센서 측정값
+    this.sensorInfoConfig = [
+        { key: 'temperature', selector: '.sensor-temp' },
+        { key: 'humidity', selector: '.sensor-humidity' }
+    ];
+
+    this.dataKeyConfig = {
         xKey: 'timestamps',
         yKey: 'temperatures'
     };
@@ -51,8 +56,8 @@ function initComponent() {
     // ======================
     // 3. 렌더링 함수 바인딩
     // ======================
-    this.renderSensorInfo = renderSensorInfo.bind(this, this.sensorConfig);
-    this.renderChart = renderChart.bind(this, { ...this.dataConfig, ...this.chartStyleConfig });
+    this.renderSensorInfo = renderSensorInfo.bind(this, [...this.baseInfoConfig, ...this.sensorInfoConfig]);
+    this.renderChart = renderChart.bind(this, { ...this.dataKeyConfig, ...this.chartStyleConfig });
 
     // ======================
     // 4. Public Methods
@@ -115,10 +120,10 @@ function showDetail() {
 function renderSensorInfo(config, data) {
     fx.go(
         config,
-        fx.each(({ key, selector, dataset }) => {
+        fx.each(({ key, selector, dataAttr }) => {
             const el = this.popupQuery(selector);
             el.textContent = data[key];
-            dataset && (el.dataset[dataset] = data[key]);
+            dataAttr && (el.dataset[dataAttr] = data[key]);
         })
     );
 }
