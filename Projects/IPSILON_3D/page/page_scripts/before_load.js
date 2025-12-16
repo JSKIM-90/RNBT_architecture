@@ -9,9 +9,28 @@
  * Responsibilities:
  * - Register event bus handlers
  * - Setup 3D raycasting
+ * - Drag detection for 3D click
  */
 
 const { onEventBusHandlers, initThreeRaycasting, withSelector } = WKit;
+
+// ======================
+// DRAG DETECTION
+// ======================
+
+let mouseDownTime = 0;
+let startPos = { x: 0, y: 0 };
+const TIME_THRESHOLD = 200;  // ms
+const DIST_THRESHOLD = 5;    // px
+
+this.onCanvasMouseDown = (e) => {
+    mouseDownTime = Date.now();
+    startPos = { x: e.clientX, y: e.clientY };
+};
+
+withSelector(this.element, 'canvas', canvas => {
+    canvas.addEventListener('mousedown', this.onCanvasMouseDown);
+});
 
 // ======================
 // EVENT BUS HANDLERS
@@ -21,8 +40,18 @@ this.eventBusHandlers = {
     // 3D TemperatureSensor: 센서 클릭
     // Page는 "어떤 메서드를 호출할지"만 결정
     '@sensorClicked': ({ event, targetInstance }) => {
+        // 드래그 체크
+        const elapsed = Date.now() - mouseDownTime;
+        const dx = event.clientX - startPos.x;
+        const dy = event.clientY - startPos.y;
+        const moved = Math.abs(dx) > DIST_THRESHOLD || Math.abs(dy) > DIST_THRESHOLD;
+
+        if (elapsed > TIME_THRESHOLD || moved) {
+            console.log('[Page] Drag detected, ignoring click');
+            return;
+        }
+
         console.log('[Page] 3D Sensor clicked:', targetInstance.id);
-        console.log('[Page] Intersected object:', event.intersects[0]?.object);
 
         // 시나리오 A: 상세 팝업 표시 (기본)
         targetInstance.showDetail();
