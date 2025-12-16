@@ -977,6 +977,154 @@ WKit의 `bindEvents`는 **submit 이벤트에만** `event.preventDefault()`를 �
 └─────────────────────────────────────────────────────────────┘
 ```
 
+#### Shadow DOM 이해
+
+Shadow DOM은 웹 컴포넌트의 캡슐화를 위한 브라우저 기술입니다.
+
+**Host와 Shadow Root 관계**
+
+```
+Document Tree
+│
+├── body
+│   └── div#app
+│       └── div#popup-sensor1  ← Host (Document Tree에 존재)
+│               │
+│               └── #shadow-root  ← 경계선
+│                       │
+│                       └── div.popup  ← Shadow DOM (렌더링되지만 격리됨)
+│                           └── ...
+```
+
+**핵심 특성**
+
+| 구분 | Host | Shadow Root 내부 |
+|------|------|------------------|
+| Document Tree | 포함됨 | 포함되지 않음 |
+| `document.querySelector()` | 접근 가능 | 접근 불가 |
+| 외부 CSS 영향 | 받음 | 받지 않음 |
+| 렌더링 | O | O |
+
+**접근 방식 차이**
+
+```javascript
+// Host는 일반 DOM처럼 접근
+document.querySelector('#popup-sensor1');  // ✓ 찾음
+
+// Shadow 내부는 document에서 직접 접근 불가
+document.querySelector('.popup');  // ✗ null
+
+// Shadow Root를 통해서만 접근
+host.shadowRoot.querySelector('.popup');  // ✓ 찾음
+```
+
+**CSS 양방향 격리**
+
+```css
+/* Shadow DOM 내부 스타일 */
+.popup { background: red; }
+
+/* 외부 Document 스타일 */
+.popup { background: blue; }
+
+/* 서로 영향 없음 - 각자의 .popup은 독립적 */
+```
+
+Shadow DOM 내부에서 정의한 CSS는 외부에 영향을 주지 않고, 외부 CSS도 Shadow DOM 내부에 영향을 주지 않습니다.
+
+#### Mixin 패턴 이해
+
+Mixin은 객체에 재사용 가능한 속성과 메서드를 동적으로 주입하는 패턴입니다.
+
+**Mixin의 동작**
+
+```javascript
+// Before
+this.showPopup  // undefined
+this.hidePopup  // undefined
+
+// Mixin 적용
+applyShadowPopupMixin(this, { ... });
+
+// After
+this._popup           // 상태 (속성)
+this.createPopup      // 메서드
+this.showPopup        // 메서드
+this.hidePopup        // 메서드
+this.popupQuery       // 메서드
+this.bindPopupEvents  // 메서드
+this.destroyPopup     // 메서드
+```
+
+**상속, Mixin, 컴포지션 비교**
+
+| 패턴 | 메서드 위치 | 관계 | 특징 |
+|------|------------|------|------|
+| 상속 | 프로토타입 체인 | is-a | 클래스 기반, 단일 상속 |
+| Mixin | this에 직접 | 혼합 | 런타임 주입, 다중 조합 가능 |
+| 컴포지션 | 별도 객체 | has-a | 위임 기반 |
+
+Mixin은 "상속보다 컴포지션"을 따르려는 기법이지만, 순수 컴포지션과 달리 메서드가 this에 직접 붙습니다. **기능 주입(injection)** 또는 **객체 확장(augmentation)** 패턴이라고 할 수 있습니다.
+
+**여러 Mixin 조합**
+
+```javascript
+applyShadowPopupMixin(this, { ... });
+applyDraggableMixin(this, { ... });
+applyResizableMixin(this, { ... });
+// this에 세 가지 기능 모두 추가됨
+```
+
+#### ShadowPopupMixin (Utils/)
+
+Shadow DOM 기반 팝업 기능을 컴포넌트에 주입하는 Mixin입니다.
+
+**제공하는 메서드**
+
+| 메서드 | 설명 |
+|--------|------|
+| `createPopup()` | Shadow DOM 팝업 생성 |
+| `showPopup()` | 팝업 표시 |
+| `hidePopup()` | 팝업 숨김 |
+| `popupQuery(selector)` | Shadow DOM 내부 요소 선택 |
+| `popupQueryAll(selector)` | Shadow DOM 내부 요소 모두 선택 |
+| `bindPopupEvents(events)` | 이벤트 델리게이션 기반 바인딩 |
+| `destroyPopup()` | 팝업 및 리소스 정리 |
+
+**사용법**
+
+```javascript
+const { applyShadowPopupMixin } = ShadowPopupMixin;
+
+applyShadowPopupMixin(this, {
+    getHTML: getPopupHTML,      // HTML 반환 함수
+    getStyles: getPopupStyles,  // CSS 반환 함수
+    onCreated: onPopupCreated   // 생성 후 콜백
+});
+```
+
+**이벤트 델리게이션 패턴**
+
+`bindPopupEvents`는 이벤트 타입당 하나의 리스너만 등록하여 효율적으로 동작합니다.
+
+```javascript
+// 컴포넌트에서 선택자와 이벤트 타입 결정
+this.bindPopupEvents({
+    click: {
+        '.close-btn': () => this.hideDetail(),
+        '.refresh-btn': () => this.refresh()
+    },
+    change: {
+        '.input-field': (e) => this.onInputChange(e)
+    }
+});
+```
+
+**장점**:
+- 선택자, 이벤트 타입 모두 컴포넌트가 결정 (Mixin에 하드코딩 없음)
+- 이벤트 타입당 리스너 하나 (효율적)
+- 동적으로 추가된 요소도 자동 처리 (`closest()` 사용)
+
 #### 적용 조건
 
 | 조건 | 설명 |
@@ -989,159 +1137,107 @@ WKit의 `bindEvents`는 **submit 이벤트에만** `event.preventDefault()`를 �
 - 여러 컴포넌트가 같은 데이터를 공유해야 하는 경우 → Topic 기반 구독 사용
 - 폴링/자동 갱신이 필요한 경우 → GlobalDataPublisher 사용
 
-#### 컴포넌트 구현 예시
+#### 컴포넌트 구현 예시 (ShadowPopupMixin 사용)
 
 ```javascript
-// 3D 컴포넌트 register.js
-const { fetchData } = WKit;
+// register.js
+const { bind3DEvents, fetchData } = WKit;
+const { applyShadowPopupMixin } = ShadowPopupMixin;
 
-// 복수의 데이터 정보 선언
-this.datasetInfo = [
-    { datasetName: 'sensor', param: { id: this.id } },
-    { datasetName: 'sensorHistory', param: { id: this.id } },
-    { datasetName: 'sensorAlerts', param: { id: this.id } }
-];
+initComponent.call(this);
 
-// 이벤트 발행 (액션 알림만)
-this.customEvents = {
-    click: '@sensorClicked'
-};
+function initComponent() {
+    // 1. 데이터 정의
+    this.datasetInfo = [
+        { datasetName: 'sensor', param: { id: this.id } }
+    ];
 
-// 자체 리소스 참조 (Shadow DOM 기반)
-this.popupHost = null;      // Shadow DOM host element
-this.shadowRoot = null;     // Shadow root (CSS 자동 격리)
+    // 2. 이벤트 발행
+    this.customEvents = { click: '@sensorClicked' };
+    bind3DEvents(this, this.customEvents);
 
-// 다양한 기능 메소드 정의
-this.showDetail = async function() {
-    const results = await Promise.all(
-        this.datasetInfo.map(info =>
-            fetchData(this.page, info.datasetName, { ...info.param })
-        )
-    );
+    // 3. Shadow DOM 팝업 믹스인 적용
+    applyShadowPopupMixin(this, {
+        getHTML: getPopupHTML,
+        getStyles: getPopupStyles,
+        onCreated: onPopupCreated
+    });
 
-    const sensor = results[0]?.response?.data;
-    const history = results[1]?.response?.data;
-    const alerts = results[2]?.response?.data;
+    // 4. Public Methods
+    this.showDetail = showDetail.bind(this);
+    this.hideDetail = hideDetail.bind(this);
+}
 
-    this.createPopup(sensor, history, alerts);
-}.bind(this);
+// PUBLIC METHODS
+async function showDetail() {
+    const result = await fetchData(this.page, 'sensor', { id: this.id });
+    const sensor = result?.response?.data;
+    if (!sensor) return;
 
-this.highlight = function() {
-    // 하이라이트 효과
-}.bind(this);
+    this.showPopup();
+    this.popupQuery('.sensor-name').textContent = sensor.name;
+    this.popupQuery('.sensor-temp').textContent = `${sensor.temperature}°C`;
+}
 
-this.focusCamera = function() {
-    // 카메라 포커스
-}.bind(this);
+function hideDetail() {
+    this.hidePopup();
+}
 
-// 자체 팝업 생성 (Shadow DOM 기반 - CSS 자동 격리)
-this.createPopup = function(sensor, history, alerts) {
-    // Shadow DOM host 생성 (최초 1회)
-    if (!this.popupHost) {
-        this.popupHost = document.createElement('div');
-        this.shadowRoot = this.popupHost.attachShadow({ mode: 'open' });
-        // 웹 빌더 컨텍스트: document.body 대신 this.page.element 사용
-        this.page.element.appendChild(this.popupHost);
-    }
+// POPUP LIFECYCLE
+function onPopupCreated() {
+    this.bindPopupEvents({
+        click: { '.close-btn': () => this.hideDetail() }
+    });
+}
 
-    // Shadow DOM 내부에 스타일 + HTML 렌더링 (CSS 자동 스코핑)
-    this.shadowRoot.innerHTML = `
-        <style>${this.getPopupStyles()}</style>
-        ${this.renderPopupContent(sensor, history, alerts)}
-    `;
-
-    this.popupHost.style.display = 'block';
-    this.bindPopupEvents();
-}.bind(this);
-
-// 팝업 CSS 정의 (Shadow DOM 내부 - prefix 불필요, 클래스명 충돌 없음)
-this.getPopupStyles = function() {
-    return `
-        .popup-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .popup-content {
-            background: #1a1f2e;
-            border-radius: 8px;
-            min-width: 400px;
-            max-width: 600px;
-            color: #e0e6ed;
-        }
-        .popup-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            border-bottom: 1px solid #2a3142;
-        }
-        .popup-header h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .popup-close {
-            background: none;
-            border: none;
-            color: #e0e6ed;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .popup-body {
-            padding: 20px;
-        }
-    `;
-}.bind(this);
-
-this.hideDetail = function() {
-    if (this.popupHost) {
-        this.popupHost.style.display = 'none';
-    }
-}.bind(this);
-
-this.renderPopupContent = function(sensor, history, alerts) {
+// POPUP TEMPLATE
+function getPopupHTML() {
     return `
         <div class="popup-overlay">
-            <div class="popup-content">
+            <div class="popup">
                 <div class="popup-header">
-                    <h3>${sensor?.name || 'Sensor Detail'}</h3>
-                    <button class="popup-close">×</button>
+                    <span class="sensor-name"></span>
+                    <button class="close-btn">&times;</button>
                 </div>
                 <div class="popup-body">
-                    <!-- 센서 정보, 차트, 알림 렌더링 -->
+                    <span class="sensor-temp"></span>
                 </div>
             </div>
         </div>
     `;
-}.bind(this);
+}
 
-this.bindPopupEvents = function() {
-    // Shadow DOM 내부 요소 접근: this.shadowRoot.querySelector
-    const closeBtn = this.shadowRoot.querySelector('.popup-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => this.hideDetail());
-    }
-}.bind(this);
-
-bind3DEvents(this, this.customEvents);
+// POPUP STYLES (Shadow DOM 내부 - 외부와 격리됨)
+function getPopupStyles() {
+    return `
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup {
+            background: #1e2332;
+            border-radius: 12px;
+            padding: 16px;
+            color: #fff;
+        }
+        /* ... */
+    `;
+}
 ```
 
 ```javascript
-// 3D 컴포넌트 destroy.js
-// 자체 생성한 리소스 정리 (1:1 원칙)
+// destroy.js
+const { remove3DEvents } = WKit;
 
-// Shadow DOM host 제거 (내부 shadowRoot + 스타일도 함께 정리됨)
-if (this.popupHost) {
-    this.popupHost.remove();
-    this.popupHost = null;
-    this.shadowRoot = null;
+onInstanceUnLoad.call(this);
+
+function onInstanceUnLoad() {
+    this.destroyPopup();  // Mixin 메서드 - 모든 리소스 정리
+    remove3DEvents(this, this.customEvents);
 }
 ```
 
@@ -1465,10 +1561,16 @@ WKit.enableDebugMode({
 
 ## 버전 정보
 
-**문서 버전**: 2.1.0
+**문서 버전**: 2.2.0
 **최종 업데이트**: 2025-12-16
 
 ### 주요 변경사항
+
+- v2.2.0: Shadow DOM / Mixin 개념 설명 추가 (2025-12-16)
+  - Shadow DOM 이해: Host/Shadow Root 관계, CSS 격리 원리
+  - Mixin 패턴 이해: 상속/컴포지션과의 비교
+  - ShadowPopupMixin 소개: 이벤트 델리게이션 패턴 적용
+  - 컴포넌트 예시를 ShadowPopupMixin 사용 버전으로 업데이트
 
 - v2.1.0: 자기 완결 컴포넌트 패턴 추가 (2025-12-16)
   - "8. 자기 완결 컴포넌트 패턴 (Self-Contained Component)" 섹션 추가
