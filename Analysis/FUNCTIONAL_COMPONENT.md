@@ -192,13 +192,28 @@ bind3DEvents(this, this.customEvents);
 | 구분 | DOM 컴포넌트 (2D) | 3D 컴포넌트 |
 |------|------------------|-------------|
 | **htmlCode 용도** | `element.innerHTML` 직접 렌더링 | `<template>` 정의 저장소 |
+| **cssCode 용도** | 요소 스타일링 | Shadow DOM 팝업 스타일 |
 | **렌더링 방식** | DOM에 바로 삽입 | JS에서 template 추출 → Shadow DOM 팝업 |
+| **데이터 출처** | `this.properties.publishCode` | `this.properties.publishCode` |
 
-### Template 구조
+### publishCode 구조 (front 프로젝트 3D 컴포넌트)
 
 ```javascript
-// register.js 상단에 정의 (향후 publishCode에서 가져올 예정)
-const templateHTML = `
+// WV3DPropertyManager.attach_default_component_infos()에서 정의
+publishCode: {
+    htmlCode: '',  // <template> 태그들 포함
+    cssCode: '',   // Shadow DOM 내부 스타일
+},
+info: {
+    componentName: 'ComponentName',
+    componentType: 'htmlCssJsEditable',  // 에디터에서 HTML/CSS 편집 활성화
+    version: '174.0',
+},
+```
+
+### Template 구조 (에디터에서 htmlCode에 입력)
+
+```html
 <template id="popup-sensor">
     <div class="popup-overlay">
         <div class="popup">...</div>
@@ -208,13 +223,6 @@ const templateHTML = `
 <template id="tooltip-info">
     <div class="tooltip">...</div>
 </template>
-`;
-
-const templateCSS = `
-.popup-overlay { ... }
-.popup { ... }
-.tooltip { ... }
-`;
 ```
 
 ### extractTemplate Helper
@@ -253,9 +261,10 @@ this.popupCreatedConfig = {
     }
 };
 
-// template 기반 (향후 publishCode 연동)
-this.getPopupHTML = () => extractTemplate(templateHTML, this.templateConfig.popup);
-this.getPopupStyles = () => templateCSS;
+// publishCode에서 HTML/CSS 가져오기
+const { htmlCode, cssCode } = this.properties.publishCode || {};
+this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+this.getPopupStyles = () => cssCode || '';
 this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
 
 applyShadowPopupMixin(this, {
@@ -265,16 +274,18 @@ applyShadowPopupMixin(this, {
 });
 ```
 
-### 향후 publishCode 연동
+### 데이터 흐름
 
-```javascript
-// 현재 (임시 데이터)
-this.getPopupHTML = () => extractTemplate(templateHTML, this.templateConfig.popup);
-this.getPopupStyles = () => templateCSS;
-
-// 향후 (publishCode 연동)
-this.getPopupHTML = () => extractTemplate(this.properties.publishCode.htmlCode, this.templateConfig.popup);
-this.getPopupStyles = () => this.properties.publishCode.cssCode;
+```
+에디터에서 HTML/CSS 입력
+    ↓
+publishCode: { htmlCode, cssCode }에 저장
+    ↓
+3D 컴포넌트 register.js에서 this.properties.publishCode로 접근
+    ↓
+extractTemplate()로 template ID에 해당하는 HTML 추출
+    ↓
+Shadow DOM 팝업에 적용
 ```
 
 ### applyShadowPopupMixin 제공 메서드
@@ -342,6 +353,14 @@ TemperatureSensor/
 
 ---
 
-**버전**: 1.1.0
+**버전**: 1.2.0
 **작성일**: 2025-12-16
 **참조**: `Utils/Mixin.js`, `Projects/IPSILON_3D/page/components/TemperatureSensor/`
+
+### 변경 이력
+
+| 버전 | 날짜 | 변경 내용 |
+|------|------|----------|
+| 1.2.0 | 2025-12-16 | publishCode 연동 완료 (임시 데이터 → 실제 데이터) |
+| 1.1.0 | 2025-12-16 | Template 기반 구조 반영 |
+| 1.0.0 | 2025-12-15 | 초기 작성 |
