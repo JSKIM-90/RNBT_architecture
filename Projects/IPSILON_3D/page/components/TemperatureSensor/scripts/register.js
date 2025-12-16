@@ -42,22 +42,18 @@ function initComponent() {
         { key: 'humidity', selector: '.sensor-humidity' }
     ];
 
-    this.dataKeyConfig = {
+    this.chartConfig = {
         xKey: 'timestamps',
-        yKey: 'temperatures'
-    };
-
-    this.chartStyleConfig = {
-        color: '#3b82f6',
-        smooth: true,
-        areaStyle: true
+        series: [
+            { yKey: 'temperatures', color: '#3b82f6', smooth: true, areaStyle: true }
+        ]
     };
 
     // ======================
     // 3. 렌더링 함수 바인딩
     // ======================
     this.renderSensorInfo = renderSensorInfo.bind(this, [...this.baseInfoConfig, ...this.sensorInfoConfig]);
-    this.renderChart = renderChart.bind(this, { ...this.dataKeyConfig, ...this.chartStyleConfig });
+    this.renderChart = renderChart.bind(this, this.chartConfig);
 
     // ======================
     // 4. Public Methods
@@ -142,7 +138,7 @@ function hideDetail() {
 // ======================
 
 function getLineChartOption(config, data) {
-    const { xKey, yKey, color, smooth, areaStyle } = config;
+    const { xKey, series: seriesConfig } = config;
 
     return {
         grid: {
@@ -163,7 +159,7 @@ function getLineChartOption(config, data) {
             axisLabel: { color: '#888', fontSize: 10 },
             splitLine: { lineStyle: { color: '#333' } }
         },
-        series: [{
+        series: seriesConfig.map(({ yKey, color, smooth, areaStyle }) => ({
             type: 'line',
             data: data[yKey],
             smooth: smooth,
@@ -179,7 +175,7 @@ function getLineChartOption(config, data) {
                     ]
                 }
             } : null
-        }]
+        }))
     };
 }
 
