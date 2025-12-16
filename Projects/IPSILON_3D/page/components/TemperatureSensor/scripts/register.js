@@ -9,11 +9,171 @@
  * 3. 렌더링 함수 바인딩
  * 4. Public Methods - Page에서 호출
  * 5. customEvents - 이벤트 발행
- * 6. Popup - 오버라이드 가능 (getPopupHTML, getPopupStyles, onPopupCreated)
+ * 6. Template Data - HTML/CSS (향후 publishCode에서 가져올 예정)
+ * 7. Popup - template 기반 Shadow DOM 팝업
  */
 
 const { bind3DEvents, fetchData } = WKit;
 const { applyShadowPopupMixin } = Mixin;
+
+// ======================
+// TEMPLATE DATA
+// (향후 this.properties.publishCode.htmlCode / cssCode 에서 가져올 예정)
+// ======================
+const templateHTML = `
+<template id="popup-sensor">
+<div class="popup-overlay">
+    <div class="popup">
+        <div class="popup-header">
+            <span class="sensor-name"></span>
+            <span class="sensor-zone"></span>
+            <button class="close-btn">&times;</button>
+        </div>
+        <div class="popup-body">
+            <div class="info-row">
+                <span class="label">Temperature</span>
+                <span class="sensor-temp"></span>
+            </div>
+            <div class="info-row">
+                <span class="label">Humidity</span>
+                <span class="sensor-humidity"></span>
+            </div>
+            <div class="info-row">
+                <span class="label">Status</span>
+                <span class="sensor-status"></span>
+            </div>
+            <div class="chart-section">
+                <div class="chart-title">Temperature Trend</div>
+                <div class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+</template>
+`;
+
+const templateCSS = `
+.popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.popup {
+    width: 300px;
+    background: #1e2332;
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+    color: #fff;
+}
+
+.popup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: #252b3d;
+    border-bottom: 1px solid #333;
+}
+
+.sensor-name {
+    font-weight: 600;
+    flex: 1;
+}
+
+.sensor-zone {
+    font-size: 12px;
+    color: #888;
+    background: #1a1f2e;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: #fff;
+}
+
+.popup-body {
+    padding: 16px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #333;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.label {
+    color: #888;
+}
+
+.sensor-status {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.sensor-status[data-status="normal"] {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+.sensor-status[data-status="warning"] {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.sensor-status[data-status="critical"] {
+    background: rgba(248, 113, 113, 0.2);
+    color: #f87171;
+}
+
+.chart-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #333;
+}
+
+.chart-title {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.chart-container {
+    width: 100%;
+    height: 150px;
+}
+`;
+
+// ======================
+// TEMPLATE HELPER
+// ======================
+function extractTemplate(htmlCode, templateId) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlCode, 'text/html');
+    const template = doc.querySelector(`template#${templateId}`);
+    return template?.innerHTML || '';
+}
 
 initComponent.call(this);
 
@@ -72,7 +232,15 @@ function initComponent() {
     bind3DEvents(this, this.customEvents);
 
     // ======================
-    // 6. Popup (오버라이드 가능)
+    // 6. Template Config
+    // ======================
+    this.templateConfig = {
+        popup: 'popup-sensor',  // 팝업용 template ID
+        // tooltip: 'tooltip-info',  // 향후 확장
+    };
+
+    // ======================
+    // 7. Popup (template 기반)
     // ======================
     this.popupCreatedConfig = {
         chartSelector: '.chart-container',
@@ -83,8 +251,9 @@ function initComponent() {
         }
     };
 
-    this.getPopupHTML = getPopupHTML.bind(this);
-    this.getPopupStyles = getPopupStyles.bind(this);
+    // 향후: this.properties.publishCode.htmlCode / cssCode 에서 가져옴
+    this.getPopupHTML = () => extractTemplate(templateHTML, this.templateConfig.popup);
+    this.getPopupStyles = () => templateCSS;
     this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
 
     applyShadowPopupMixin(this, {
@@ -228,157 +397,3 @@ function onPopupCreated({chartSelector, events}) {
     events && this.bindPopupEvents(events)
 }
 
-// ======================
-// POPUP TEMPLATE
-// ======================
-
-function getPopupHTML() {
-    return `
-<div class="popup-overlay">
-    <div class="popup">
-        <div class="popup-header">
-            <span class="sensor-name"></span>
-            <span class="sensor-zone"></span>
-            <button class="close-btn">&times;</button>
-        </div>
-        <div class="popup-body">
-            <div class="info-row">
-                <span class="label">Temperature</span>
-                <span class="sensor-temp"></span>
-            </div>
-            <div class="info-row">
-                <span class="label">Humidity</span>
-                <span class="sensor-humidity"></span>
-            </div>
-            <div class="info-row">
-                <span class="label">Status</span>
-                <span class="sensor-status"></span>
-            </div>
-            <div class="chart-section">
-                <div class="chart-title">Temperature Trend</div>
-                <div class="chart-container"></div>
-            </div>
-        </div>
-    </div>
-</div>
-    `;
-}
-
-// ======================
-// POPUP STYLES
-// ======================
-
-function getPopupStyles() {
-    return `
-.popup-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.popup {
-    width: 300px;
-    background: #1e2332;
-    border-radius: 12px;
-    overflow: hidden;
-    font-family: system-ui, sans-serif;
-    color: #fff;
-}
-
-.popup-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 16px;
-    background: #252b3d;
-    border-bottom: 1px solid #333;
-}
-
-.sensor-name {
-    font-weight: 600;
-    flex: 1;
-}
-
-.sensor-zone {
-    font-size: 12px;
-    color: #888;
-    background: #1a1f2e;
-    padding: 2px 8px;
-    border-radius: 4px;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: #888;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-.close-btn:hover {
-    color: #fff;
-}
-
-.popup-body {
-    padding: 16px;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid #333;
-}
-
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.label {
-    color: #888;
-}
-
-.sensor-status {
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    text-transform: uppercase;
-}
-
-.sensor-status[data-status="normal"] {
-    background: rgba(74, 222, 128, 0.2);
-    color: #4ade80;
-}
-
-.sensor-status[data-status="warning"] {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fbbf24;
-}
-
-.sensor-status[data-status="critical"] {
-    background: rgba(248, 113, 113, 0.2);
-    color: #f87171;
-}
-
-.chart-section {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid #333;
-}
-
-.chart-title {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 8px;
-}
-
-.chart-container {
-    width: 100%;
-    height: 150px;
-}
-    `;
-}
