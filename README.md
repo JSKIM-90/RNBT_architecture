@@ -946,6 +946,261 @@ WKit의 `bindEvents`는 **submit 이벤트에만** `event.preventDefault()`를 �
 }
 ```
 
+### 8. 자기 완결 컴포넌트 패턴 (Self-Contained Component)
+
+컴포넌트가 자신의 기능을 완전히 소유하고, 페이지는 실행 여부만 결정하는 패턴입니다.
+
+#### 핵심 원칙
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. 컴포넌트는 기능(메소드)을 정의한다                         │
+│     - showDetail(), highlight(), focusCamera() 등            │
+│     - 각 메소드는 자기 완결 (필요 시 fetchData 포함)           │
+│                                                              │
+│  2. 컴포넌트는 datasetInfo[]로 데이터 정보를 선언한다          │
+│     - 복수의 데이터셋 지원                                    │
+│     - 메소드 내에서 필요 시 조회                              │
+│                                                              │
+│  3. 컴포넌트는 customEvents로 이벤트만 발행한다               │
+│     - 사용자 행동을 혼자 판단하지 않음                        │
+│     - "뭔가 일어났다"만 알림                                  │
+│                                                              │
+│  4. 컴포넌트는 자체 리소스(Shadow DOM)를 관리한다             │
+│     - 외부 컴포넌트 의존 없음 (결합도 제거)                    │
+│     - Shadow DOM으로 HTML + CSS 캡슐화 (자동 스코핑)          │
+│     - destroy 시 host 제거로 전체 정리 (1:1 원칙)             │
+│                                                              │
+│  5. 페이지가 시나리오를 결정한다                              │
+│     - eventBusHandlers에서 어떤 메소드를 호출할지 선택        │
+│     - 시나리오 변경 시 페이지 핸들러만 수정                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### 적용 조건
+
+| 조건 | 설명 |
+|------|------|
+| 사용자 액션 기반 | 클릭, 호버 등 명시적 액션으로 트리거 |
+| 단일 사용 데이터 | 다른 컴포넌트와 공유 불필요 |
+| 특정 아이템 상세 | 목록 중 하나의 상세 정보 (팝업 등) |
+
+**적용 금지:**
+- 여러 컴포넌트가 같은 데이터를 공유해야 하는 경우 → Topic 기반 구독 사용
+- 폴링/자동 갱신이 필요한 경우 → GlobalDataPublisher 사용
+
+#### 컴포넌트 구현 예시
+
+```javascript
+// 3D 컴포넌트 register.js
+const { fetchData } = WKit;
+
+// 복수의 데이터 정보 선언
+this.datasetInfo = [
+    { datasetName: 'sensor', param: { id: this.id } },
+    { datasetName: 'sensorHistory', param: { id: this.id } },
+    { datasetName: 'sensorAlerts', param: { id: this.id } }
+];
+
+// 이벤트 발행 (액션 알림만)
+this.customEvents = {
+    click: '@sensorClicked'
+};
+
+// 자체 리소스 참조 (Shadow DOM 기반)
+this.popupHost = null;      // Shadow DOM host element
+this.shadowRoot = null;     // Shadow root (CSS 자동 격리)
+
+// 다양한 기능 메소드 정의
+this.showDetail = async function() {
+    const results = await Promise.all(
+        this.datasetInfo.map(info =>
+            fetchData(this.page, info.datasetName, { ...info.param })
+        )
+    );
+
+    const sensor = results[0]?.response?.data;
+    const history = results[1]?.response?.data;
+    const alerts = results[2]?.response?.data;
+
+    this.createPopup(sensor, history, alerts);
+}.bind(this);
+
+this.highlight = function() {
+    // 하이라이트 효과
+}.bind(this);
+
+this.focusCamera = function() {
+    // 카메라 포커스
+}.bind(this);
+
+// 자체 팝업 생성 (Shadow DOM 기반 - CSS 자동 격리)
+this.createPopup = function(sensor, history, alerts) {
+    // Shadow DOM host 생성 (최초 1회)
+    if (!this.popupHost) {
+        this.popupHost = document.createElement('div');
+        this.shadowRoot = this.popupHost.attachShadow({ mode: 'open' });
+        // 웹 빌더 컨텍스트: document.body 대신 this.page.element 사용
+        this.page.element.appendChild(this.popupHost);
+    }
+
+    // Shadow DOM 내부에 스타일 + HTML 렌더링 (CSS 자동 스코핑)
+    this.shadowRoot.innerHTML = `
+        <style>${this.getPopupStyles()}</style>
+        ${this.renderPopupContent(sensor, history, alerts)}
+    `;
+
+    this.popupHost.style.display = 'block';
+    this.bindPopupEvents();
+}.bind(this);
+
+// 팝업 CSS 정의 (Shadow DOM 내부 - prefix 불필요, 클래스명 충돌 없음)
+this.getPopupStyles = function() {
+    return `
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .popup-content {
+            background: #1a1f2e;
+            border-radius: 8px;
+            min-width: 400px;
+            max-width: 600px;
+            color: #e0e6ed;
+        }
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #2a3142;
+        }
+        .popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .popup-close {
+            background: none;
+            border: none;
+            color: #e0e6ed;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .popup-body {
+            padding: 20px;
+        }
+    `;
+}.bind(this);
+
+this.hideDetail = function() {
+    if (this.popupHost) {
+        this.popupHost.style.display = 'none';
+    }
+}.bind(this);
+
+this.renderPopupContent = function(sensor, history, alerts) {
+    return `
+        <div class="popup-overlay">
+            <div class="popup-content">
+                <div class="popup-header">
+                    <h3>${sensor?.name || 'Sensor Detail'}</h3>
+                    <button class="popup-close">×</button>
+                </div>
+                <div class="popup-body">
+                    <!-- 센서 정보, 차트, 알림 렌더링 -->
+                </div>
+            </div>
+        </div>
+    `;
+}.bind(this);
+
+this.bindPopupEvents = function() {
+    // Shadow DOM 내부 요소 접근: this.shadowRoot.querySelector
+    const closeBtn = this.shadowRoot.querySelector('.popup-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => this.hideDetail());
+    }
+}.bind(this);
+
+bind3DEvents(this, this.customEvents);
+```
+
+```javascript
+// 3D 컴포넌트 destroy.js
+// 자체 생성한 리소스 정리 (1:1 원칙)
+
+// Shadow DOM host 제거 (내부 shadowRoot + 스타일도 함께 정리됨)
+if (this.popupHost) {
+    this.popupHost.remove();
+    this.popupHost = null;
+    this.shadowRoot = null;
+}
+```
+
+#### 페이지 구현 예시
+
+```javascript
+// Page - before_load.js
+this.eventBusHandlers = {
+    // 시나리오 A: 상세 팝업 표시
+    '@sensorClicked': ({ targetInstance }) => {
+        targetInstance.showDetail();
+    }
+
+    // 시나리오 B: 하이라이트만 (시나리오 변경 시)
+    // '@sensorClicked': ({ targetInstance }) => {
+    //     targetInstance.highlight();
+    // }
+
+    // 시나리오 C: 복합 동작
+    // '@sensorClicked': ({ targetInstance }) => {
+    //     targetInstance.highlight();
+    //     targetInstance.showDetail();
+    // }
+
+    // 시나리오 D: 페이지 레벨 처리
+    // '@sensorClicked': async ({ targetInstance }) => {
+    //     const data = await fetchData(this, 'sensor', { id: targetInstance.id });
+    //     this.updateDashboard(data);
+    // }
+};
+
+onEventBusHandlers(this.eventBusHandlers);
+```
+
+#### 시나리오 변경 대응
+
+| 변경 사항 | 컴포넌트 수정 | 페이지 수정 |
+|----------|-------------|------------|
+| 클릭 시 다른 행동 | ❌ 불필요 | ✅ 핸들러만 변경 |
+| 새 기능 추가 | ✅ 메소드 추가 | ✅ 핸들러에서 호출 |
+| 기존 기능 조합 | ❌ 불필요 | ✅ 핸들러에서 조합 |
+
+#### 주의사항
+
+1. **웹 빌더 컨텍스트**: Shadow DOM host 생성 시 `document.body` 대신 `this.page.element` 사용
+2. **라이프사이클 관리**: `popupHost.remove()`로 Shadow DOM 전체가 정리됨 (1:1 원칙)
+3. **CSS 자동 스코핑**: Shadow DOM 내부 스타일은 외부와 완전 격리 (prefix 불필요)
+4. **Shadow DOM 내부 접근**: `this.shadowRoot.querySelector()`로 내부 요소 접근
+5. **에러 처리**: 컴포넌트 메소드 내에서 try-catch 처리
+
+#### Shadow DOM 장점
+
+| 항목 | 설명 |
+|------|------|
+| CSS 자동 격리 | 클래스명 충돌 걱정 없음, prefix 불필요 |
+| 같은 컴포넌트 복수 배치 | 각각 독립된 스타일 공간 |
+| 외부 스타일 영향 차단 | 페이지 CSS가 팝업에 영향 안 줌 |
+| 정리 간소화 | host 제거 시 내부 전체 정리 |
+
 ---
 
 ## 에러 처리 패턴
@@ -1210,10 +1465,16 @@ WKit.enableDebugMode({
 
 ## 버전 정보
 
-**문서 버전**: 2.0.0
-**최종 업데이트**: 2025-12-15
+**문서 버전**: 2.1.0
+**최종 업데이트**: 2025-12-16
 
 ### 주요 변경사항
+
+- v2.1.0: 자기 완결 컴포넌트 패턴 추가 (2025-12-16)
+  - "8. 자기 완결 컴포넌트 패턴 (Self-Contained Component)" 섹션 추가
+  - datasetInfo 배열 지원, 컴포넌트 내 fetchData
+  - Shadow DOM 기반 팝업 생성 (CSS 자동 스코핑)
+  - 시나리오 변경 대응 유연성 강화
 
 - v2.0.0: 문서 구조 재편 (2025-12-15)
   - CLAUDE.md의 설계 내용을 README.md로 통합
