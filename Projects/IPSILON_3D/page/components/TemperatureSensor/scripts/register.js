@@ -132,7 +132,10 @@ function showDetail() {
                 data => data && render.forEach(fn => this[fn](data))
             )
         )
-    );
+    ).catch(e => {
+        console.error('[TemperatureSensor]', e);
+        this.hidePopup();
+    });
 }
 
 function renderSensorInfo(config, data) {
