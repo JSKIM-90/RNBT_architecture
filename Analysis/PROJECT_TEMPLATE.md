@@ -18,10 +18,12 @@
 **사용자가 직접 조합**:
 ```javascript
 const { datasetInfo } = targetInstance;
-if (datasetInfo) {
-    const { datasetName, param } = datasetInfo;
-    const data = await WKit.fetchData(this, datasetName, param);
-    // 사용자가 원하는 대로 처리
+if (datasetInfo?.length) {
+    // 배열 순회 (다중 데이터셋 지원)
+    for (const { datasetName, param } of datasetInfo) {
+        const data = await WKit.fetchData(this, datasetName, param);
+        // 사용자가 원하는 대로 처리
+    }
 }
 ```
 
@@ -64,10 +66,11 @@ this.eventBusHandlers = {
     // 샘플: Primitive 조합 패턴
     '@itemClicked': async ({ event, targetInstance }) => {
         const { datasetInfo } = targetInstance;
-        if (datasetInfo) {
-            const { datasetName, param } = datasetInfo;
-            const data = await fetchData(this, datasetName, param);
-            // TODO: 데이터 처리
+        if (datasetInfo?.length) {
+            for (const { datasetName, param } of datasetInfo) {
+                const data = await fetchData(this, datasetName, param);
+                // TODO: 데이터 처리
+            }
         }
     },
 

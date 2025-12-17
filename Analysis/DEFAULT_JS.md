@@ -122,13 +122,16 @@ this.customEvents = {
 };
 
 // Data source info (상호작용 시 데이터 필요한 경우)
-this.datasetInfo = {
-    datasetName: 'myDataset',
-    param: {
-        type: 'geometry',
-        id: this.id
+// 배열 형태로 정의 (다중 데이터셋 지원)
+this.datasetInfo = [
+    {
+        datasetName: 'myDataset',
+        param: {
+            type: 'geometry',
+            id: this.id
+        }
     }
-};
+];
 
 bind3DEvents(this, this.customEvents);
 ```
@@ -158,10 +161,11 @@ this.eventBusHandlers = {
     // 샘플: Primitive 조합 패턴
     // '@itemClicked': async ({ event, targetInstance }) => {
     //     const { datasetInfo } = targetInstance;
-    //     if (datasetInfo) {
-    //         const { datasetName, param } = datasetInfo;
-    //         const data = await fetchData(this, datasetName, param);
-    //         // 데이터 처리
+    //     if (datasetInfo?.length) {
+    //         for (const { datasetName, param } of datasetInfo) {
+    //             const data = await fetchData(this, datasetName, param);
+    //             // 데이터 처리
+    //         }
     //     }
     // },
 
@@ -306,10 +310,12 @@ this.eventBusHandlers = {
         console.log('Clicked 3D object:', event.intersects[0]?.object);
 
         const { datasetInfo } = targetInstance;
-        if (datasetInfo) {
-            const { datasetName, param } = datasetInfo;
-            const data = await fetchData(this, datasetName, param);
-            console.log('3D object data:', data);
+        if (datasetInfo?.length) {
+            // 배열 순회 (다중 데이터셋 지원)
+            for (const { datasetName, param } of datasetInfo) {
+                const data = await fetchData(this, datasetName, param);
+                console.log('3D object data:', data);
+            }
         }
     }
 };

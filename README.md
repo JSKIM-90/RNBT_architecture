@@ -211,10 +211,12 @@ WEventBus.emit('@myClickEvent', { event, targetInstance });
 // 구독자
 WEventBus.on('@myClickEvent', async ({ event, targetInstance }) => {
     const { datasetInfo } = targetInstance;
-    if (datasetInfo) {
-        const { datasetName, param } = datasetInfo;
-        const data = await WKit.fetchData(page, datasetName, param);
-        // 처리 로직
+    if (datasetInfo?.length) {
+        // 배열 순회 (다중 데이터셋 지원)
+        for (const { datasetName, param } of datasetInfo) {
+            const data = await WKit.fetchData(page, datasetName, param);
+            // 처리 로직
+        }
     }
 });
 ```
@@ -566,10 +568,12 @@ this.eventBusHandlers = {
     '@3dObjectClicked': async ({ event, targetInstance }) => {
         const { datasetInfo } = targetInstance;
 
-        if (datasetInfo) {
-            const { datasetName, param } = datasetInfo;
-            const data = await fetchData(this, datasetName, param);
-            console.log('[Page] 3D Object clicked - Data:', data);
+        if (datasetInfo?.length) {
+            // 배열 순회 (다중 데이터셋 지원)
+            for (const { datasetName, param } of datasetInfo) {
+                const data = await fetchData(this, datasetName, param);
+                console.log('[Page] 3D Object clicked - Data:', data);
+            }
         }
     }
 };
