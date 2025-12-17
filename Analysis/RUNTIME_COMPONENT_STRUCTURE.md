@@ -47,56 +47,10 @@
 
 ## 컨테이너 크기 규칙
 
-| 상황 | 컨테이너 크기 |
-|------|-------------|
-| CONTAINER_STYLES.md 있음 | 해당 문서 값 사용 (레이아웃 기반) |
-| CONTAINER_STYLES.md 없음 | Figma 선택 요소 크기 사용 (고정) |
-
-### CONTAINER_STYLES.md 적용 방법
-
-**CONTAINER_STYLES.md는 마크다운 문서입니다.** CSS 파일이 아닙니다.
-
-**적용 과정**:
-1. 전체 레이아웃 설계 시 CONTAINER_STYLES.md에 각 컴포넌트의 컨테이너 크기 정의
-2. 개발자가 preview.html 작성 시 MD 문서의 값을 **수동으로 복사**
-3. 런타임에서는 에디터가 컨테이너 크기를 관리 (MD 문서는 참고용)
-
-```markdown
-<!-- CONTAINER_STYLES.md 예시 -->
-## StatsPanel
-- width: 100%
-- height: calc((100vh - 60px) / 2)
-- padding: 20px
-- overflow: auto
-
-## VisitorChart
-- width: 100%
-- height: calc((100vh - 60px) / 2)
-```
-
-```html
-<!-- preview.html에서 수동 적용 -->
-<style>
-#stats-panel-container {
-    width: 100%;
-    height: calc((100vh - 60px) / 2);
-    padding: 20px;
-    overflow: auto;
-}
-</style>
-```
-
-**핵심**: CONTAINER_STYLES.md는 **설계 문서**이며, 자동으로 CSS에 반영되지 않습니다.
+**컨테이너 크기 = Figma 선택 요소 크기**
 
 ```css
-/* CONTAINER_STYLES.md 있는 경우 */
-#component-container {
-    width: 100%;
-    height: calc((100vh - 60px) / 2);  /* MD에 명시된 값 */
-    overflow: auto;
-}
-
-/* CONTAINER_STYLES.md 없는 경우 */
+/* Container: Figma 선택 요소 크기 */
 #component-container {
     width: 524px;   /* Figma 선택 요소 width */
     height: 350px;  /* Figma 선택 요소 height */
@@ -104,13 +58,17 @@
 }
 ```
 
+- Figma에서 선택한 요소의 크기가 곧 컨테이너 크기
+- 레이아웃 조립 시 크기 조정은 **에디터가 담당**
+- preview.html은 Figma 크기로 디자인 검증 목적
+
 ---
 
 ## 설계 철학
 
 ### Figma 스타일 그대로 유지
 
-- 컨테이너 크기 = Figma 선택 요소 크기 (또는 CONTAINER_STYLES.md 값)
+- 컨테이너 크기 = Figma 선택 요소 크기
 - 내부 요소 스타일 = Figma에서 추출한 그대로
 - **임의로 width: 100%, height: 100%로 변경하지 않음**
 
@@ -217,9 +175,9 @@ ComponentName/
 <html>
 <head>
     <style>
-        /* Container Style - CONTAINER_STYLES.md 또는 Figma 크기 */
+        /* Container: Figma 선택 요소 크기 */
         #component-container {
-            width: 524px;   /* Figma 크기 또는 MD 값 */
+            width: 524px;   /* Figma 크기 */
             height: 350px;
             overflow: auto;
         }
@@ -259,7 +217,6 @@ ComponentName/
 
 - **DOM 깊이 증가**: 모든 컴포넌트마다 컨테이너 div 추가
 - **단순 컴포넌트 오버헤드**: 아이콘 하나도 컨테이너 필요
-- **CONTAINER_STYLES.md 비대화**: 컴포넌트가 많아지면 파일이 커질 수 있음
 
 ### 결론
 
@@ -268,9 +225,9 @@ ComponentName/
 
 ---
 
-**버전**: 2.2.0
-**작성일**: 2025-12-04
+**버전**: 2.3.0
+**작성일**: 2025-12-17
 **변경사항**:
-- v2.2.0: CONTAINER_STYLES.md 적용 방법 명시 (수동 복사)
+- v2.3.0: CONTAINER_STYLES.md 제거 - Figma 크기 = 컨테이너 크기로 단순화, 레이아웃 조립은 에디터 담당
 - v2.1.0: 파일 구조 통일 (scripts/ 폴더, 파일명 간결화)
-- v2.0.0: Figma 스타일 그대로 유지 원칙 명확화, height: 100% 패턴 제거, 컨테이너 크기 규칙 추가
+- v2.0.0: Figma 스타일 그대로 유지 원칙 명확화, height: 100% 패턴 제거

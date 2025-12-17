@@ -61,7 +61,6 @@ example_master_02/
 │       ├── SpendingChart_*.js     # ECharts 통합
 │       └── *_preview.html
 │
-├── CONTAINER_STYLES.md        # 컨테이너 스타일 가이드
 └── README.md
 ```
 
@@ -217,7 +216,7 @@ page/components/SpendingChart_preview.html
 ```
 
 **Preview 파일 특징**:
-- CONTAINER_STYLES.md의 컨테이너 스타일 그대로 적용
+- Figma 크기를 컨테이너에 그대로 적용
 - Component CSS 파일 그대로 적용 (`#component-id` → `#component-container`)
 - Mock 데이터로 렌더링 결과 확인
 - 런타임 종속성 없이 독립 실행

@@ -44,7 +44,6 @@ example_basic_01/
 │
 ├── mock_server/               # 목 API 서버 (port: 3000)
 ├── datasetList.json           # 데이터셋 정의
-├── CONTAINER_STYLES.md        # 컨테이너 스타일 가이드
 └── README.md
 ```
 
