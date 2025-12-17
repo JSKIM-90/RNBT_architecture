@@ -1231,13 +1231,13 @@ function getPopupStyles() {
 
 ```javascript
 // destroy.js
-const { remove3DEvents } = WKit;
-
 onInstanceUnLoad.call(this);
 
 function onInstanceUnLoad() {
-    this.destroyPopup();  // Mixin 메서드 - 모든 리소스 정리
-    remove3DEvents(this, this.customEvents);
+    // DOM 리소스 정리 (Shadow DOM 팝업, 차트 등)
+    this.destroyPopup();
+
+    // 3D 리소스 정리는 Page의 disposeAllThreeResources()에서 자동 처리
 }
 ```
 
@@ -1561,10 +1561,15 @@ WKit.enableDebugMode({
 
 ## 버전 정보
 
-**문서 버전**: 2.2.0
-**최종 업데이트**: 2025-12-16
+**문서 버전**: 2.3.0
+**최종 업데이트**: 2025-12-17
 
 ### 주요 변경사항
+
+- v2.3.0: 3D 컴포넌트 destroy.js 정책 명확화 (2025-12-17)
+  - 3D 리소스 정리: Page에서 자동 처리 (기존과 동일)
+  - DOM 리소스 정리: 자기완결 컴포넌트는 destroy.js에서 직접 정리
+  - destroy 예시에서 remove3DEvents 호출 제거
 
 - v2.2.0: Shadow DOM / Mixin 개념 설명 추가 (2025-12-16)
   - Shadow DOM 이해: Host/Shadow Root 관계, CSS 격리 원리

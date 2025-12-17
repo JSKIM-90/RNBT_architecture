@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TemperatureSensor - Preview</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1219;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .preview-btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .preview-btn:hover {
+            background: #2563eb;
+        }
+
+        .preview-btn.warning {
+            background: #eab308;
+            color: #000;
+        }
+
+        .preview-btn.critical {
+            background: #ef4444;
+        }
+
+        #popup-host {
+            /* Shadow DOM host */
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-controls">
+        <button class="preview-btn" onclick="showPopup('normal')">Normal Sensor</button>
+        <button class="preview-btn warning" onclick="showPopup('warning')">Warning Sensor</button>
+        <button class="preview-btn critical" onclick="showPopup('critical')">Critical Sensor</button>
+    </div>
+
+    <div id="popup-host"></div>
+
+    <script>
+        // Load template and styles
+        const templateHTML = `
+            <div class="popup-overlay">
+                <div class="popup-content">
+                    <!-- Header -->
+                    <div class="popup-header">
+                        <div class="header-info">
+                            <h2 class="sensor-name">-</h2>
+                            <span class="sensor-zone">-</span>
+                        </div>
+                        <div class="header-actions">
+                            <span class="sensor-status" data-status="normal">Normal</span>
+                            <button class="close-btn" type="button" aria-label="Close">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="popup-body">
+                        <!-- Current Values -->
+                        <div class="current-values">
+                            <div class="value-card">
+                                <div class="value-label">Temperature</div>
+                                <div class="value-number">
+                                    <span class="sensor-temp">-</span>
+                                    <span class="value-unit">&deg;C</span>
+                                </div>
+                            </div>
+                            <div class="value-card">
+                                <div class="value-label">Humidity</div>
+                                <div class="value-number">
+                                    <span class="sensor-humidity">-</span>
+                                    <span class="value-unit">%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart -->
+                        <div class="chart-section">
+                            <div class="chart-header">
+                                <span class="chart-title">Temperature History</span>
+                            </div>
+                            <div class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const popupStyles = `
+            .popup-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            }
+
+            .popup-content {
+                background: #1a1f2e;
+                border-radius: 12px;
+                width: 480px;
+                max-width: 90vw;
+                max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+                border: 1px solid #2a3142;
+            }
+
+            .popup-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 24px;
+                border-bottom: 1px solid #2a3142;
+            }
+
+            .header-info {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .sensor-name {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+                color: #e0e6ed;
+            }
+
+            .sensor-zone {
+                font-size: 13px;
+                color: #8892a0;
+            }
+
+            .header-actions {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .sensor-status {
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+                text-transform: capitalize;
+            }
+
+            .sensor-status[data-status="normal"] {
+                background: rgba(34, 197, 94, 0.15);
+                color: #22c55e;
+            }
+
+            .sensor-status[data-status="warning"] {
+                background: rgba(234, 179, 8, 0.15);
+                color: #eab308;
+            }
+
+            .sensor-status[data-status="critical"] {
+                background: rgba(239, 68, 68, 0.15);
+                color: #ef4444;
+            }
+
+            .close-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                background: transparent;
+                border: none;
+                border-radius: 6px;
+                color: #8892a0;
+                cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+            }
+
+            .close-btn:hover {
+                background: #2a3142;
+                color: #e0e6ed;
+            }
+
+            .popup-body {
+                padding: 24px;
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .current-values {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+
+            .value-card {
+                background: #252b3b;
+                border-radius: 8px;
+                padding: 16px;
+            }
+
+            .value-label {
+                font-size: 12px;
+                color: #8892a0;
+                margin-bottom: 8px;
+            }
+
+            .value-number {
+                display: flex;
+                align-items: baseline;
+                gap: 4px;
+            }
+
+            .sensor-temp,
+            .sensor-humidity {
+                font-size: 32px;
+                font-weight: 600;
+                color: #e0e6ed;
+            }
+
+            .value-unit {
+                font-size: 16px;
+                color: #8892a0;
+            }
+
+            .chart-section {
+                background: #252b3b;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+            .chart-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 12px 16px;
+                border-bottom: 1px solid #2a3142;
+            }
+
+            .chart-title {
+                font-size: 14px;
+                font-weight: 500;
+                color: #e0e6ed;
+            }
+
+            .chart-container {
+                width: 100%;
+                height: 200px;
+            }
+        `;
+
+        // Mock data
+        const mockSensorData = {
+            normal: {
+                name: 'Temperature Sensor A-1',
+                zone: 'Zone-A',
+                status: 'normal',
+                temperature: 24.5,
+                humidity: 45
+            },
+            warning: {
+                name: 'Temperature Sensor B-2',
+                zone: 'Zone-B',
+                status: 'warning',
+                temperature: 29.8,
+                humidity: 62
+            },
+            critical: {
+                name: 'Temperature Sensor C-3',
+                zone: 'Zone-C',
+                status: 'critical',
+                temperature: 36.2,
+                humidity: 78
+            }
+        };
+
+        function generateHistoryData() {
+            const timestamps = [];
+            const temperatures = [];
+            const now = new Date();
+
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 3600000);
+                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
+                const baseTemp = 23 + Math.sin(i / 6) * 2;
+                const noise = (Math.random() - 0.5) * 3;
+                temperatures.push(Math.round((baseTemp + noise) * 10) / 10);
+            }
+
+            return { timestamps, temperatures };
+        }
+
+        let shadowRoot = null;
+        let chart = null;
+
+        function showPopup(status) {
+            const host = document.getElementById('popup-host');
+
+            // Clear existing
+            if (shadowRoot) {
+                host.shadowRoot.innerHTML = '';
+            } else {
+                shadowRoot = host.attachShadow({ mode: 'open' });
+            }
+
+            // Add styles
+            const style = document.createElement('style');
+            style.textContent = popupStyles;
+            shadowRoot.appendChild(style);
+
+            // Add content
+            const content = document.createElement('div');
+            content.innerHTML = templateHTML;
+            shadowRoot.appendChild(content);
+
+            // Bind data
+            const data = mockSensorData[status];
+            shadowRoot.querySelector('.sensor-name').textContent = data.name;
+            shadowRoot.querySelector('.sensor-zone').textContent = data.zone;
+
+            const statusEl = shadowRoot.querySelector('.sensor-status');
+            statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+            statusEl.dataset.status = data.status;
+
+            shadowRoot.querySelector('.sensor-temp').textContent = data.temperature;
+            shadowRoot.querySelector('.sensor-humidity').textContent = data.humidity;
+
+            // Bind close
+            shadowRoot.querySelector('.close-btn').addEventListener('click', hidePopup);
+            shadowRoot.querySelector('.popup-overlay').addEventListener('click', (e) => {
+                if (e.target.classList.contains('popup-overlay')) {
+                    hidePopup();
+                }
+            });
+
+            // Init chart
+            const chartContainer = shadowRoot.querySelector('.chart-container');
+            chart = echarts.init(chartContainer);
+
+            const historyData = generateHistoryData();
+            const option = {
+                grid: { left: 40, right: 16, top: 16, bottom: 24 },
+                xAxis: {
+                    type: 'category',
+                    data: historyData.timestamps,
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: { show: false },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                    splitLine: { lineStyle: { color: '#333' } }
+                },
+                series: [{
+                    type: 'line',
+                    data: historyData.temperatures,
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { color: '#3b82f6', width: 2 },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                                { offset: 1, color: 'rgba(59, 130, 246, 0)' }
+                            ]
+                        }
+                    }
+                }]
+            };
+
+            chart.setOption(option);
+        }
+
+        function hidePopup() {
+            if (chart) {
+                chart.dispose();
+                chart = null;
+            }
+            if (shadowRoot) {
+                shadowRoot.innerHTML = '';
+            }
+        }
+    </script>
+</body>
+</html>

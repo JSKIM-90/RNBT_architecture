@@ -11,11 +11,12 @@
 | `GET /api/assets/summary` | 페이지 초기화 | Page | Summary만 조회 (타입 목록) |
 | `GET /api/assets` | 페이지 로드 | Page | 전체 자산 목록 조회 |
 | `GET /api/assets?type=sensor` | 타입 펼침 | Page | 해당 타입 자산만 조회 |
-| `GET /api/sensor/:id` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 센서 현재 상태 표시 |
-| `GET /api/sensor/:id/history` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 차트 렌더링 |
-| `GET /api/sensor/:id/alerts` | 3D 센서 클릭 | TemperatureSensor → SensorDetailPopup | 알림 목록 표시 |
-| `GET /api/sensor/:id/history?period=` | 기간 버튼 클릭 | SensorDetailPopup | 차트 기간 변경 (24h/7d/30d) |
-| `GET /api/sensor/:id` + `/history` | 새로고침 버튼 클릭 | SensorDetailPopup | 센서 + 차트 갱신 |
+| `GET /api/sensor/:id` | 3D 센서 클릭 | TemperatureSensor | 센서 현재 상태 표시 |
+| `GET /api/sensor/:id/history` | 3D 센서 클릭 | TemperatureSensor | 차트 렌더링 |
+| `GET /api/sensor/:id/alerts` | - | (확장용) | 알림 목록 표시 |
+| `GET /api/sensor/:id/history?period=` | - | (확장용) | 차트 기간 변경 (24h/7d/30d) |
+
+> **Note**: TemperatureSensor는 자기 완결 컴포넌트로, 클릭 시 내부에서 직접 데이터를 조회합니다.
 
 ---
 
@@ -220,14 +221,16 @@ GET /api/sensor/:id
 | threshold.critical | number | 위험 임계값 (°C) |
 | lastUpdated | string | 마지막 업데이트 (ISO 8601) |
 
-### 컴포넌트 연동
+### 컴포넌트 연동 (자기 완결 패턴)
 
 ```javascript
-// SensorDetailPopup.updateSensor(sensor)
-// - .popup-title: sensor.name
-// - .current-temp: sensor.temperature
-// - .status-badge-large: sensor.status
-// - .threshold-warning-val, .threshold-critical-val
+// TemperatureSensor.renderSensorInfo(data)
+// Config 기반 렌더링:
+// - .sensor-name: data.name
+// - .sensor-zone: data.zone
+// - .sensor-status: data.status (+ data-status attribute)
+// - .sensor-temp: data.temperature
+// - .sensor-humidity: data.humidity
 ```
 
 ---
@@ -283,14 +286,15 @@ GET /api/sensor/:id/history
 | thresholds.warning | number | 경고 임계값 |
 | thresholds.critical | number | 위험 임계값 |
 
-### 컴포넌트 연동
+### 컴포넌트 연동 (자기 완결 패턴)
 
 ```javascript
-// SensorDetailPopup.updateChart(history)
-// - ECharts Line Chart
-// - X축: history.timestamps
-// - Y축: history.temperatures
-// - 점선: thresholds.warning, thresholds.critical
+// TemperatureSensor.renderChart(data)
+// chartConfig 기반 ECharts Line Chart:
+// - xKey: 'timestamps' → X축
+// - series[0].yKey: 'temperatures' → Y축 데이터
+// - series[0].color: '#3b82f6'
+// - series[0].smooth: true, areaStyle: true
 ```
 
 ---
@@ -349,13 +353,13 @@ GET /api/sensor/:id/alerts
 | message | string | 알림 메시지 |
 | timestamp | string | 발생 시간 (ISO 8601) |
 
-### 컴포넌트 연동
+### 컴포넌트 연동 (확장용)
 
 ```javascript
-// SensorDetailPopup.updateAlerts(alertsData)
+// 현재 미구현 - 향후 확장 시 사용
+// datasetInfo에 sensorAlerts 추가 후:
 // - .alert-list에 알림 아이템 렌더링
-// - severity에 따라 아이콘 변경 (⚠️ / ⚡)
-// - 알림 없으면 "No recent alerts" 표시
+// - severity에 따라 스타일 변경
 ```
 
 ---
@@ -370,44 +374,61 @@ temperature < warning(28°C)    → status: "normal"
 
 ---
 
-## 사용 예시
+## 사용 예시 (자기 완결 패턴)
 
-### 3D 센서 클릭 시 (병렬 호출)
+### 3D 센서 클릭 시
 
 ```javascript
 // Page - before_load.js '@sensorClicked' 핸들러
-const [sensorResult, historyResult, alertsResult] = await Promise.all([
-    fetchData(this, 'sensor', { id: sensorId }),
-    fetchData(this, 'sensorHistory', { id: sensorId }),
-    fetchData(this, 'sensorAlerts', { id: sensorId })
-]);
+'@sensorClicked': ({ event, targetInstance }) => {
+    // Page는 "어떤 메서드를 호출할지"만 결정
+    targetInstance.showDetail();
+}
 
-popup.showDetail(sensor, history, alerts);
+// TemperatureSensor 내부에서 처리:
+// 1. showPopup() → Shadow DOM 팝업 표시
+// 2. datasetInfo 순회 → fetchData 호출
+// 3. 결과를 render 함수에 전달
 ```
 
-### 기간 변경 시 (history만 조회)
+### TemperatureSensor.showDetail() 내부 흐름
 
 ```javascript
-// Page - before_load.js '@periodChanged' 핸들러
-const historyResult = await fetchData(this, 'sensorHistory', {
-    id: sensorId,
-    period: '7d'
-});
+function showDetail() {
+    this.showPopup();  // Mixin 제공
 
-popup.updateChart(history);
+    fx.go(
+        this.datasetInfo,
+        fx.each(({ datasetName, param, render }) =>
+            fx.go(
+                fetchData(this.page, datasetName, param),
+                result => result?.response?.data,
+                data => data && render.forEach(fn => this[fn](data))
+            )
+        )
+    );
+}
+
+// datasetInfo 정의:
+const assetId = this.setter.ipsilonAssetInfo.assetId;
+
+this.datasetInfo = [
+    { datasetName: 'sensor', param: { id: assetId }, render: ['renderSensorInfo'] },
+    { datasetName: 'sensorHistory', param: { id: assetId }, render: ['renderChart'] }
+];
 ```
 
-### 새로고침 시 (sensor + history 조회)
+### 확장 예시: Alerts 추가 시
 
 ```javascript
-// Page - before_load.js '@refreshDetailClicked' 핸들러
-const [sensorResult, historyResult] = await Promise.all([
-    fetchData(this, 'sensor', { id: sensorId }),
-    fetchData(this, 'sensorHistory', { id: sensorId })
-]);
+// datasetInfo에 추가하면 자동으로 호출됨
+const assetId = this.setter.ipsilonAssetInfo.assetId;
 
-popup.updateSensor(sensor);
-popup.updateChart(history);
+this.datasetInfo = [
+    { datasetName: 'sensor', param: { id: assetId }, render: ['renderSensorInfo'] },
+    { datasetName: 'sensorHistory', param: { id: assetId }, render: ['renderChart'] },
+    { datasetName: 'sensorAlerts', param: { id: assetId }, render: ['renderAlerts'] }  // 추가
+];
 ```
 
 ---

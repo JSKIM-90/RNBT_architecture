@@ -137,7 +137,8 @@ IPSILON_3D/
 
 ## 3D 컴포넌트 특징
 
-1. **destroy.js 없음**: 페이지 `disposeAllThreeResources()`에서 일괄 정리
-2. **bind3DEvents 사용**: DOM이 아닌 Three.js Raycasting 기반
-3. **datasetInfo로 데이터 연결**: 클릭 시 페이지가 데이터 조회
-4. **개별 컴포넌트**: 센서 하나 = 컴포넌트 하나 (실제 존재하는 단위)
+1. **3D 리소스 정리**: 페이지 `disposeAllThreeResources()`에서 일괄 정리
+2. **DOM 리소스 정리**: 자기완결 컴포넌트(Shadow DOM 팝업 등)는 destroy.js에서 `destroyPopup()` 호출
+3. **bind3DEvents 사용**: DOM이 아닌 Three.js Raycasting 기반
+4. **datasetInfo로 데이터 연결**: 클릭 시 페이지가 데이터 조회
+5. **개별 컴포넌트**: 센서 하나 = 컴포넌트 하나 (실제 존재하는 단위)

@@ -32,9 +32,11 @@ function initComponent() {
     // ======================
     // 1. 데이터 정의
     // ======================
+    const assetId = this.setter.ipsilonAssetInfo.assetId;
+
     this.datasetInfo = [
-        { datasetName: 'sensor', param: { id: this.id }, render: ['renderSensorInfo'] },
-        { datasetName: 'sensorHistory', param: { id: this.id }, render: ['renderChart'] }
+        { datasetName: 'sensor', param: { id: assetId }, render: ['renderSensorInfo'] },
+        { datasetName: 'sensorHistory', param: { id: assetId }, render: ['renderChart'] }
     ];
 
     // ======================
@@ -114,7 +116,7 @@ function initComponent() {
         onCreated: this.onPopupCreated
     });
 
-    console.log('[TemperatureSensor] Registered:', this.id);
+    console.log('[TemperatureSensor] Registered:', assetId);
 }
 
 // ======================

@@ -133,11 +133,13 @@ this.datasetInfo = {
 bind3DEvents(this, this.customEvents);
 ```
 
-> **Note**: 3D 컴포넌트는 destroy.js가 없습니다.
-> 페이지 `before_unload.js`의 `disposeAllThreeResources()`에서 일괄 정리됩니다.
-> - subscriptions 해제
-> - customEvents, datasetInfo 참조 제거
-> - 3D 리소스 dispose (geometry, material, texture)
+> **Note**: 3D 컴포넌트의 정리
+> - **3D 리소스**: 페이지 `before_unload.js`의 `disposeAllThreeResources()`에서 일괄 정리
+>   - subscriptions 해제
+>   - customEvents, datasetInfo 참조 제거
+>   - geometry, material, texture dispose
+> - **DOM 리소스**: 자기완결 컴포넌트(Shadow DOM 팝업 등)는 destroy.js에서 직접 정리
+>   - `this.destroyPopup()` 등 컴포넌트가 생성한 DOM 리소스 정리
 
 ---
 
@@ -603,9 +605,10 @@ this.customEvents = {
 
 ---
 
-**버전**: 1.5.0
+**버전**: 1.6.0
 **작성일**: 2025-12-02
 **변경사항**:
+- v1.6.0: 3D 컴포넌트 destroy.js 정책 변경 - DOM 관리 필요 시 destroy.js 사용 (2025-12-17)
 - v1.5.0: 에러 처리 필수화 (.catch() 추가), 파일 구조 통일 (scripts/ 폴더)
 - v1.4.0: 3D 컴포넌트 destroy.js 제거 - `disposeAllThreeResources()`에서 일괄 정리
 - v1.3.0: 문서 구조 재정리 - 섹션 번호 추가, 컴포넌트 destroy.js 위치 수정

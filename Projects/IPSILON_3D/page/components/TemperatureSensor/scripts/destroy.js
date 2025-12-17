@@ -10,5 +10,5 @@ function onInstanceUnLoad() {
     // Shadow DOM 팝업 정리 (차트 포함)
     this.destroyPopup();
 
-    console.log('[TemperatureSensor] Destroyed:', this.id);
+    console.log('[TemperatureSensor] Destroyed:', this.setter?.ipsilonAssetInfo?.assetId);
 }
