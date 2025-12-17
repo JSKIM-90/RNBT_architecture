@@ -1,186 +1,233 @@
-# 에러 핸들링 가이드
+# fx.go 기반 에러 핸들링 가이드
 
-## 1. fetchAndPublish 에러 핸들링
+## 목적
 
-### 계약
-- `GlobalDataPublisher.fetchAndPublish(topic, page, params?)`는 실패 시 Promise를 reject한다.
-- `async` 함수 내부에서 `throw`된 에러는 자동으로 Promise rejection이 되므로, 호출자가 `await/try-catch`나 `.catch()`로 잡을 수 있다.
-- 호출자는 반드시 `await/try-catch` 또는 `.catch()`로 처리한다.
+이 문서는 `fx.go` / `reduce` 기반 파이프라인에서 **에러가 어떻게 전파되고, 어디에서 처리해야 하는지**를 명확히 정의한다.
 
-### 기본 패턴
+---
+
+## 1. 기본 원칙
+
+### 1.1 유틸은 에러를 처리하지 않는다
+
+* `fx.go`, `reduce`, `reduceF` 등 유틸 레벨에서는 에러를 **복구하지 않는다**.
+* 에러를 **삼키지 않고 그대로 전파**한다.
+* 유틸의 책임은 다음 두 가지뿐이다.
+
+  * 정상 값은 다음 단계로 전달
+  * 에러는 호출자에게 전파
+
+> 재시도, fallback, 사용자 알림, 로그 레벨 등은 도메인 컨텍스트를 아는 **호출자의 책임**이다.
+
+---
+
+### 1.2 호출자는 반드시 에러를 처리한다
+
+* `fx.go(...)`는 실패 시 **rejected Promise를 반환**할 수 있다.
+* 모든 호출부는 반드시 다음 중 하나로 에러를 처리해야 한다.
+
+  * `async / await + try-catch`
+  * `.catch(...)`
+
 ```js
-// async 함수 내부
+// async / await
 try {
-  await GlobalDataPublisher.fetchAndPublish(topic, page, params);
-} catch (err) {
-  // 도메인별 처리 (알림/재시도/무시/로깅)
+  await fx.go(...);
+} catch (e) {
+  // 도메인별 처리
 }
+```
 
+```js
 // Promise 체인
-GlobalDataPublisher.fetchAndPublish(topic, page, params)
-  .catch(err => {
+fx.go(...)
+  .catch(e => {
     // 도메인별 처리
   });
 ```
 
-### interval/이벤트 핸들러
-```js
-const run = () => GlobalDataPublisher.fetchAndPublish(topic, this, this.currentParams[topic] || {})
-  .catch(err => {
-    console.error(`[fetchAndPublish:${topic}]`, err);
-    // 필요 시 사용자 알림/백오프/재시도
-  });
+---
 
-this.refreshIntervals[topic] = setInterval(run, refreshMs);
-run(); // 초기 호출도 안전하게
+## 2. fx.go 파이프라인의 내부 동작 (이해를 위한 설명)
+
+### 2.1 fx.go는 reduce 기반 파이프라인
+
+```js
+const go = (...args) => reduce((a, f) => f(a), args);
 ```
+
+* 각 함수의 반환값이 다음 함수의 입력이 된다.
+* Promise가 반환되면 비동기 파이프라인으로 연결된다.
 
 ---
 
-## 2. fx.go 에러 처리 메커니즘
+### 2.2 비동기 처리의 핵심: reduceF
 
-### 설계 의도
-
-fx.go는 내부적으로 두 가지 에러를 구분한다:
-
-| 유형 | Symbol | 처리 | 순회 |
-|------|--------|------|------|
-| 데이터 없음 | `nop` | `acc` 반환 | **계속** |
-| 진짜 에러 | - | `Promise.reject(e)` | **중단** |
-
-### 코드 분석
-
-```javascript
-// fx.js - reduceF
+```js
 const reduceF = (acc, a, f) =>
   a instanceof Promise
     ? a.then(
-        (a) => f(acc, a),
-        (e) => (e == nop ? acc : Promise.reject(e))  // ← 핵심
+        a => f(acc, a),
+        e => e == nop ? acc : Promise.reject(e)
       )
     : f(acc, a);
-
-// fx.js - reduce
-const reduce = curry((f, acc, iter) => {
-  iter = iter[Symbol.iterator]();
-  return go1(acc, function recur(acc) {
-    let cur;
-    while (!(cur = iter.next()).done) {
-      acc = reduceF(acc, cur.value, f);
-      if (acc instanceof Promise) return acc.then(recur);  // ← recur 호출
-    }
-    return acc;
-  });
-});
 ```
 
-**동작 원리:**
-- `nop` 에러: `acc` 반환 → `.then(recur)` 호출 → 순회 계속
-- **진짜 에러**: `Promise.reject(e)` 반환 → `.then(recur)` 호출 안 됨 → 순회 중단
+#### 의미 정리
 
-### 왜 이렇게 설계했는가?
+* **nop**
 
-진짜 에러(네트워크 에러, 서버 에러 등)가 발생하면 **정상 동작을 시키면 안 된다**.
-개별 catch로 에러를 삼키면 문제가 있는데도 마치 정상인 것처럼 계속 진행되는 위험이 있다.
+  * 필터(`L.filter`) 전용 내부 시그널
+  * “조건 불충족 → 스킵”을 표현
+  * 에러가 아님
+  * 순회를 계속하기 위해 `acc`를 그대로 반환
+* **진짜 에러**
+
+  * `Promise.reject(e)`로 그대로 전파
+  * 복구하지 않음
+
+> `reduceF`는 에러를 처리하지 않는다. `nop`만 예외적으로 스킵을 위해 복구한다.
 
 ---
 
-## 3. fx.go에서 catch 위치
+### 2.3 순회가 중단되는 이유 (fail-fast 동작)
 
-### ❌ 잘못된 패턴: 개별 catch
+* `reduce`는 `acc`가 Promise일 경우 다음과 같이 동작한다.
 
-```javascript
+  ```js
+  return acc.then(recur);
+  ```
+* 그러나 `acc`가 **rejected Promise**이면
+
+  * `then(recur)`의 `recur`는 실행되지 않는다.
+  * rejected 상태가 그대로 반환된다.
+* 결과적으로
+
+  * 다음 함수 적용 ❌
+  * 순회 중단
+  * 최종적으로 `fx.go`는 rejected Promise를 반환
+
+> `reduce`는 내부에서 catch를 하지 않기 때문에 기본 동작은 **fail-fast**이다.
+
+---
+
+## 3. nop의 정확한 역할
+
+* `nop`은 **오직 필터를 구현하기 위한 내부 메커니즘**이다.
+* 목적은 비동기 조건식에서 “false → 스킵”을 표현하는 것이다.
+* 특징
+
+  * 진짜 에러 ❌
+  * 외부에서 처리 대상 ❌
+  * `reduceF`에서만 특별 취급
+
+```js
+e => e == nop ? acc : Promise.reject(e)
+```
+
+---
+
+## 4. catch 위치와 파이프라인 의미
+
+### 4.1 중요한 구분
+
+* 파이프라인의 **정상 흐름의 의미**는 함수 구성으로 결정된다.
+* `catch`의 위치는 **에러 발생 시의 동작 방식**을 결정한다.
+
+> 파이프라인의 정상 흐름은 함수 구성으로,
+> **파이프라인의 에러 처리 전략은 `catch`를 어디에 두느냐로 결정된다.**
+
+---
+
+### 4.2 파이프라인 중간 catch (주의)
+
+```js
 fx.go(
-  this.datasetInfo,
-  fx.each(({ datasetName, param, render }) =>
-    fx.go(
-      fetchData(this.page, datasetName, param),
-      result => result?.response?.data,
-      data => data && render.forEach(fn => this[fn](data))
-    ).catch(err => console.error(err))  // ← 개별 catch (❌)
+  items,
+  fx.each(item =>
+    fx.go(fetchData(item), process)
+      .catch(err => {
+        console.error(err);
+        // 반환값 없음 → resolved(undefined)
+      })
   )
 );
 ```
 
-**문제점:**
-- 에러를 삼켜서 순회 계속됨
-- fx.go의 "진짜 에러 시 순회 중단" 설계 의도 무시
-- 하나가 실패해도 정상처럼 보임
+* 진짜 에러가 **fulfilled 값으로 변환됨**
+* 파이프라인은 “성공”으로 인식하고 계속 진행
+* 의도하지 않으면 버그의 원인이 됨
 
-### ✅ 올바른 패턴: 전체 catch
+---
 
-```javascript
+### 4.3 기본 패턴: 파이프라인 끝에서 catch
+
+```js
 fx.go(
-  this.datasetInfo,
-  fx.each(({ datasetName, param, render }) =>
-    fx.go(
-      fetchData(this.page, datasetName, param),
-      result => result?.response?.data,
-      data => data && render.forEach(fn => this[fn](data))
-    )
+  items,
+  fx.each(item =>
+    fx.go(fetchData(item), process)
   )
 ).catch(e => {
-  console.error('[ComponentName]', e);
-  // 에러 상태 처리 (예: 팝업 닫기, 에러 UI 표시)
+  console.error('[Component]', e);
+  // 상태 복구 / 에러 UI / 중단 처리
 });
 ```
 
-**장점:**
-- 진짜 에러 발생 시 순회 즉시 중단
-- fx.go 설계 의도 준수
-- 에러 발생 시 적절한 상태 처리 가능
+* 에러는 끝까지 전파된다.
+* 한 지점에서 일관되게 처리한다.
+* 기본값으로 권장되는 패턴이다.
 
 ---
 
-## 4. 컴포넌트에서의 에러 처리 예시
+### 4.4 예외: 부분 실패를 허용하는 경우
 
-### showDetail 패턴
+* 일부 실패를 허용해야 하는 도메인에서는 **의도적으로** 중간 catch를 사용할 수 있다.
+* 단, 반드시 **명시적인 대체값**을 반환해야 한다.
 
-```javascript
-function showDetail() {
-    this.showPopup();
-    fx.go(
-        this.datasetInfo,
-        fx.each(({ datasetName, param, render }) =>
-            fx.go(
-                fetchData(this.page, datasetName, param),
-                result => result?.response?.data,
-                data => data && render.forEach(fn => this[fn](data))
-            )
-        )
-    ).catch(e => {
-        console.error('[TemperatureSensor]', e);
-        this.hidePopup();  // 에러 시 팝업 닫기
-    });
-}
+```js
+.catch(e => ({
+  ok: false,
+  error: e
+}));
 ```
 
+> 에러를 삼키는 것이 아니라 **의미 있는 값으로 변환**하는 것이다.
+
 ---
 
-## 5. 유틸에서 삼키지 않는 이유
+## 5. interval / 이벤트 핸들러
 
-- 도메인마다 실패 대응(재시도, fallback, 사용자 알림, 로그 레벨)이 다르다.
-- 유틸은 reject만 하고, 호출자가 컨텍스트에 맞게 처리하는 것이 확장성과 가시성 측면에서 안전하다.
+* 이 컨텍스트에서는 **최상단 catch가 필수**다.
+* 목적은 unhandled rejection 방지다.
+
+```js
+const run = () =>
+  GlobalDataPublisher.fetchAndPublish(topic, page, params)
+    .catch(e => {
+      console.error(`[fetchAndPublish:${topic}]`, e);
+      // 재시도 / 백오프 / 사용자 알림 등
+    });
+
+setInterval(run, refreshMs);
+run();
+```
 
 ---
 
 ## 6. 체크리스트
 
-- [ ] 모든 호출부가 `await/try-catch` 또는 `.catch()`를 붙였는가?
-- [ ] interval/이벤트 핸들러 호출에 `.catch()`가 있는가?
-- [ ] fx.go 사용 시 **전체 catch**를 사용했는가? (개별 catch ❌)
-- [ ] 에러 발생 시 적절한 상태 처리(팝업 닫기, 에러 UI 등)를 했는가?
-- [ ] 필요한 곳에 사용자 알림/재시도 정책을 넣었는가?
-- [ ] 로깅 레벨과 메시지가 운영 모니터링에 적합한가?
+* [ ] 모든 `fx.go` 호출부에 `try-catch` 또는 `.catch()`가 있는가?
+* [ ] 파이프라인 중간 `catch`가 의도적인 복구인가?
+* [ ] `catch`에서 반환값이 명확한가?
+* [ ] `nop`을 진짜 에러 처리와 혼동하지 않았는가?
+* [ ] interval / 이벤트 핸들러에 catch가 있는가?
 
 ---
 
-**버전**: 1.1.0
-**작성일**: 2025-12-16
+## 핵심 요약
 
-### 변경 이력
-
-| 버전 | 날짜 | 변경 내용 |
-|------|------|----------|
-| 1.1.0 | 2025-12-16 | fx.go 에러 처리 메커니즘 추가, 개별/전체 catch 설명 |
-| 1.0.0 | - | 초기 작성 (fetchAndPublish 에러 핸들링) |
+* `fx.go`는 에러를 처리하지 않고 전파한다.
+* `reduceF`는 `nop`만 복구하고 진짜 에러는 fail-fast로 중단시킨다.
+* 파이프라인의 정상 흐름은 함수 구성으로 결정된다.
+* **에러 처리 전략은 `catch` 위치로 결정된다.**
