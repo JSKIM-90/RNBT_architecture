@@ -247,3 +247,116 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
         }
     };
 };
+
+
+// Mixin.js에 추가
+
+/**
+ * FreeCode 기반 2D 컴포넌트 Mixin
+ */
+Mixin.applyFreeCodeMixin = function(instance) {
+    instance.getExtensionProperties = function() {
+        return false;
+    };
+
+    instance._onCreateElement = function() {
+        setTimeout(() => {
+            if (instance.layerName === 'masterLayer') {
+                instance.onLoadPage();
+            }
+        });
+    };
+
+    instance.onLoadPage = function() {
+        if (
+            instance.properties.publishCode.htmlCode === '' &&
+            instance.properties.publishCode.cssCode === '' &&
+            instance.events.preview === '' &&
+            instance.isEditorMode
+        ) {
+            instance.setPreviewImage(instance.element);
+        }
+
+        if (instance.isEditorMode && instance.events.preview) {
+            try {
+                const previewFunc = new Function(instance.events.preview).bind(instance);
+                previewFunc();
+            } catch (error) {
+                console.warn('preview event error', error);
+            }
+        }
+    };
+
+    instance.setPreviewImage = function(element) { /* ... */ };
+    instance.resetPreviewImage = function(element) { /* ... */ };
+};
+
+/**
+ * ModelLoaderComponent 기반 3D 컴포넌트 Mixin
+ */
+Mixin.applyModelLoaderMixin = function(instance) {
+    instance._invalidateSelectItem = false;
+
+    instance._onCreateProperties = function() {
+        // 주의: super 호출은 컴포넌트에서 해야 함
+        instance._invalidateSelectItem = false;
+    };
+
+    instance._onCommitProperties = function() {
+        // 주의: super 호출은 컴포넌트에서 해야 함
+        if (instance._invalidateSelectItem) {
+            instance._invalidateSelectItem = false;
+            instance.validateCallLater(instance._validateResource);
+        }
+    };
+
+    Object.defineProperty(instance, 'selectItem', {
+        get() {
+            return instance.getGroupPropertyValue('setter', 'selectItem');
+        },
+        set(value) {
+            if (instance._checkUpdateGroupPropertyValue('setter', 'selectItem', value)) {
+                instance._invalidateSelectItem = true;
+            }
+        }
+    });
+
+    instance.startLoadResource = async function() {
+        try {
+            if (instance.selectItem) {
+                await instance._validateResource();
+                requestAnimationFrame(() => {
+                    instance.applyThreejsProperties(instance.getGroupProperties('threeJsProperties'));
+                });
+            }
+        } finally {
+            instance.resourceBus.$emit(window.WeMB.WVComponentEvent.LOADED_RESOURCE, instance);
+        }
+    };
+
+    instance._validateResource = async function() {
+        let info = instance.selectItem;
+        instance.removePrevResource();
+
+        if (!info) {
+            instance._onCreateElement();
+            instance._elementSize = null;
+            instance.size = instance.getDefaultProperties().setter.size;
+            return;
+        }
+
+        let loadedObj = null;
+        if (info.path.includes('.obj')) {
+            loadedObj = await NLoaderManager.composeResource(info, true);
+        } else if (info.path.includes('.gltf') || info.path.includes('.glb')) {
+            loadedObj = await NLoaderManager.loadGLTF(info, true);
+        }
+
+        instance.composeResource(loadedObj);
+        instance._onValidateResource();
+    };
+
+    instance._cleanupModelLoader = function() {
+        instance._invalidateSelectItem = null;
+    };
+};
