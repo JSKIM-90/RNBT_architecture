@@ -215,6 +215,55 @@ app.get('/api/assets', (req, res) => {
     });
 });
 
+// GET /api/asset/:id - 개별 자산 조회 (유효성 검증용)
+app.get('/api/asset/:id', (req, res) => {
+    const { id } = req.params;
+    const asset = ASSETS.find(a => a.id === id);
+
+    console.log(`[${new Date().toISOString()}] GET /api/asset/${id} - ${asset ? 'found' : 'not found'}`);
+
+    if (!asset) {
+        return res.status(404).json({
+            error: 'Asset not found',
+            id: id
+        });
+    }
+
+    res.json({ data: asset });
+});
+
+// POST /api/assets/validate - 배치 자산 유효성 검증
+app.post('/api/assets/validate', (req, res) => {
+    const { ids } = req.body;
+
+    if (!ids || !Array.isArray(ids)) {
+        return res.status(400).json({
+            error: 'ids array is required'
+        });
+    }
+
+    const validIds = [];
+    const invalidIds = [];
+
+    ids.forEach(id => {
+        const asset = ASSETS.find(a => a.id === id);
+        if (asset) {
+            validIds.push(id);
+        } else {
+            invalidIds.push(id);
+        }
+    });
+
+    console.log(`[${new Date().toISOString()}] POST /api/assets/validate - ${ids.length} ids, ${validIds.length} valid, ${invalidIds.length} invalid`);
+
+    res.json({
+        data: {
+            validIds,
+            invalidIds
+        }
+    });
+});
+
 // GET /api/sensor/:id - 센서 현재 상태
 app.get('/api/sensor/:id', (req, res) => {
     const { id } = req.params;
@@ -258,6 +307,8 @@ app.listen(PORT, () => {
     console.log(`  GET /api/assets/summary      - Summary only (no assets)`);
     console.log(`  GET /api/assets              - All assets (with summary)`);
     console.log(`  GET /api/assets?type=sensor  - Filter by type`);
+    console.log(`  GET /api/asset/:id           - Single asset by ID (404 if not found)`);
+    console.log(`  POST /api/assets/validate    - Batch validate asset IDs`);
     console.log(`  GET /api/sensor/:id          - Sensor current status`);
     console.log(`  GET /api/sensor/:id/history  - Temperature history`);
     console.log(`  GET /api/sensor/:id/alerts   - Alert list`);

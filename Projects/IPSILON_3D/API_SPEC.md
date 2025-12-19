@@ -11,6 +11,8 @@
 | `GET /api/assets/summary` | 페이지 초기화 | Page | Summary만 조회 (타입 목록) |
 | `GET /api/assets` | 페이지 로드 | Page | 전체 자산 목록 조회 |
 | `GET /api/assets?type=sensor` | 타입 펼침 | Page | 해당 타입 자산만 조회 |
+| `GET /api/asset/:id` | 개별 조회 | - | 단일 자산 조회 (404 if not found) |
+| `POST /api/assets/validate` | 페이지 로드 완료 후 | OpenPageCommand | 배치 자산 유효성 검증 |
 | `GET /api/sensor/:id` | 3D 센서 클릭 | TemperatureSensor | 센서 현재 상태 표시 |
 | `GET /api/sensor/:id/history` | 3D 센서 클릭 | TemperatureSensor | 차트 렌더링 |
 | `GET /api/sensor/:id/alerts` | - | (확장용) | 알림 목록 표시 |
@@ -173,7 +175,114 @@ GET /api/assets?type=sensor,server
 
 ---
 
-## 3. 센서 현재 상태 조회
+## 3. 개별 자산 조회
+
+단일 자산의 존재 여부를 확인합니다.
+
+### Request
+
+```
+GET /api/asset/:id
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | string | ✓ | 자산 ID (path) |
+
+### Response (200 OK)
+
+```json
+{
+  "data": {
+    "id": "sensor-001",
+    "type": "sensor",
+    "name": "Temperature Sensor A-1",
+    "zone": "Zone-A",
+    "status": "normal"
+  }
+}
+```
+
+### Response (404 Not Found)
+
+```json
+{
+  "error": "Asset not found",
+  "id": "invalid-id"
+}
+```
+
+---
+
+## 4. 배치 자산 유효성 검증
+
+여러 자산 ID의 유효성을 한 번에 검증합니다.
+
+### Request
+
+```
+POST /api/assets/validate
+Content-Type: application/json
+```
+
+```json
+{
+  "ids": ["sensor-001", "sensor-002", "invalid-id", "server-001"]
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| ids | string[] | ✓ | 검증할 자산 ID 배열 |
+
+### Response
+
+```json
+{
+  "data": {
+    "validIds": ["sensor-001", "sensor-002", "server-001"],
+    "invalidIds": ["invalid-id"]
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| validIds | string[] | 유효한 (존재하는) 자산 ID 목록 |
+| invalidIds | string[] | 유효하지 않은 자산 ID 목록 |
+
+### 사용 시점
+
+페이지 로드 완료 후 `OpenPageCommand`에서 호출하여, 저장된 인스턴스의 assetId가 유효한지 검증합니다.
+
+```javascript
+// Editor: 유효하지 않은 assetId를 가진 인스턴스 자동 삭제
+// Viewer: 유효하지 않은 assetId를 가진 인스턴스 경고 로그만 출력
+```
+
+### 설정 (config.json)
+
+```json
+{
+  "config": {
+    "asset": {
+      "api_url": "http://localhost:3003",
+      "validate_on_page_load": true
+    }
+  }
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| api_url | string | "http://localhost:3003" | Asset API 서버 URL |
+| validate_on_page_load | boolean | false | 페이지 로드 시 자동 검증 여부 |
+
+---
+
+## 5. 센서 현재 상태 조회
 
 단일 센서의 현재 상태를 조회합니다.
 
@@ -235,7 +344,7 @@ GET /api/sensor/:id
 
 ---
 
-## 4. 온도 히스토리 조회
+## 6. 온도 히스토리 조회
 
 센서의 과거 온도 데이터를 조회합니다. (차트 렌더링용)
 
@@ -299,7 +408,7 @@ GET /api/sensor/:id/history
 
 ---
 
-## 5. 알림 목록 조회
+## 7. 알림 목록 조회
 
 센서의 최근 알림 목록을 조회합니다.
 
