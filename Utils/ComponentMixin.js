@@ -190,7 +190,10 @@ ComponentMixin.applyModelLoaderMixin = function(instance) {
         }
         instance.composeResource(loadedObj);
         instance._onValidateResource();
-        instance.applyDepthRelatedToTransparent(loadedObj);
+        requestAnimationFrame(() => {
+          instance.applyThreejsProperties(instance.getGroupProperties('threeJsProperties'))
+          instance.applyDepthRelatedToTransparent(loadedObj);
+        })
       } catch (error) {
         throw error;
       }
@@ -205,9 +208,6 @@ ComponentMixin.applyModelLoaderMixin = function(instance) {
       if (instance.selectItem) {
         await instance._validateResource().catch((err) => {
           throw new Error(err);
-        });
-        requestAnimationFrame(() => {
-          instance.applyThreejsProperties(instance.getGroupProperties('threeJsProperties'));
         });
       }
     } catch (error) {
