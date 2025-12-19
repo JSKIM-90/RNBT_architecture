@@ -7,6 +7,21 @@ RENOBIT은 크게 페이지와 컴포넌트로 만들어지는 웹 결과물을 
 
 ---
 
+## 목차
+
+1. [라이프사이클](#라이프사이클)
+2. [프로젝트 설계 템플릿](#프로젝트-설계-템플릿)
+3. [컴포넌트 라이프사이클 패턴](#컴포넌트-라이프사이클-패턴)
+4. [고급 패턴](#고급-패턴)
+5. [완전한 라이프사이클 흐름](#완전한-라이프사이클-흐름)
+6. [핵심 원칙](#핵심-원칙)
+7. [Default JS 템플릿](#default-js-템플릿)
+8. [Functional Component Pattern](#functional-component-pattern)
+9. [fx.go 기반 에러 핸들링 가이드](#fxgo-기반-에러-핸들링-가이드)
+10. [Component Structure Guide](#component-structure-guide)
+
+---
+
 ## 라이프사이클
 
 페이지와 컴포넌트는 각각 라이프 사이클을 가지고 있다.
