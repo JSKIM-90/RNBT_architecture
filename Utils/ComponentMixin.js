@@ -193,7 +193,8 @@ ComponentMixin.applyModelLoaderMixin = function(instance) {
         requestAnimationFrame(() => {
           instance.applyThreejsProperties(instance.getGroupProperties('threeJsProperties'))
           instance.applyDepthRelatedToTransparent(loadedObj);
-        })
+        }
+      );
       } catch (error) {
         throw error;
       }
