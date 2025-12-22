@@ -1,7 +1,7 @@
 /*
  * ServerMonitor - Self-Contained 3D Component (Tabbed UI)
  *
- * applyTabbedPopupMixin을 사용한 탭 팝업 컴포넌트 예제
+ * applyShadowPopupMixin + applyTabulatorMixin을 사용한 탭 팝업 컴포넌트 예제
  *
  * 핵심 구조:
  * 1. datasetInfo - 데이터 정의 (server, processes, history)
@@ -16,7 +16,7 @@
  */
 
 const { bind3DEvents, fetchData } = WKit;
-const { applyTabbedPopupMixin, applyTabulatorMixin } = Mixin;
+const { applyShadowPopupMixin, applyTabulatorMixin } = Mixin;
 
 // ======================
 // TEMPLATE HELPER
@@ -165,7 +165,7 @@ function initComponent() {
     this.getPopupStyles = () => cssCode || '';
     this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
 
-    applyTabbedPopupMixin(this, {
+    applyShadowPopupMixin(this, {
         getHTML: this.getPopupHTML,
         getStyles: this.getPopupStyles,
         onCreated: this.onPopupCreated
