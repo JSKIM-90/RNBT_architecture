@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ServerMonitor - Preview</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1219;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .preview-btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .preview-btn:hover {
+            background: #2563eb;
+        }
+
+        .preview-btn.warning {
+            background: #eab308;
+            color: #000;
+        }
+
+        .preview-btn.critical {
+            background: #ef4444;
+        }
+
+        #popup-host {
+            /* Shadow DOM host */
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-controls">
+        <button class="preview-btn" onclick="showPopup('normal')">Normal Server</button>
+        <button class="preview-btn warning" onclick="showPopup('warning')">Warning Server</button>
+        <button class="preview-btn critical" onclick="showPopup('critical')">Critical Server</button>
+    </div>
+
+    <div id="popup-host"></div>
+
+    <script>
+        // Load template and styles
+        const templateHTML = `
+            <div class="popup-overlay">
+                <div class="popup-content">
+                    <!-- Header -->
+                    <div class="popup-header">
+                        <div class="header-info">
+                            <h2 class="server-name">-</h2>
+                            <span class="server-zone">-</span>
+                        </div>
+                        <div class="header-actions">
+                            <span class="server-status" data-status="normal">Normal</span>
+                            <button class="close-btn" type="button" aria-label="Close">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Bar -->
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <span class="stat-label">CPU</span>
+                            <span class="stat-value server-cpu">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Memory</span>
+                            <span class="stat-value server-memory">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Disk</span>
+                            <span class="stat-value server-disk">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">OS</span>
+                            <span class="stat-value server-os">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Uptime</span>
+                            <span class="stat-value server-uptime">-</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="tab-container">
+                        <div class="tab-header">
+                            <button class="tab-btn active" data-tab="overview">Overview</button>
+                            <button class="tab-btn" data-tab="performance">Performance</button>
+                        </div>
+
+                        <!-- Tab: Overview (Table) -->
+                        <div class="tab-panel active" data-panel="overview">
+                            <div class="table-container"></div>
+                        </div>
+
+                        <!-- Tab: Performance (Chart) -->
+                        <div class="tab-panel" data-panel="performance">
+                            <div class="chart-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        const popupStyles = `
+            .popup-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            }
+
+            .popup-content {
+                background: #1a1f2e;
+                border-radius: 12px;
+                width: 680px;
+                max-width: 90vw;
+                max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+                border: 1px solid #2a3142;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .popup-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 24px;
+                border-bottom: 1px solid #2a3142;
+            }
+
+            .header-info {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .server-name {
+                margin: 0;
+                font-size: 18px;
+                font-weight: 600;
+                color: #e0e6ed;
+            }
+
+            .server-zone {
+                font-size: 13px;
+                color: #8892a0;
+            }
+
+            .header-actions {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .server-status {
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+                text-transform: capitalize;
+            }
+
+            .server-status[data-status="normal"] {
+                background: rgba(34, 197, 94, 0.15);
+                color: #22c55e;
+            }
+
+            .server-status[data-status="warning"] {
+                background: rgba(234, 179, 8, 0.15);
+                color: #eab308;
+            }
+
+            .server-status[data-status="critical"] {
+                background: rgba(239, 68, 68, 0.15);
+                color: #ef4444;
+            }
+
+            .close-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                background: transparent;
+                border: none;
+                border-radius: 6px;
+                color: #8892a0;
+                cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+            }
+
+            .close-btn:hover {
+                background: #2a3142;
+                color: #e0e6ed;
+            }
+
+            .stats-bar {
+                display: flex;
+                justify-content: space-around;
+                padding: 16px 24px;
+                background: #252b3b;
+                border-bottom: 1px solid #2a3142;
+            }
+
+            .stat-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .stat-label {
+                font-size: 11px;
+                color: #8892a0;
+                text-transform: uppercase;
+            }
+
+            .stat-value {
+                font-size: 16px;
+                font-weight: 600;
+                color: #e0e6ed;
+            }
+
+            .tab-container {
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                overflow: hidden;
+            }
+
+            .tab-header {
+                display: flex;
+                padding: 0 24px;
+                border-bottom: 1px solid #2a3142;
+            }
+
+            .tab-btn {
+                padding: 12px 20px;
+                background: transparent;
+                border: none;
+                font-size: 13px;
+                font-weight: 500;
+                color: #8892a0;
+                cursor: pointer;
+                position: relative;
+                transition: color 0.15s;
+            }
+
+            .tab-btn:hover {
+                color: #e0e6ed;
+            }
+
+            .tab-btn.active {
+                color: #3b82f6;
+            }
+
+            .tab-btn.active::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: #3b82f6;
+            }
+
+            .tab-panel {
+                display: none;
+                flex: 1;
+                overflow: auto;
+            }
+
+            .tab-panel.active {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .table-container {
+                flex: 1;
+                min-height: 250px;
+                overflow: auto;
+                padding: 16px;
+            }
+
+            /* Tabulator Custom Styles */
+            .table-container .tabulator {
+                border-radius: 8px;
+                font-size: 12px;
+            }
+
+            .table-container .tabulator-header {
+                border-bottom: 2px solid #3b82f6;
+            }
+
+            .table-container .tabulator .tabulator-table {
+                background: transparent;
+            }
+
+            .table-container .tabulator-row {
+                background: transparent !important;
+                min-height: 40px;
+                height: 40px;
+            }
+
+            .chart-container {
+                flex: 1;
+                min-height: 280px;
+                padding: 16px;
+            }
+        `;
+
+        // Mock data
+        const mockServerData = {
+            normal: {
+                name: 'Server A-1',
+                zone: 'Zone-A',
+                status: 'normal',
+                cpu: 45,
+                memory: 62,
+                disk: 71,
+                os: 'Ubuntu 22.04',
+                uptime: 42
+            },
+            warning: {
+                name: 'Server B-2',
+                zone: 'Zone-B',
+                status: 'warning',
+                cpu: 78,
+                memory: 72,
+                disk: 85,
+                os: 'CentOS 8',
+                uptime: 15
+            },
+            critical: {
+                name: 'Server C-3',
+                zone: 'Zone-C',
+                status: 'critical',
+                cpu: 95,
+                memory: 91,
+                disk: 92,
+                os: 'RHEL 9',
+                uptime: 3
+            }
+        };
+
+        const mockProcessData = [
+            { pid: 1234, name: 'nginx', user: 'www-data', type: 'Web Server', cpu: 15.2, memory: 256, status: 'normal', uptime: '12h 35m' },
+            { pid: 2345, name: 'node', user: 'app', type: 'Application', cpu: 28.7, memory: 412, status: 'high', uptime: '5h 12m' },
+            { pid: 3456, name: 'postgres', user: 'postgres', type: 'Database', cpu: 8.5, memory: 1024, status: 'normal', uptime: '42d 3h' },
+            { pid: 4567, name: 'redis', user: 'redis', type: 'Cache', cpu: 3.2, memory: 128, status: 'normal', uptime: '42d 3h' },
+            { pid: 5678, name: 'java', user: 'app', type: 'Application', cpu: 22.1, memory: 2048, status: 'warning', uptime: '8h 45m' },
+            { pid: 6789, name: 'python', user: 'app', type: 'Worker', cpu: 5.8, memory: 320, status: 'normal', uptime: '2d 6h' }
+        ];
+
+        function generateHistoryData() {
+            const timestamps = [];
+            const cpu = [];
+            const memory = [];
+            const now = new Date();
+
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 3600000);
+                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
+
+                const baseCpu = 45 + Math.sin(i / 4) * 15;
+                const baseMemory = 60 + Math.sin(i / 6) * 10;
+
+                cpu.push(Math.round((baseCpu + (Math.random() - 0.5) * 20) * 10) / 10);
+                memory.push(Math.round((baseMemory + (Math.random() - 0.5) * 15) * 10) / 10);
+            }
+
+            return { timestamps, cpu, memory };
+        }
+
+        let shadowRoot = null;
+        let chart = null;
+        let table = null;
+
+        function showPopup(status) {
+            const host = document.getElementById('popup-host');
+
+            // Clear existing
+            if (shadowRoot) {
+                if (chart) { chart.dispose(); chart = null; }
+                if (table) { table.destroy(); table = null; }
+                host.shadowRoot.innerHTML = '';
+            } else {
+                shadowRoot = host.attachShadow({ mode: 'open' });
+            }
+
+            // Add Tabulator CSS
+            const tabulatorLink = document.createElement('link');
+            tabulatorLink.rel = 'stylesheet';
+            tabulatorLink.href = 'https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css';
+            shadowRoot.appendChild(tabulatorLink);
+
+            // Add styles
+            const style = document.createElement('style');
+            style.textContent = popupStyles;
+            shadowRoot.appendChild(style);
+
+            // Add content
+            const content = document.createElement('div');
+            content.innerHTML = templateHTML;
+            shadowRoot.appendChild(content);
+
+            // Bind data
+            const data = mockServerData[status];
+            shadowRoot.querySelector('.server-name').textContent = data.name;
+            shadowRoot.querySelector('.server-zone').textContent = data.zone;
+
+            const statusEl = shadowRoot.querySelector('.server-status');
+            statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+            statusEl.dataset.status = data.status;
+
+            shadowRoot.querySelector('.server-cpu').textContent = data.cpu + '%';
+            shadowRoot.querySelector('.server-memory').textContent = data.memory + '%';
+            shadowRoot.querySelector('.server-disk').textContent = data.disk + '%';
+            shadowRoot.querySelector('.server-os').textContent = data.os;
+            shadowRoot.querySelector('.server-uptime').textContent = data.uptime + ' days';
+
+            // Bind close
+            shadowRoot.querySelector('.close-btn').addEventListener('click', hidePopup);
+            shadowRoot.querySelector('.popup-overlay').addEventListener('click', (e) => {
+                if (e.target.classList.contains('popup-overlay')) {
+                    hidePopup();
+                }
+            });
+
+            // Tab switching
+            shadowRoot.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const tabName = e.target.dataset.tab;
+                    shadowRoot.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+                    shadowRoot.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tabName));
+
+                    // Performance 탭 전환 시 차트 리사이즈
+                    if (tabName === 'performance' && chart) {
+                        setTimeout(() => chart.resize(), 10);
+                    }
+                });
+            });
+
+            // Wait for Tabulator CSS to load, then init table
+            setTimeout(() => {
+                const tableContainer = shadowRoot.querySelector('.table-container');
+                table = new Tabulator(tableContainer, {
+                    data: mockProcessData,
+                    layout: 'fitColumns',
+                    height: 250,
+                    placeholder: 'No processes found',
+                    initialSort: [{ column: 'cpu', dir: 'desc' }],
+                    columns: [
+                        { title: 'PID', field: 'pid', widthGrow: 1, hozAlign: 'right' },
+                        { title: 'Name', field: 'name', widthGrow: 2 },
+                        { title: 'User', field: 'user', widthGrow: 1 },
+                        { title: 'Type', field: 'type', widthGrow: 1.5 },
+                        {
+                            title: 'CPU',
+                            field: 'cpu',
+                            widthGrow: 1,
+                            hozAlign: 'right',
+                            formatter: (cell) => {
+                                const value = cell.getValue();
+                                const color = value > 25 ? '#ef4444' : value > 15 ? '#eab308' : '#22c55e';
+                                return `<span style="color: ${color}">${value}%</span>`;
+                            }
+                        },
+                        {
+                            title: 'Mem',
+                            field: 'memory',
+                            widthGrow: 1,
+                            hozAlign: 'right',
+                            formatter: (cell) => `${cell.getValue()}MB`
+                        },
+                        {
+                            title: 'Status',
+                            field: 'status',
+                            widthGrow: 1,
+                            formatter: (cell) => {
+                                const value = cell.getValue();
+                                const colors = { high: '#ef4444', warning: '#eab308', normal: '#22c55e' };
+                                return `<span style="color: ${colors[value] || '#8892a0'}">${value}</span>`;
+                            }
+                        },
+                        { title: 'Up', field: 'uptime', widthGrow: 1, hozAlign: 'right' }
+                    ]
+                });
+
+                // Init chart
+                const chartContainer = shadowRoot.querySelector('.chart-container');
+                chart = echarts.init(chartContainer);
+
+                const historyData = generateHistoryData();
+                const option = {
+                    grid: { left: 45, right: 16, top: 30, bottom: 24 },
+                    legend: {
+                        data: ['CPU', 'Memory'],
+                        top: 0,
+                        textStyle: { color: '#8892a0', fontSize: 11 }
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: '#1a1f2e',
+                        borderColor: '#2a3142',
+                        textStyle: { color: '#e0e6ed', fontSize: 12 }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: historyData.timestamps,
+                        axisLine: { lineStyle: { color: '#333' } },
+                        axisLabel: { color: '#888', fontSize: 10 }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        min: 0,
+                        max: 100,
+                        axisLine: { show: false },
+                        axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
+                        splitLine: { lineStyle: { color: '#333' } }
+                    },
+                    series: [
+                        {
+                            name: 'CPU',
+                            type: 'line',
+                            data: historyData.cpu,
+                            smooth: true,
+                            symbol: 'none',
+                            lineStyle: { color: '#3b82f6', width: 2 },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0, y: 0, x2: 0, y2: 1,
+                                    colorStops: [
+                                        { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                                        { offset: 1, color: 'rgba(59, 130, 246, 0)' }
+                                    ]
+                                }
+                            }
+                        },
+                        {
+                            name: 'Memory',
+                            type: 'line',
+                            data: historyData.memory,
+                            smooth: true,
+                            symbol: 'none',
+                            lineStyle: { color: '#22c55e', width: 2 },
+                            areaStyle: {
+                                color: {
+                                    type: 'linear',
+                                    x: 0, y: 0, x2: 0, y2: 1,
+                                    colorStops: [
+                                        { offset: 0, color: 'rgba(34, 197, 94, 0.3)' },
+                                        { offset: 1, color: 'rgba(34, 197, 94, 0)' }
+                                    ]
+                                }
+                            }
+                        }
+                    ]
+                };
+
+                chart.setOption(option);
+            }, 100);
+        }
+
+        function hidePopup() {
+            if (chart) {
+                chart.dispose();
+                chart = null;
+            }
+            if (table) {
+                table.destroy();
+                table = null;
+            }
+            if (shadowRoot) {
+                shadowRoot.innerHTML = '';
+            }
+        }
+    </script>
+</body>
+</html>

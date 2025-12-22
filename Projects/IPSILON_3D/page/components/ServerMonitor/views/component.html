@@ -1,0 +1,81 @@
+<!--
+  ServerMonitor - Shadow DOM Popup Template (Tabbed)
+
+  Required selectors (from register.js):
+  - .server-name    : 서버 이름
+  - .server-zone    : 존
+  - .server-status  : 상태 (data-status attribute)
+  - .server-cpu     : CPU 사용률
+  - .server-memory  : 메모리 사용률
+  - .server-disk    : 디스크 사용률
+  - .server-os      : 운영체제
+  - .server-uptime  : 가동 일수
+  - .table-container: Tabulator 테이블 컨테이너
+  - .chart-container: ECharts 차트 컨테이너
+  - .close-btn      : 닫기 버튼
+  - .tab-btn        : 탭 버튼
+-->
+
+<template id="popup-server">
+    <div class="popup-overlay">
+        <div class="popup-content">
+            <!-- Header -->
+            <div class="popup-header">
+                <div class="header-info">
+                    <h2 class="server-name">-</h2>
+                    <span class="server-zone">-</span>
+                </div>
+                <div class="header-actions">
+                    <span class="server-status" data-status="normal">Normal</span>
+                    <button class="close-btn" type="button" aria-label="Close">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-label">CPU</span>
+                    <span class="stat-value server-cpu">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Memory</span>
+                    <span class="stat-value server-memory">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Disk</span>
+                    <span class="stat-value server-disk">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">OS</span>
+                    <span class="stat-value server-os">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Uptime</span>
+                    <span class="stat-value server-uptime">-</span>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tab-container">
+                <div class="tab-header">
+                    <button class="tab-btn active" data-tab="overview">Overview</button>
+                    <button class="tab-btn" data-tab="performance">Performance</button>
+                </div>
+
+                <!-- Tab: Overview (Table) -->
+                <div class="tab-panel active" data-panel="overview">
+                    <div class="table-container"></div>
+                </div>
+
+                <!-- Tab: Performance (Chart) -->
+                <div class="tab-panel" data-panel="performance">
+                    <div class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
