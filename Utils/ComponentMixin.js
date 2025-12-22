@@ -191,6 +191,7 @@ ComponentMixin.applyModelLoaderMixin = function(instance) {
         instance.composeResource(loadedObj);
         instance._onValidateResource();
         requestAnimationFrame(() => {
+          if (!instance.appendElement) return;
           instance.applyThreejsProperties(instance.getGroupProperties('threeJsProperties'))
           instance.applyDepthRelatedToTransparent(loadedObj);
         }
