@@ -1,10 +1,7 @@
 /**
  * CRAC - Destroy Script
+ * 컴포넌트 정리 (Shadow DOM 팝업 + 차트)
  */
 
-function destroy(component) {
-    if (component.destroyPopup) {
-        component.destroyPopup();
-    }
-    console.log('[CRAC] Destroyed:', component.setter?.ecoAssetInfo?.assetId);
-}
+this.destroyPopup();
+console.log('[CRAC] Destroyed:', this.setter?.ecoAssetInfo?.assetId);
