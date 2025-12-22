@@ -3,59 +3,66 @@
  *
  * 컴포넌트 기능 확장을 위한 Mixin 모음
  *
- * 사용법:
- *   const { applyShadowPopupMixin } = Mixin;
- *
  * ─────────────────────────────────────────────────────────────
- * applyShadowPopupMixin - Shadow DOM 팝업 믹스인
+ * 사용 가능한 Mixin
  * ─────────────────────────────────────────────────────────────
  *
- * 핵심 기능:
- * - Shadow DOM 기반 팝업 생성 (CSS 자동 격리)
- * - 팝업 표시/숨김
- * - 내부 요소 쿼리
- * - 이벤트 바인딩 헬퍼
- * - 차트 인스턴스 관리 (ECharts)
+ * 1. applyShadowPopupMixin - 기본 Shadow DOM 팝업
+ *    - 팝업 생성/표시/숨김
+ *    - DOM 쿼리
+ *    - 이벤트 바인딩
  *
- * 사용법:
+ * 2. applyEChartsMixin - ECharts 차트 관리
+ *    - applyShadowPopupMixin 이후 호출
+ *    - 차트 생성/업데이트/조회
+ *    - ResizeObserver 자동 연결
+ *
+ * 3. applyTabulatorMixin - Tabulator 테이블 관리
+ *    - applyShadowPopupMixin 이후 호출
+ *    - Shadow DOM CSS 자동 주입
+ *    - 테이블 생성/업데이트/조회
+ *
+ * ─────────────────────────────────────────────────────────────
+ * 사용 예시
+ * ─────────────────────────────────────────────────────────────
+ *
+ *   const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = Mixin;
+ *
  *   applyShadowPopupMixin(this, {
  *       getHTML: () => '<div class="popup">...</div>',
  *       getStyles: () => '.popup { ... }',
  *       onCreated: (shadowRoot) => { ... }
  *   });
  *
- * 차트 사용:
- *   this.createChart('.chart-container');  // echarts.init + ResizeObserver
- *   this.updateChart('.chart-container', option);  // setOption
- *   this.getChart('.chart-container');  // 인스턴스 조회
- *   // destroyPopup() 호출 시 차트 자동 정리
+ *   applyEChartsMixin(this);    // 차트 필요 시
+ *   applyTabulatorMixin(this);  // 테이블 필요 시
  *
  * ─────────────────────────────────────────────────────────────
- * 스타일 분리 검증 (2025-12-16)
+ * 표시/숨김 방식
  * ─────────────────────────────────────────────────────────────
  *
- * Mixin은 컴포넌트의 스타일링에 관여하지 않음:
- *
- * | 영역                  | Mixin 관여 | 컴포넌트 결정 |
- * |-----------------------|-----------|--------------|
- * | Shadow DOM 내부 CSS   | ❌        | ✅ (getStyles) |
- * | Shadow DOM 내부 HTML  | ❌        | ✅ (getHTML)   |
- * | 선택자                | ❌        | ✅ (bindPopupEvents 인자) |
- * | host의 display        | ✅        | -             |
- *
- * 유일한 제약:
  * - showPopup(): host.style.display = 'block'
  * - hidePopup(): host.style.display = 'none'
  *
- * 만약 opacity, visibility, transform 등 다른 방식의 표시/숨김이
- * 필요하면 이 부분 수정 필요. 현재는 99%의 케이스에서 문제없음.
+ * opacity, visibility, transform 등 다른 방식 필요 시 수정 필요.
  * ─────────────────────────────────────────────────────────────
  */
 
 const Mixin = {};
 
 /**
- * 컴포넌트에 Shadow DOM 팝업 기능을 추가
+ * ─────────────────────────────────────────────────────────────
+ * applyShadowPopupMixin - 기본 Shadow DOM 팝업
+ * ─────────────────────────────────────────────────────────────
+ *
+ * 제공 메서드:
+ * - createPopup()      : Shadow DOM 팝업 생성
+ * - showPopup()        : 팝업 표시
+ * - hidePopup()        : 팝업 숨김
+ * - popupQuery()       : Shadow DOM 내부 요소 선택
+ * - popupQueryAll()    : Shadow DOM 내부 요소 모두 선택
+ * - bindPopupEvents()  : 이벤트 델리게이션 바인딩
+ * - destroyPopup()     : 팝업 및 리소스 정리
  */
 Mixin.applyShadowPopupMixin = function(instance, options) {
     const { getHTML, getStyles, onCreated } = options;
@@ -65,7 +72,6 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
         host: null,
         shadowRoot: null,
         eventCleanups: [],
-        charts: new Map(),           // selector → { chart, resizeObserver }
     };
 
     /**
@@ -133,16 +139,6 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
      * 이벤트 델리게이션 기반 바인딩
      *
      * @param {Object} events - { eventType: { selector: handler } }
-     * @example
-     *   this.bindPopupEvents({
-     *       click: {
-     *           '.close-btn': () => this.hideDetail(),
-     *           '.refresh-btn': () => this.refresh()
-     *       },
-     *       change: {
-     *           '.input-field': (e) => this.onInputChange(e)
-     *       }
-     *   });
      */
     instance.bindPopupEvents = function(events) {
         Object.entries(events).forEach(([eventType, handlers]) => {
@@ -161,15 +157,48 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
         });
     };
 
-    // ======================
-    // CHART HELPERS
-    // ======================
+    /**
+     * 팝업 및 리소스 정리
+     */
+    instance.destroyPopup = function() {
+        // 이벤트 정리
+        instance._popup.eventCleanups.forEach(cleanup => cleanup());
+        instance._popup.eventCleanups = [];
+
+        // DOM 제거
+        if (instance._popup.host) {
+            instance._popup.host.remove();
+            instance._popup.host = null;
+            instance._popup.shadowRoot = null;
+        }
+    };
+};
+
+/**
+ * ─────────────────────────────────────────────────────────────
+ * applyEChartsMixin - ECharts 차트 관리
+ * ─────────────────────────────────────────────────────────────
+ *
+ * applyShadowPopupMixin 이후에 호출해야 합니다.
+ *
+ * 제공 메서드:
+ * - createChart(selector)         : ECharts 인스턴스 생성 + ResizeObserver
+ * - getChart(selector)            : 인스턴스 조회
+ * - updateChart(selector, option) : setOption 호출
+ *
+ * destroyPopup() 호출 시 차트 자동 정리
+ */
+Mixin.applyEChartsMixin = function(instance) {
+    if (!instance._popup) {
+        console.warn('[Mixin] applyEChartsMixin requires applyShadowPopupMixin to be called first');
+        return;
+    }
+
+    // 차트 저장소 추가
+    instance._popup.charts = new Map();  // selector → { chart, resizeObserver }
 
     /**
      * Shadow DOM 내부에 ECharts 인스턴스 생성
-     *
-     * @param {string} selector - 차트 컨테이너 선택자
-     * @returns {Object|null} ECharts 인스턴스
      */
     instance.createChart = function(selector) {
         if (instance._popup.charts.has(selector)) {
@@ -196,9 +225,6 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
 
     /**
      * 차트 인스턴스 조회
-     *
-     * @param {string} selector - 차트 컨테이너 선택자
-     * @returns {Object|null} ECharts 인스턴스
      */
     instance.getChart = function(selector) {
         return instance._popup.charts.get(selector)?.chart || null;
@@ -206,9 +232,6 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
 
     /**
      * 차트 옵션 업데이트
-     *
-     * @param {string} selector - 차트 컨테이너 선택자
-     * @param {Object} option - ECharts option
      */
     instance.updateChart = function(selector, option) {
         const chart = instance.getChart(selector);
@@ -224,9 +247,8 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
         }
     };
 
-    /**
-     * 팝업 및 리소스 정리
-     */
+    // destroyPopup 확장 - 차트 정리 추가
+    const originalDestroyPopup = instance.destroyPopup;
     instance.destroyPopup = function() {
         // 차트 정리
         instance._popup.charts.forEach(({ chart, resizeObserver }) => {
@@ -235,16 +257,8 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
         });
         instance._popup.charts.clear();
 
-        // 이벤트 정리
-        instance._popup.eventCleanups.forEach(cleanup => cleanup());
-        instance._popup.eventCleanups = [];
-
-        // DOM 제거
-        if (instance._popup.host) {
-            instance._popup.host.remove();
-            instance._popup.host = null;
-            instance._popup.shadowRoot = null;
-        }
+        // 원래 destroyPopup 호출
+        originalDestroyPopup.call(instance);
     };
 };
 

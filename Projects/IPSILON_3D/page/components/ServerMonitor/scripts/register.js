@@ -16,7 +16,7 @@
  */
 
 const { bind3DEvents, fetchData } = WKit;
-const { applyShadowPopupMixin, applyTabulatorMixin } = Mixin;
+const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = Mixin;
 
 // ======================
 // TEMPLATE HELPER
@@ -171,9 +171,8 @@ function initComponent() {
         onCreated: this.onPopupCreated
     });
 
-    applyTabulatorMixin(this, {
-        tableSelector: '.table-container'
-    });
+    applyEChartsMixin(this);
+    applyTabulatorMixin(this);
 
     console.log('[ServerMonitor] Registered:', assetId);
 }
