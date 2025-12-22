@@ -29,7 +29,7 @@
       "description": "UPS current status (on-demand)",
       "dataset_id": "ups-001",
       "name": "ups",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/ups/:id\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/ups/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -44,7 +44,7 @@
       "description": "UPS load/battery history (on-demand)",
       "dataset_id": "ups-history-001",
       "name": "upsHistory",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/ups/:id/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/ups/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -59,7 +59,7 @@
       "description": "PDU current status (on-demand)",
       "dataset_id": "pdu-001",
       "name": "pdu",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/pdu/:id\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/pdu/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -74,7 +74,7 @@
       "description": "PDU circuit list (on-demand)",
       "dataset_id": "pdu-circuits-001",
       "name": "pduCircuits",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/pdu/:id/circuits\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/pdu/#{assetId}/circuits\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -89,7 +89,7 @@
       "description": "PDU power/current history (on-demand)",
       "dataset_id": "pdu-history-001",
       "name": "pduHistory",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/pdu/:id/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/pdu/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -104,7 +104,7 @@
       "description": "CRAC current status (on-demand)",
       "dataset_id": "crac-001",
       "name": "crac",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/crac/:id\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/crac/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -119,7 +119,7 @@
       "description": "CRAC temperature/humidity history (on-demand)",
       "dataset_id": "crac-history-001",
       "name": "cracHistory",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/crac/:id/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/crac/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -134,7 +134,7 @@
       "description": "Temperature/Humidity sensor current status (on-demand)",
       "dataset_id": "sensor-001",
       "name": "sensor",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/sensor/:id\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/sensor/#{assetId}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     },
     {
       "datasource": "",
@@ -149,7 +149,7 @@
       "description": "Sensor temperature/humidity history (on-demand)",
       "dataset_id": "sensor-history-001",
       "name": "sensorHistory",
-      "rest_api": "{\"url\":\"http://localhost:3004/api/sensor/:id/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+      "rest_api": "{\"url\":\"http://localhost:3004/api/sensor/#{assetId}/history\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
     }
   ],
   "datasource": []
