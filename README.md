@@ -1608,3 +1608,34 @@ ComponentName/
 
 비주얼 빌더에서는 Figma 스타일 유지와 예측 가능한 구조의 가치가 트레이드오프보다 큽니다.
 일관된 구조를 유지하면 컴포넌트를 자산으로 쌓을 수 있습니다.
+
+---
+
+## 부록: 라이프사이클 상세 (2D/3D 차이점)
+
+### destroy 이벤트에서의 appendElement 접근성
+
+| 구분 | appendElement 상태 | 비고 |
+|------|-------------------|------|
+| 2D 컴포넌트 | `null` (접근 불가) | `WVDOMComponent._onDestroy()`에서 먼저 null 처리 |
+| 3D 컴포넌트 | 참조 가능하나 scene에서 제거됨 | `scene.remove()` 완료 후 DESTROY 이벤트 발생 |
+
+### _onDestroy 실행 순서
+
+**2D:**
+```
+WVDOMComponent._onDestroy()  ← this._element = null
+    ↓
+WV2DComponent._onDestroy()
+    ↓
+WVComponent._onDestroy()     ← DESTROY 이벤트 발생
+```
+
+**3D:**
+```
+NWV3DComponent._onDestroy()  ← scene.remove() 완료
+    ↓
+WVComponent._onDestroy()     ← DESTROY 이벤트 발생
+```
+
+> **권장:** destroy 이벤트 대신 beforeDestroy에서 리소스 정리를 수행하세요.
