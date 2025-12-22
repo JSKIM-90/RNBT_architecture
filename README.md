@@ -1,74 +1,92 @@
 # RENOBIT 아키텍처 가이드
 
-RENOBIT은 크게 페이지와 컴포넌트로 만들어지는 웹 결과물을 만들어내는 플랫폼이다. 페이지는 컴포넌트가 각각의 역할을 수행할 수 있도록 컨트롤러의 역할을 해야 한다. 이 지점에서 두 가지 중요한 원칙을 도출할 수 있다.
+## Q. RENOBIT의 역할은 무엇인가요?
 
-- **페이지는 컨트롤러로서 컴포넌트를 운영한다.**
-- **컴포넌트는 수동적이며, 자신의 콘텐츠를 가지고 있다.**
+RENOBIT은 단순하게 생각하면 페이지와 컴포넌트로 웹 결과물을 만들어내는 플랫폼이다.
 
----
+## 컴포넌트는 무엇인가요?
 
-## 목차
+RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루는 코드의 모음이다.
 
-1. [라이프사이클](#라이프사이클)
-2. [프로젝트 설계 템플릿](#프로젝트-설계-템플릿)
-3. [컴포넌트 라이프사이클 패턴](#컴포넌트-라이프사이클-패턴)
-4. [고급 패턴](#고급-패턴)
-5. [완전한 라이프사이클 흐름](#완전한-라이프사이클-흐름)
-6. [핵심 원칙](#핵심-원칙)
-7. [Default JS 템플릿](#default-js-템플릿)
-8. [Functional Component Pattern](#functional-component-pattern)
-9. [fx.go 기반 에러 핸들링 가이드](#fxgo-기반-에러-핸들링-가이드)
-10. [Component Structure Guide](#component-structure-guide)
+## Q. 페이지와 컴포넌트의 역할이 정해져 있나요?
+
+페이지는 컨트롤러로서 컴포넌트를 운영한다.
+
+컴포넌트는 수동적이며, 자신의 콘텐츠를 가지고 있다.
 
 ---
 
-## 라이프사이클
+## Q. 컴포넌트를 배치하긴 했는데, 어디서부터 어떻게 작업해야 하는지 모르겠어요.
 
-페이지와 컴포넌트는 각각 라이프 사이클을 가지고 있다.
+작업을 한다는 것은 컴포넌트의 행동양식을 결정한다는 것과 같다. 이벤트를 정의해야하고, 탄생과 죽음까지 행동양식을 결정해야한다.
 
-### 페이지 라이프사이클
+태어날땐 무엇을 하며, 살아있는 동안 어떤 상호작용을 할 것이며, 죽는 순간에는 어떤 것을 정리해야하는지를 결정하는 것이 개발자의 몫이다.
+
+페이지와 컴포넌트는 각각 라이프 사이클을 가지고 있다. 먼저 주로 활용되는 페이지의 라이프사이클은 다음과 같다.
 
 | 단계 | 시점 |
 |------|------|
 | Before Load | 모든 개별 컴포넌트 register 이전 |
 | Loaded | 모든 개별 컴포넌트 completed 이후 |
-| Before Unload | 모든 개별 컴포넌트 destroy 이전 |
+| Before Unload | 모든 개별 컴포넌트 beforeDestroy 이전 |
 
-### 컴포넌트 라이프사이클
+활용할 컴포넌트의 라이프 사이클은 다음과 같다.
 
 | 단계 | 설명 |
 |------|------|
-| register | 컴포넌트 초기화 |
-| destroy | 컴포넌트 정리 |
+| register | this.appendElement에 접근 가능 |
+| beforeDestroy | this.appendElement에 접근 가능 |
 
-### 컴포넌트 소스 레벨 라이프사이클
+### appendElement? → Component Container
+
+`this.appendElement`는 컴포넌트의 가장 최상단이며, 컨테이너다.
+
+- 2D의 경우 instance id를 id 속성으로 가진 HTMLElement(div)이고,
+- 3D의 경우 "MainGroup"을 이름으로 가진 THREE.Object3D다.
+
+인스턴스의 이름은 `this.name`으로 접근 가능하다.
+
+---
+
+## 컴포넌트 소스 레벨 라이프사이클
+
+컴포넌트는 소스에서도 라이프사이클을 가지고 있다. (컴포넌트 커스텀 제작 시 중요)
 
 참조: [Utils/ComponentMixin.js](Utils/ComponentMixin.js)
 
-#### `_onImmediateUpdateDisplay()` (override)
+### `_onImmediateUpdateDisplay()` (override)
 
-1. WVDOMComponent의 `immediateUpdateDisplay`가 실행된다
-2. innerHTML와 styleTag가 생성된다
+1. 부모 클래스 WVDOMComponent의 `immediateUpdateDisplay`가 실행된다
+2. htmlCode와, cssCode를 활용하는 innerHTML와 styleTag가 생성된다
 3. `super.immediateUpdateDisplay`가 실행된다 (WVComponent)
 4. `this._componentEventDispatcher.dispatchEvent(WVComponentScriptEvent.REGISTER)` 실행된다
 5. `_onImmediateUpdateDisplay()`가 실행된다 → override
 
-> - Codebox의 register에서 `this.element`에 접근할 수 있다
-> - Src에서 `_onImmediateUpdateDisplay`에서 `this.element`에 접근할 수 있다
+> 위의 두 코드 순서를 변경하여 패치완료함. 사용자 정의 register가 최우선으로 적용될 수 있어야함.
 
-#### `_onDestroy()` (override)
+- Codebox의 register에서 `this.appendElement`에 접근할 수 있다
+- Src에서 `_onImmediateUpdateDisplay`에서 `this.appendElement`에 접근할 수 있다
 
-1. `_onDestroy()`가 실행된다 → override
-2. `super._onDestroy`가 실행된다 → WVDOMComponent
-3. `this.element`가 제거된다
-4. `super._onDestroy`가 실행된다 → WV2DComponent
-5. `super._onDestroy`가 실행된다 → WVComponent
-6. `this._componentEventDispatcher.dispatchEvent(WVComponentScriptEvent.DESTROY)` 실행된다
+### `_onDestroy()` (override)
 
-> - Codebox의 destroy에서는 `this.element`가 없다. `this`는 있다
-> - Src에서 `_onDestroy`에서는 `this.element`가 있다. 당연히 `this`도 있다
+1. `_beforeDestroy`가 실행된다
+   - `this._componentEventDispatcher.dispatchEvent(WVComponentScriptEvent.BEFORE_DESTROY)` → codebox beforeDestroy 탭
+2. `_onDestroy()`가 실행된다 → override 코드를 작성한다
+3. `super._onDestroy`가 실행된다 → WVDOMComponent
+4. `this.appendElement`가 제거된다
+5. `super._onDestroy`가 실행된다 → WV2DComponent
+6. `super._onDestroy`가 실행된다 → WVComponent
+7. `this._componentEventDispatcher.dispatchEvent(WVComponentScriptEvent.DESTROY)` 실행된다
+
+- Codebox의 destroy에서는 `this.appendElement`가 없다. `this`는 있다
+- Codebox의 beforeDestroy에서는 `this.appendElement`가 있다. 당연히 `this`도 있다
+- Src에서 `_onDestroy`에서는 `this.appendElement`가 있다. 당연히 `this`도 있다
+
+라이프사이클에 대해 정리하였다. 라이프사이클에 대해 정리한 이유는 작업자가 RENOBIT에서 코드를 작업하는 영역에 대해 이해할 수 있어야 자신이 원하는 코드 작업을 원하는 위치에 작성할 수 있기 때문이다. 이러한 라이프사이클을 기반으로 다음의 아키텍쳐에 따라 코드를 작업할 수 있다.
 
 ---
+
+## 역할은 알겠는데 이 역할을 나눈 것의 의미는 무엇이죠? 각 탭에서는 그래서 무슨 코드를 써야하나요?
 
 ## 프로젝트 설계 템플릿
 
@@ -87,6 +105,8 @@ RENOBIT은 크게 페이지와 컴포넌트로 만들어지는 웹 결과물을 
 - 샘플 하나로 패턴 명시
 - Primitive 조합 방식 표현
 - 선택적 기능은 주석 처리
+
+**코드 예시:**
 
 ```javascript
 const { onEventBusHandlers, fetchData } = WKit;
@@ -239,7 +259,7 @@ function onPageUnLoad() {
 
 ## 컴포넌트 라이프사이클 패턴
 
-컴포넌트는 register와 destroy 두 개의 라이프사이클 단계를 가집니다.
+컴포넌트는 register와 beforeDestroy 두 개의 라이프사이클 단계를 활용합니다.
 
 ### Register 패턴
 
@@ -291,7 +311,7 @@ function renderTable(data) {
 }
 ```
 
-### Destroy 패턴
+### beforeDestroy 패턴
 
 ```javascript
 const { removeCustomEvents } = WKit;
@@ -316,8 +336,8 @@ this.updateCount = null;
 
 **생성/정리 매칭 (컴포넌트):**
 
-| 생성 (register) | 정리 (destroy) |
-|-----------------|----------------|
+| 생성 (register) | 정리 (beforeDestroy) |
+|-----------------|----------------------|
 | `this.customEvents = {...}` | `this.customEvents = null` |
 | `bindEvents(this, customEvents)` | `removeCustomEvents(this, customEvents)` |
 | `this.subscriptions = {...}` | `this.subscriptions = null` |
@@ -524,7 +544,7 @@ bindEvents(this, this.customEvents);
 // }
 ```
 
-#### destroy.js
+#### beforeDestroy.js
 
 ```javascript
 const { unsubscribe } = GlobalDataPublisher;
@@ -1160,8 +1180,8 @@ TemperatureSensor/
 - 팝업 내 ECharts 차트 자동 관리
 - 닫기 버튼 → `hideDetail()` → 팝업 숨김
 
-**버전:** 1.2.0  
-**작성일:** 2025-12-16  
+**버전:** 1.2.0
+**작성일:** 2025-12-16
 **참조:** Utils/Mixin.js, Projects/IPSILON_3D/page/components/TemperatureSensor/
 
 **변경 이력:**
