@@ -17,8 +17,11 @@
 | `GET /api/sensor/:id/history` | 3D 센서 클릭 | TemperatureSensor | 차트 렌더링 |
 | `GET /api/sensor/:id/alerts` | - | (확장용) | 알림 목록 표시 |
 | `GET /api/sensor/:id/history?period=` | - | (확장용) | 차트 기간 변경 (24h/7d/30d) |
+| `GET /api/server/:id` | 3D 서버 클릭 | ServerMonitor | 서버 현재 상태 표시 |
+| `GET /api/server/:id/processes` | 3D 서버 클릭 | ServerMonitor | 프로세스 테이블 렌더링 |
+| `GET /api/server/:id/history` | 3D 서버 클릭 | ServerMonitor | CPU/Memory 차트 렌더링 |
 
-> **Note**: TemperatureSensor는 자기 완결 컴포넌트로, 클릭 시 내부에서 직접 데이터를 조회합니다.
+> **Note**: TemperatureSensor, ServerMonitor는 자기 완결 컴포넌트로, 클릭 시 내부에서 직접 데이터를 조회합니다.
 
 ---
 
@@ -537,6 +540,262 @@ this.datasetInfo = [
     { datasetName: 'sensor', param: { id: assetId }, render: ['renderSensorInfo'] },
     { datasetName: 'sensorHistory', param: { id: assetId }, render: ['renderChart'] },
     { datasetName: 'sensorAlerts', param: { id: assetId }, render: ['renderAlerts'] }  // 추가
+];
+```
+
+---
+
+## 8. 서버 현재 상태 조회
+
+단일 서버의 현재 상태를 조회합니다.
+
+### Request
+
+```
+GET /api/server/:id
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | string | ✓ | 서버 ID (3D 컴포넌트 ID) |
+
+### Response
+
+```json
+{
+  "data": {
+    "id": "server-001",
+    "name": "Server server-001",
+    "zone": "Zone-A",
+    "cpu": 45.2,
+    "memory": 62.8,
+    "disk": 71.5,
+    "network": {
+      "in": 52.3,
+      "out": 38.7
+    },
+    "status": "normal",
+    "uptime": 42,
+    "os": "Ubuntu 22.04",
+    "lastUpdated": "2025-12-22T08:30:00.000Z"
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | 서버 ID |
+| name | string | 서버 이름 |
+| zone | string | 존 (Zone-A ~ Zone-D) |
+| cpu | number | CPU 사용률 (%) |
+| memory | number | 메모리 사용률 (%) |
+| disk | number | 디스크 사용률 (%) |
+| network.in | number | 네트워크 수신 (Mbps) |
+| network.out | number | 네트워크 송신 (Mbps) |
+| status | string | 상태 (`normal` \| `warning` \| `critical`) |
+| uptime | number | 가동 일수 |
+| os | string | 운영체제 |
+| lastUpdated | string | 마지막 업데이트 (ISO 8601) |
+
+### 상태 판정 로직
+
+```
+cpu >= 90% OR memory >= 90%  → status: "critical"
+cpu >= 70% OR memory >= 70%  → status: "warning"
+cpu < 70% AND memory < 70%   → status: "normal"
+```
+
+---
+
+## 9. 서버 프로세스 목록 조회
+
+서버에서 실행 중인 프로세스 목록을 조회합니다. (테이블 렌더링용)
+
+### Request
+
+```
+GET /api/server/:id/processes
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | string | ✓ | 서버 ID (path) |
+
+### Response
+
+```json
+{
+  "data": {
+    "serverId": "server-001",
+    "processes": [
+      {
+        "pid": 1234,
+        "name": "nginx",
+        "user": "www-data",
+        "type": "Web Server",
+        "cpu": 15.2,
+        "memory": 256.5,
+        "status": "normal",
+        "uptime": "12h 35m"
+      },
+      {
+        "pid": 2345,
+        "name": "node",
+        "user": "app",
+        "type": "Application",
+        "cpu": 28.7,
+        "memory": 412.3,
+        "status": "high",
+        "uptime": "5h 12m"
+      }
+    ],
+    "totalCount": 8
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| serverId | string | 서버 ID |
+| processes | Process[] | 프로세스 목록 (CPU 사용률 내림차순) |
+| totalCount | number | 전체 프로세스 수 |
+
+### Process Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| pid | number | 프로세스 ID |
+| name | string | 프로세스 이름 |
+| user | string | 실행 사용자 |
+| type | string | 프로세스 유형 (Web Server, Application, Database, etc.) |
+| cpu | number | CPU 사용률 (%) |
+| memory | number | 메모리 사용량 (MB) |
+| status | string | 상태 (`normal` \| `warning` \| `high`) |
+| uptime | string | 가동 시간 |
+
+### 컴포넌트 연동 (자기 완결 패턴)
+
+```javascript
+// ServerMonitor.renderProcessTable(data)
+// tableConfig 기반 Tabulator 테이블:
+// - columns: [pid, name, user, type, cpu, memory, status, uptime]
+// - initialSort: [{ column: 'cpu', dir: 'desc' }]
+```
+
+---
+
+## 10. 서버 CPU/Memory 히스토리 조회
+
+서버의 과거 CPU/Memory 데이터를 조회합니다. (차트 렌더링용)
+
+### Request
+
+```
+GET /api/server/:id/history
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| id | string | ✓ | 서버 ID (path) |
+| period | string | - | 조회 기간 (query, default: `24h`) |
+
+**period 옵션:**
+
+| 값 | 기간 | 데이터 포인트 | 간격 |
+|----|------|--------------|------|
+| `24h` | 24시간 | 24개 | 1시간 |
+| `7d` | 7일 | 168개 | 1시간 |
+| `30d` | 30일 | 720개 | 1시간 |
+
+### Response
+
+```json
+{
+  "data": {
+    "serverId": "server-001",
+    "period": "24h",
+    "timestamps": ["08:00", "09:00", "10:00", "..."],
+    "cpu": [42.5, 45.1, 38.8, "..."],
+    "memory": [55.2, 56.8, 54.3, "..."],
+    "thresholds": {
+      "warning": 70,
+      "critical": 90
+    }
+  }
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| serverId | string | 서버 ID |
+| period | string | 조회 기간 |
+| timestamps | string[] | 시간 라벨 (HH:mm 형식) |
+| cpu | number[] | CPU 사용률 데이터 배열 |
+| memory | number[] | 메모리 사용률 데이터 배열 |
+| thresholds.warning | number | 경고 임계값 (%) |
+| thresholds.critical | number | 위험 임계값 (%) |
+
+### 컴포넌트 연동 (자기 완결 패턴)
+
+```javascript
+// ServerMonitor.renderPerformanceChart(data)
+// chartConfig 기반 ECharts Line Chart:
+// - xKey: 'timestamps' → X축
+// - series[0]: { yKey: 'cpu', color: '#3b82f6', name: 'CPU' }
+// - series[1]: { yKey: 'memory', color: '#22c55e', name: 'Memory' }
+```
+
+---
+
+## 사용 예시 (ServerMonitor - 자기 완결 패턴)
+
+### 3D 서버 클릭 시
+
+```javascript
+// Page - before_load.js '@serverClicked' 핸들러
+'@serverClicked': ({ event, targetInstance }) => {
+    // Page는 "어떤 메서드를 호출할지"만 결정
+    targetInstance.showDetail();
+}
+
+// ServerMonitor 내부에서 처리:
+// 1. showPopup() → Shadow DOM 팝업 표시
+// 2. datasetInfo 순회 → fetchData 호출
+// 3. 결과를 render 함수에 전달 (테이블 + 차트)
+```
+
+### ServerMonitor.showDetail() 내부 흐름
+
+```javascript
+function showDetail() {
+    this.showPopup();  // Mixin 제공
+    this._switchTab('overview');  // 기본 탭
+
+    fx.go(
+        this.datasetInfo,
+        fx.each(({ datasetName, param, render }) =>
+            fx.go(
+                fetchData(this.page, datasetName, param),
+                result => result?.response?.data,
+                data => data && render.forEach(fn => this[fn](data))
+            )
+        )
+    );
+}
+
+// datasetInfo 정의:
+const assetId = this.setter.ipsilonAssetInfo.assetId;
+
+this.datasetInfo = [
+    { datasetName: 'server', param: { id: assetId }, render: ['renderServerInfo'] },
+    { datasetName: 'serverProcesses', param: { id: assetId }, render: ['renderProcessTable'] },
+    { datasetName: 'serverHistory', param: { id: assetId }, render: ['renderPerformanceChart'] }
 ];
 ```
 

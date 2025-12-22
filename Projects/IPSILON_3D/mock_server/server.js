@@ -102,6 +102,124 @@ function generateAlerts(sensorId) {
 }
 
 // ======================
+// SERVER MOCK DATA GENERATORS
+// ======================
+
+function getServerStatus(cpu, memory) {
+    if (cpu >= 90 || memory >= 90) return 'critical';
+    if (cpu >= 70 || memory >= 70) return 'warning';
+    return 'normal';
+}
+
+function generateServer(id) {
+    const cpu = Math.round((20 + Math.random() * 60 + (Math.random() > 0.9 ? 25 : 0)) * 10) / 10;
+    const memory = Math.round((30 + Math.random() * 50 + (Math.random() > 0.85 ? 20 : 0)) * 10) / 10;
+    const disk = Math.round((40 + Math.random() * 40) * 10) / 10;
+    const network = {
+        in: Math.round(Math.random() * 100 * 10) / 10,
+        out: Math.round(Math.random() * 80 * 10) / 10
+    };
+    const status = getServerStatus(cpu, memory);
+    const uptime = Math.floor(Math.random() * 90) + 1; // days
+
+    return {
+        id,
+        name: `Server ${id}`,
+        zone: `Zone-${String.fromCharCode(65 + (parseInt(id.split('-')[1] || '0') % 4))}`,
+        cpu,
+        memory,
+        disk,
+        network,
+        status,
+        uptime,
+        os: ['Ubuntu 22.04', 'CentOS 8', 'Windows Server 2022', 'Debian 12'][Math.floor(Math.random() * 4)],
+        lastUpdated: new Date().toISOString()
+    };
+}
+
+function generateServerProcesses(serverId) {
+    const processNames = [
+        { name: 'nginx', user: 'www-data', type: 'Web Server' },
+        { name: 'node', user: 'app', type: 'Application' },
+        { name: 'postgres', user: 'postgres', type: 'Database' },
+        { name: 'redis-server', user: 'redis', type: 'Cache' },
+        { name: 'docker', user: 'root', type: 'Container' },
+        { name: 'sshd', user: 'root', type: 'System' },
+        { name: 'cron', user: 'root', type: 'System' },
+        { name: 'java', user: 'app', type: 'Application' },
+        { name: 'python3', user: 'app', type: 'Application' },
+        { name: 'mongod', user: 'mongodb', type: 'Database' }
+    ];
+
+    const count = 5 + Math.floor(Math.random() * 6); // 5-10 processes
+    const processes = [];
+
+    for (let i = 0; i < count; i++) {
+        const proc = processNames[i % processNames.length];
+        const cpu = Math.round(Math.random() * 30 * 10) / 10;
+        const memory = Math.round((Math.random() * 500 + 50) * 10) / 10; // MB
+        const pid = 1000 + Math.floor(Math.random() * 9000);
+
+        processes.push({
+            pid,
+            name: proc.name,
+            user: proc.user,
+            type: proc.type,
+            cpu,
+            memory,
+            status: cpu > 25 ? 'high' : memory > 400 ? 'warning' : 'normal',
+            uptime: `${Math.floor(Math.random() * 24)}h ${Math.floor(Math.random() * 60)}m`
+        });
+    }
+
+    // Sort by CPU usage (highest first)
+    processes.sort((a, b) => b.cpu - a.cpu);
+
+    return {
+        serverId,
+        processes,
+        totalCount: processes.length
+    };
+}
+
+function generateServerHistory(serverId, period = '24h') {
+    const now = new Date();
+    const points = period === '24h' ? 24 : period === '7d' ? 168 : 720;
+    const interval = 60; // minutes
+
+    const timestamps = [];
+    const cpuData = [];
+    const memoryData = [];
+
+    for (let i = points - 1; i >= 0; i--) {
+        const time = new Date(now.getTime() - i * interval * 60000);
+        timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
+
+        // Generate CPU with daily pattern
+        const baseCpu = 35 + Math.sin(i / 8) * 15;
+        const noiseCpu = (Math.random() - 0.5) * 20;
+        cpuData.push(Math.round(Math.max(5, Math.min(95, baseCpu + noiseCpu)) * 10) / 10);
+
+        // Generate Memory with gradual increase pattern
+        const baseMemory = 45 + (i / points) * 10 + Math.sin(i / 12) * 8;
+        const noiseMemory = (Math.random() - 0.5) * 10;
+        memoryData.push(Math.round(Math.max(20, Math.min(90, baseMemory + noiseMemory)) * 10) / 10);
+    }
+
+    return {
+        serverId,
+        period,
+        timestamps,
+        cpu: cpuData,
+        memory: memoryData,
+        thresholds: {
+            warning: 70,
+            critical: 90
+        }
+    };
+}
+
+// ======================
 // ASSET DATA
 // ======================
 
@@ -295,6 +413,39 @@ app.get('/api/sensor/:id/alerts', (req, res) => {
 });
 
 // ======================
+// SERVER API ENDPOINTS
+// ======================
+
+// GET /api/server/:id - 서버 현재 상태
+app.get('/api/server/:id', (req, res) => {
+    const { id } = req.params;
+    const server = generateServer(id);
+
+    console.log(`[${new Date().toISOString()}] GET /api/server/${id}`);
+    res.json({ data: server });
+});
+
+// GET /api/server/:id/processes - 프로세스 목록
+app.get('/api/server/:id/processes', (req, res) => {
+    const { id } = req.params;
+    const processes = generateServerProcesses(id);
+
+    console.log(`[${new Date().toISOString()}] GET /api/server/${id}/processes`);
+    res.json({ data: processes });
+});
+
+// GET /api/server/:id/history - CPU/Memory 히스토리
+app.get('/api/server/:id/history', (req, res) => {
+    const { id } = req.params;
+    const { period = '24h' } = req.query;
+
+    const history = generateServerHistory(id, period);
+
+    console.log(`[${new Date().toISOString()}] GET /api/server/${id}/history?period=${period}`);
+    res.json({ data: history });
+});
+
+// ======================
 // SERVER START
 // ======================
 
@@ -312,5 +463,8 @@ app.listen(PORT, () => {
     console.log(`  GET /api/sensor/:id          - Sensor current status`);
     console.log(`  GET /api/sensor/:id/history  - Temperature history`);
     console.log(`  GET /api/sensor/:id/alerts   - Alert list`);
+    console.log(`  GET /api/server/:id          - Server current status`);
+    console.log(`  GET /api/server/:id/processes - Process list`);
+    console.log(`  GET /api/server/:id/history  - CPU/Memory history`);
     console.log(`\n`);
 });
