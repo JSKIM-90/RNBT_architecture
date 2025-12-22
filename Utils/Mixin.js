@@ -247,3 +247,205 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
         }
     };
 };
+
+/**
+ * ─────────────────────────────────────────────────────────────
+ * applyTabulatorMixin - Shadow DOM 내 Tabulator 테이블 믹스인
+ * ─────────────────────────────────────────────────────────────
+ *
+ * Shadow DOM 팝업 내에서 Tabulator 테이블을 관리합니다.
+ * applyShadowPopupMixin과 함께 사용됩니다.
+ *
+ * 사용법:
+ *   // applyShadowPopupMixin 이후에 호출
+ *   applyTabulatorMixin(this);
+ *
+ * 테이블 사용:
+ *   this.createTable('.table-container', options);  // Tabulator 생성 + ResizeObserver
+ *   this.updateTable('.table-container', data);     // setData
+ *   this.getTable('.table-container');              // 인스턴스 조회
+ *   // destroyPopup() 호출 시 테이블 자동 정리 (applyShadowPopupMixin 확장)
+ *
+ * 옵션 빌더 패턴:
+ *   const tableConfig = {
+ *       columns: [...],
+ *       optionBuilder: (config, data) => ({ ...tabulatorOptions })
+ *   };
+ *   const options = tableConfig.optionBuilder(tableConfig, data);
+ *   this.createTable('.table-container', options);
+ *
+ * ─────────────────────────────────────────────────────────────
+ * Shadow DOM에서 Tabulator CSS 사용하기
+ * ─────────────────────────────────────────────────────────────
+ *
+ * 문제:
+ *   Shadow DOM은 외부 스타일시트와 격리됩니다.
+ *   메인 페이지에서 Tabulator CSS를 import해도 Shadow DOM에는 적용되지 않음.
+ *
+ * 해결:
+ *   CSS 파일을 fetch하여 Shadow DOM에 <style> 태그로 주입합니다.
+ *   - 경로: client/common/libs/tabulator/tabulator_midnight.min.css
+ *   - 테마: midnight (다크 모드)
+ *
+ * 커스터마이징:
+ *   midnight 테마가 이미 다크 모드를 지원하므로 최소한의 오버라이드만 권장.
+ *   권장 스타일: border-radius, 헤더 강조선, 배경 투명화, 행 높이
+ *   피해야 할 스타일: 색상 오버라이드 (테마가 이미 처리)
+ * ─────────────────────────────────────────────────────────────
+ */
+Mixin.applyTabulatorMixin = function(instance) {
+    // _popup이 없으면 applyShadowPopupMixin이 먼저 호출되지 않은 것
+    if (!instance._popup) {
+        console.warn('[Mixin] applyTabulatorMixin requires applyShadowPopupMixin to be called first');
+        return;
+    }
+
+    // 테이블 저장소 추가
+    instance._popup.tables = new Map();  // selector → { table, resizeObserver }
+    instance._popup.tabulatorCssInjected = false;
+
+    // Tabulator CSS 파일 경로 (midnight 테마 - 다크 모드)
+    const TABULATOR_CSS_PATH = 'client/common/libs/tabulator/tabulator_midnight.min.css';
+
+    /**
+     * Shadow DOM에 Tabulator CSS 파일 주입 (최초 1회)
+     * CSS 파일을 fetch하여 <style> 태그로 Shadow DOM에 주입
+     */
+    async function injectTabulatorCSS() {
+        if (instance._popup.tabulatorCssInjected) return;
+
+        const shadowRoot = instance._popup.host?.shadowRoot;
+        if (!shadowRoot) return;
+
+        instance._popup.tabulatorCssInjected = true; // 중복 요청 방지
+
+        try {
+            const response = await fetch(TABULATOR_CSS_PATH);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch Tabulator CSS: ${response.status}`);
+            }
+            const cssText = await response.text();
+
+            const style = document.createElement('style');
+            style.setAttribute('data-tabulator-theme', 'midnight');
+            style.textContent = cssText;
+            shadowRoot.appendChild(style);
+
+            console.log('[Mixin] Tabulator CSS injected into Shadow DOM');
+        } catch (e) {
+            console.error('[Mixin] Failed to inject Tabulator CSS:', e);
+            instance._popup.tabulatorCssInjected = false; // 실패 시 재시도 허용
+        }
+    }
+
+    /**
+     * Shadow DOM 내부에 Tabulator 인스턴스 생성
+     *
+     * @param {string} selector - 테이블 컨테이너 선택자
+     * @param {Object} options - Tabulator 옵션 (columns, layout 등)
+     * @returns {Object|null} Tabulator 인스턴스
+     */
+    instance.createTable = function(selector, options = {}) {
+        if (instance._popup.tables.has(selector)) {
+            return instance._popup.tables.get(selector).table;
+        }
+
+        const container = instance.popupQuery(selector);
+        if (!container) {
+            console.warn(`[Mixin] Table container not found: ${selector}`);
+            return null;
+        }
+
+        // Tabulator 기본 CSS를 Shadow DOM에 주입
+        injectTabulatorCSS();
+
+        // 기본 옵션과 병합
+        const defaultOptions = {
+            layout: 'fitColumns',
+            responsiveLayout: 'collapse',
+            height: '100%',
+        };
+
+        const table = new Tabulator(container, { ...defaultOptions, ...options });
+
+        // ResizeObserver로 컨테이너 크기 변경 감지
+        const resizeObserver = new ResizeObserver(() => {
+            table.redraw();
+        });
+        resizeObserver.observe(container);
+
+        instance._popup.tables.set(selector, { table, resizeObserver });
+
+        return table;
+    };
+
+    /**
+     * 테이블 인스턴스 조회
+     *
+     * @param {string} selector - 테이블 컨테이너 선택자
+     * @returns {Object|null} Tabulator 인스턴스
+     */
+    instance.getTable = function(selector) {
+        return instance._popup.tables.get(selector)?.table || null;
+    };
+
+    /**
+     * 테이블 데이터 업데이트
+     *
+     * @param {string} selector - 테이블 컨테이너 선택자
+     * @param {Array} data - 테이블 데이터 배열
+     */
+    instance.updateTable = function(selector, data) {
+        const table = instance.getTable(selector);
+        if (!table) {
+            console.warn(`[Mixin] Table not found: ${selector}`);
+            return;
+        }
+
+        try {
+            table.setData(data);
+        } catch (e) {
+            console.error(`[Mixin] Table setData error:`, e);
+        }
+    };
+
+    /**
+     * 테이블 옵션 업데이트 (columns 변경 등)
+     *
+     * @param {string} selector - 테이블 컨테이너 선택자
+     * @param {Object} options - 업데이트할 옵션
+     */
+    instance.updateTableOptions = function(selector, options) {
+        const table = instance.getTable(selector);
+        if (!table) {
+            console.warn(`[Mixin] Table not found: ${selector}`);
+            return;
+        }
+
+        try {
+            if (options.columns) {
+                table.setColumns(options.columns);
+            }
+            if (options.data) {
+                table.setData(options.data);
+            }
+        } catch (e) {
+            console.error(`[Mixin] Table updateOptions error:`, e);
+        }
+    };
+
+    // destroyPopup 확장 - 테이블 정리 추가
+    const originalDestroyPopup = instance.destroyPopup;
+    instance.destroyPopup = function() {
+        // 테이블 정리
+        instance._popup.tables.forEach(({ table, resizeObserver }) => {
+            resizeObserver.disconnect();
+            table.off();  // 이벤트 해제
+            table.destroy();
+        });
+        instance._popup.tables.clear();
+
+        // 원래 destroyPopup 호출 (차트, 이벤트, DOM 정리)
+        originalDestroyPopup.call(instance);
+    };
+};
