@@ -3,34 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AssetTree - Preview (register.js 구조)</title>
+    <title>AssetTree Component Preview - ECO Dashboard</title>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0f1219;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
         }
-        .preview-controls { display: flex; gap: 12px; }
-        .preview-btn {
-            padding: 10px 20px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.15s;
+
+        /* Container: Figma 선택 요소 크기 */
+        #component-container {
+            width: 360px;
+            height: 600px;
+            margin: 20px auto;
         }
-        .preview-btn:hover { background: #2563eb; }
-        .preview-btn.destroy { background: #6b7280; }
-        .preview-btn.destroy:hover { background: #4b5563; }
-        .instance-info { font-size: 12px; color: #6b7280; margin-top: 8px; }
+
         .event-log {
             position: fixed;
             bottom: 20px;
@@ -46,374 +39,177 @@
         .event-log h3 { font-size: 12px; color: #8892a0; margin-bottom: 8px; }
         .event-log-item { font-size: 11px; color: #3b82f6; padding: 4px 0; border-bottom: 1px solid #2a3142; }
     </style>
+    <link rel="stylesheet" href="styles/component.css">
 </head>
 <body>
-    <div class="preview-controls">
-        <button class="preview-btn" onclick="showAssetTree()">Show Asset Navigator</button>
-        <button class="preview-btn destroy" onclick="destroyInstance()">Destroy</button>
+    <!-- Component Container -->
+    <div id="component-container">
+        <!-- AssetTree Component (views/component.html) -->
+        <div class="asset-tree-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Asset Navigator</h2>
+                <button class="refresh-btn" title="Refresh">↻</button>
+            </div>
+
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="Search assets...">
+                </div>
+                <div class="filter-box">
+                    <select class="status-filter">
+                        <option value="all">All Status</option>
+                        <option value="normal">Normal</option>
+                        <option value="warning">Warning</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="tree-actions">
+                    <button class="expand-all-btn" title="Expand All">⊞</button>
+                    <button class="collapse-all-btn" title="Collapse All">⊟</button>
+                </div>
+            </div>
+
+            <div class="panel-body">
+                <div class="tree-container">
+                    <!-- Tree will be rendered here -->
+                </div>
+            </div>
+
+            <div class="panel-footer">
+                <div class="legend">
+                    <span class="legend-item"><span class="dot normal"></span> Normal</span>
+                    <span class="legend-item"><span class="dot warning"></span> Warning</span>
+                    <span class="legend-item"><span class="dot critical"></span> Critical</span>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="instance-info" id="instance-info">Instance: not created</div>
-    <div id="popup-host"></div>
+
     <div class="event-log" id="eventLog">
         <h3>Event Log</h3>
     </div>
 
+    <!-- Mock Data -->
     <script>
-        // ======================
-        // TEMPLATE DATA
-        // ======================
-        const htmlCode = `
-            <template id="popup-asset-tree">
-                <div class="popup-overlay">
-                    <div class="asset-tree-popup">
-                        <div class="popup-header">
-                            <h2 class="popup-title">Asset Navigator</h2>
-                            <div class="header-actions">
-                                <button class="refresh-btn" title="Refresh">↻</button>
-                                <button class="close-btn" title="Close">×</button>
-                            </div>
-                        </div>
-                        <div class="toolbar">
-                            <div class="search-box">
-                                <input type="text" class="search-input" placeholder="Search assets...">
-                            </div>
-                            <div class="filter-box">
-                                <select class="status-filter">
-                                    <option value="all">All Status</option>
-                                    <option value="normal">Normal</option>
-                                    <option value="warning">Warning</option>
-                                    <option value="critical">Critical</option>
-                                </select>
-                            </div>
-                            <div class="tree-actions">
-                                <button class="expand-all-btn" title="Expand All">⊞</button>
-                                <button class="collapse-all-btn" title="Collapse All">⊟</button>
-                            </div>
-                        </div>
-                        <div class="popup-body">
-                            <div class="tree-container"></div>
-                        </div>
-                        <div class="popup-footer">
-                            <div class="legend">
-                                <span class="legend-item"><span class="dot normal"></span> Normal</span>
-                                <span class="legend-item"><span class="dot warning"></span> Warning</span>
-                                <span class="legend-item"><span class="dot critical"></span> Critical</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </template>
-        `;
-
-        const cssCode = `
-            .popup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-            .asset-tree-popup { background: #1a1f2e; border-radius: 12px; border: 1px solid #2a3142; width: 360px; max-height: 600px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); font-family: 'Segoe UI', system-ui, sans-serif; color: #e0e6ed; display: flex; flex-direction: column; }
-            .popup-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: linear-gradient(135deg, #252b3d 0%, #1a1f2e 100%); border-bottom: 1px solid #2a3142; }
-            .popup-title { margin: 0; font-size: 16px; font-weight: 600; color: #fff; }
-            .header-actions { display: flex; gap: 6px; }
-            .refresh-btn, .close-btn { width: 28px; height: 28px; border: none; border-radius: 6px; background: #2a3142; color: #8892a0; font-size: 16px; cursor: pointer; }
-            .refresh-btn:hover, .close-btn:hover { background: #3a4152; color: #fff; }
-            .toolbar { display: flex; gap: 8px; padding: 12px 16px; background: #252b3d; border-bottom: 1px solid #2a3142; }
-            .search-box { flex: 1; }
-            .search-input { width: 100%; padding: 8px 12px; border: 1px solid #2a3142; border-radius: 6px; background: #1a1f2e; color: #e0e6ed; font-size: 13px; }
-            .search-input:focus { outline: none; border-color: #3b82f6; }
-            .search-input::placeholder { color: #6b7280; }
-            .status-filter { padding: 8px 12px; border: 1px solid #2a3142; border-radius: 6px; background: #1a1f2e; color: #e0e6ed; font-size: 13px; cursor: pointer; }
-            .status-filter:focus { outline: none; border-color: #3b82f6; }
-            .tree-actions { display: flex; gap: 4px; }
-            .expand-all-btn, .collapse-all-btn { width: 32px; height: 32px; border: 1px solid #2a3142; border-radius: 6px; background: #1a1f2e; color: #8892a0; font-size: 14px; cursor: pointer; }
-            .expand-all-btn:hover, .collapse-all-btn:hover { background: #2a3142; color: #fff; }
-            .popup-body { flex: 1; overflow-y: auto; padding: 12px 16px; max-height: 400px; }
-            .tree-container { font-size: 13px; }
-            .tree-root { list-style: none; margin: 0; padding: 0; }
-            .tree-node { list-style: none; }
-            .node-children { list-style: none; margin: 0; padding-left: 20px; }
-            .node-header { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.15s; }
-            .node-header:hover { background: #252b3d; }
-            .node-toggle { width: 14px; font-size: 10px; color: #6b7280; text-align: center; cursor: pointer; }
-            .node-icon { font-size: 14px; }
-            .node-label { flex: 1; color: #e0e6ed; }
-            .node-count { font-size: 11px; color: #6b7280; background: #2a3142; padding: 2px 6px; border-radius: 10px; }
-            .asset-header { padding-left: 22px; }
-            .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-            .asset-id { font-size: 11px; color: #6b7280; font-family: monospace; }
-            .asset-node:hover .node-header { background: #2a3142; }
-            .asset-node.selected .node-header { background: #3b82f6; }
-            .asset-node.selected .node-label, .asset-node.selected .asset-id { color: #fff; }
-            .popup-footer { padding: 10px 16px; background: #252b3d; border-top: 1px solid #2a3142; }
-            .legend { display: flex; justify-content: center; gap: 16px; font-size: 11px; color: #8892a0; }
-            .legend-item { display: flex; align-items: center; gap: 4px; }
-            .legend .dot { width: 8px; height: 8px; border-radius: 50%; }
-            .dot.normal { background: #22c55e; }
-            .dot.warning { background: #f59e0b; }
-            .dot.critical { background: #ef4444; }
-        `;
-
-        // ======================
-        // MOCK DATA
-        // ======================
-        const mockAssetTreeData = {
-            zones: [
-                {
-                    id: 'zone_a', name: 'Zone-A', totalAssets: 6,
-                    assets: {
-                        ups: [{ id: 'ups-001', name: 'UPS A', status: 'normal' }],
-                        pdu: [{ id: 'pdu-001', name: 'PDU A-1', status: 'normal' }, { id: 'pdu-002', name: 'PDU A-2', status: 'warning' }],
-                        crac: [{ id: 'crac-001', name: 'CRAC A', status: 'normal' }],
-                        sensor: [{ id: 'sensor-001', name: 'Sensor A-1', status: 'normal' }, { id: 'sensor-002', name: 'Sensor A-2', status: 'normal' }]
-                    }
-                },
-                {
-                    id: 'zone_b', name: 'Zone-B', totalAssets: 6,
-                    assets: {
-                        ups: [{ id: 'ups-002', name: 'UPS B', status: 'warning' }],
-                        pdu: [{ id: 'pdu-003', name: 'PDU B-1', status: 'critical' }, { id: 'pdu-004', name: 'PDU B-2', status: 'normal' }],
-                        crac: [{ id: 'crac-002', name: 'CRAC B', status: 'normal' }],
-                        sensor: [{ id: 'sensor-003', name: 'Sensor B-1', status: 'normal' }, { id: 'sensor-004', name: 'Sensor B-2', status: 'warning' }]
-                    }
-                },
-                {
-                    id: 'zone_c', name: 'Zone-C', totalAssets: 6,
-                    assets: {
-                        ups: [{ id: 'ups-003', name: 'UPS C', status: 'normal' }],
-                        pdu: [{ id: 'pdu-005', name: 'PDU C-1', status: 'normal' }, { id: 'pdu-006', name: 'PDU C-2', status: 'normal' }],
-                        crac: [{ id: 'crac-003', name: 'CRAC C', status: 'normal' }],
-                        sensor: [{ id: 'sensor-005', name: 'Sensor C-1', status: 'normal' }, { id: 'sensor-006', name: 'Sensor C-2', status: 'normal' }]
-                    }
-                },
-                {
-                    id: 'zone_d', name: 'Zone-D', totalAssets: 6,
-                    assets: {
-                        ups: [{ id: 'ups-004', name: 'UPS D', status: 'normal' }],
-                        pdu: [{ id: 'pdu-007', name: 'PDU D-1', status: 'normal' }, { id: 'pdu-008', name: 'PDU D-2', status: 'normal' }],
-                        crac: [{ id: 'crac-004', name: 'CRAC D', status: 'normal' }],
-                        sensor: [{ id: 'sensor-007', name: 'Sensor D-1', status: 'normal' }, { id: 'sensor-008', name: 'Sensor D-2', status: 'normal' }]
-                    }
-                }
-            ]
-        };
-
-        function getMockData(datasetName) {
-            switch (datasetName) {
-                case 'assetTree': return mockAssetTreeData;
-                default: return {};
-            }
-        }
-
-        // ======================
-        // MOCK IMPLEMENTATIONS
-        // ======================
-        const fx = {
-            go: (data, ...fns) => fns.reduce((acc, fn) => acc.then ? acc.then(fn) : Promise.resolve(fn(acc)), Promise.resolve(data)),
-            each: (fn) => (arr) => { arr.forEach(fn); return arr; }
-        };
-
-        const WKit = {
-            fetchData: (page, datasetName, param) => {
-                console.log('[WKit.fetchData]', datasetName, param);
-                return Promise.resolve({ response: { data: getMockData(datasetName) } });
-            },
-            emit3DEvent: (page, eventName, data) => {
-                const log = document.getElementById('eventLog');
-                const item = document.createElement('div');
-                item.className = 'event-log-item';
-                item.textContent = `${eventName}: ${JSON.stringify(data)}`;
-                log.appendChild(item);
-                log.scrollTop = log.scrollHeight;
-                console.log('[WKit.emit3DEvent]', eventName, data);
-            }
-        };
-
-        const PopupMixin = {
-            applyShadowPopupMixin: (ctx, config) => {
-                let shadowRoot = null;
-
-                ctx.showPopup = () => {
-                    const host = ctx.page.element;
-                    if (!host.shadowRoot) {
-                        shadowRoot = host.attachShadow({ mode: 'open' });
-                    } else {
-                        shadowRoot = host.shadowRoot;
-                        shadowRoot.innerHTML = '';
-                    }
-                    const style = document.createElement('style');
-                    style.textContent = config.getStyles();
-                    shadowRoot.appendChild(style);
-                    const content = document.createElement('div');
-                    content.innerHTML = config.getHTML();
-                    shadowRoot.appendChild(content);
-                    ctx._shadowRoot = shadowRoot;
-                    config.onCreated?.();
-                    console.log('[PopupMixin] Popup shown');
-                };
-
-                ctx.hidePopup = () => {
-                    if (ctx._shadowRoot) {
-                        ctx._shadowRoot.innerHTML = '';
-                        console.log('[PopupMixin] Popup hidden');
-                    }
-                };
-
-                ctx.destroyPopup = () => {
-                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; ctx._shadowRoot = null; }
-                    console.log('[PopupMixin] Popup destroyed');
-                };
-
-                ctx.popupQuery = (sel) => ctx._shadowRoot?.querySelector(sel);
-                ctx.popupQueryAll = (sel) => ctx._shadowRoot?.querySelectorAll(sel) || [];
-                ctx.bindPopupEvents = (events) => {
-                    Object.entries(events).forEach(([eventType, handlers]) => {
-                        Object.entries(handlers).forEach(([selector, handler]) => {
-                            ctx.popupQueryAll(selector).forEach(el => el.addEventListener(eventType, handler));
-                        });
-                    });
-                };
-            }
-        };
-
-        // ======================
-        // TEMPLATE HELPER
-        // ======================
-        function extractTemplate(htmlCode, templateId) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlCode, 'text/html');
-            const template = doc.querySelector(`template#${templateId}`);
-            return template?.innerHTML || '';
-        }
-
-        // ======================
-        // COMPONENT INSTANCE
-        // ======================
-        let instance = null;
-
-        function createInstance() {
-            if (instance) onInstanceUnLoad.call(instance);
-            instance = {
-                id: 'preview-asset-tree',
-                page: { element: document.getElementById('popup-host') },
-                properties: { publishCode: { htmlCode, cssCode } },
-                setter: {}
-            };
-            initComponent.call(instance);
-            updateInstanceInfo();
-        }
-
-        function updateInstanceInfo() {
-            const info = document.getElementById('instance-info');
-            info.textContent = instance ? `Instance: ${instance.id}` : 'Instance: not created';
-        }
-
-        // ======================
-        // COMPONENT LIFECYCLE
-        // ======================
-        function initComponent() {
-            const { applyShadowPopupMixin } = PopupMixin;
-
-            this.datasetInfo = [
-                { datasetName: 'assetTree', param: {}, render: ['renderTree'] }
-            ];
-
-            // State
-            this._treeData = null;
-            this._expandedNodes = new Set(['root']);
-            this._searchTerm = '';
-            this._filterStatus = 'all';
-
-            // Config
-            this.typeIcons = { ups: '⚡', pdu: '🔌', crac: '❄️', sensor: '🌡️' };
-            this.statusColors = { normal: '#22c55e', warning: '#f59e0b', critical: '#ef4444' };
-
-            // Bind methods
-            this.renderTree = renderTree.bind(this);
-            this._updateTreeView = _updateTreeView.bind(this);
-            this._buildTreeHTML = _buildTreeHTML.bind(this);
-            this._bindTreeEvents = _bindTreeEvents.bind(this);
-            this._toggleNode = _toggleNode.bind(this);
-            this._onAssetClick = _onAssetClick.bind(this);
-            this._onSearch = _onSearch.bind(this);
-            this._onFilterChange = _onFilterChange.bind(this);
-            this._expandAll = _expandAll.bind(this);
-            this._collapseAll = _collapseAll.bind(this);
-            this.showDetail = showDetail.bind(this);
-            this.hideDetail = hideDetail.bind(this);
-
-            this.templateConfig = { popup: 'popup-asset-tree' };
-            this.popupCreatedConfig = {
-                events: {
-                    click: {
-                        '.close-btn': () => this.hideDetail(),
-                        '.refresh-btn': () => this.showDetail(),
-                        '.expand-all-btn': () => this._expandAll(),
-                        '.collapse-all-btn': () => this._collapseAll()
+        const MOCK_DATA = {
+            assetTree: {
+                zones: [
+                    {
+                        id: 'zone-a',
+                        name: 'Zone A - Main Hall',
+                        totalAssets: 12,
+                        assets: {
+                            ups: [
+                                { id: 'ups-001', name: 'UPS Main-A', status: 'normal' },
+                                { id: 'ups-002', name: 'UPS Main-B', status: 'warning' }
+                            ],
+                            pdu: [
+                                { id: 'pdu-001', name: 'PDU Rack-01', status: 'normal' },
+                                { id: 'pdu-002', name: 'PDU Rack-02', status: 'normal' },
+                                { id: 'pdu-003', name: 'PDU Rack-03', status: 'critical' }
+                            ],
+                            crac: [
+                                { id: 'crac-001', name: 'CRAC Unit-A1', status: 'normal' },
+                                { id: 'crac-002', name: 'CRAC Unit-A2', status: 'normal' }
+                            ],
+                            sensor: [
+                                { id: 'sensor-001', name: 'Temp Sensor Row-1', status: 'normal' },
+                                { id: 'sensor-002', name: 'Temp Sensor Row-2', status: 'normal' },
+                                { id: 'sensor-003', name: 'Temp Sensor Row-3', status: 'warning' },
+                                { id: 'sensor-004', name: 'Humidity Sensor', status: 'normal' }
+                            ]
+                        }
                     },
-                    input: {
-                        '.search-input': (e) => this._onSearch(e.target.value)
-                    },
-                    change: {
-                        '.status-filter': (e) => this._onFilterChange(e.target.value)
+                    {
+                        id: 'zone-b',
+                        name: 'Zone B - Power Room',
+                        totalAssets: 8,
+                        assets: {
+                            ups: [
+                                { id: 'ups-003', name: 'UPS Backup-A', status: 'normal' },
+                                { id: 'ups-004', name: 'UPS Backup-B', status: 'normal' }
+                            ],
+                            pdu: [
+                                { id: 'pdu-004', name: 'PDU Power-01', status: 'normal' },
+                                { id: 'pdu-005', name: 'PDU Power-02', status: 'warning' }
+                            ],
+                            crac: [
+                                { id: 'crac-003', name: 'CRAC Unit-B1', status: 'normal' }
+                            ],
+                            sensor: [
+                                { id: 'sensor-005', name: 'Temp Sensor B-1', status: 'normal' },
+                                { id: 'sensor-006', name: 'Temp Sensor B-2', status: 'normal' },
+                                { id: 'sensor-007', name: 'Power Sensor', status: 'normal' }
+                            ]
+                        }
                     }
-                }
-            };
+                ]
+            }
+        };
+    </script>
 
-            const { htmlCode, cssCode } = this.properties.publishCode || {};
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
-            this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+    <!-- Render Functions (from scripts/register.js) -->
+    <script>
+        const container = document.getElementById('component-container');
 
-            applyShadowPopupMixin(this, {
-                getHTML: this.getPopupHTML,
-                getStyles: this.getPopupStyles,
-                onCreated: this.onPopupCreated
-            });
+        // ======================
+        // STATE
+        // ======================
 
-            console.log('[AssetTree] Registered');
+        let _treeData = null;
+        let _expandedNodes = new Set(['root']);
+        let _searchTerm = '';
+        let _filterStatus = 'all';
+
+        // ======================
+        // ICON CONFIG
+        // ======================
+
+        const typeIcons = {
+            ups: '⚡',
+            pdu: '🔌',
+            crac: '❄️',
+            sensor: '🌡️'
+        };
+
+        const statusColors = {
+            normal: '#22c55e',
+            warning: '#f59e0b',
+            critical: '#ef4444'
+        };
+
+        // ======================
+        // RENDER FUNCTIONS
+        // ======================
+
+        function renderTree(response) {
+            const { zones } = response;
+            console.log(`[AssetTree] renderTree: ${zones?.length || 0} zones`);
+
+            _treeData = response;
+            updateTreeView();
         }
 
-        function onPopupCreated(config) {
-            if (config.events) this.bindPopupEvents(config.events);
+        function updateTreeView() {
+            const treeContainer = container.querySelector('.tree-container');
+            if (!treeContainer || !_treeData) return;
+
+            const html = buildTreeHTML(_treeData.zones);
+            treeContainer.innerHTML = html;
+            bindTreeEvents(treeContainer);
         }
 
-        function showDetail() {
-            this.showPopup();
-            fx.go(
-                this.datasetInfo,
-                fx.each(({ datasetName, param, render }) =>
-                    fx.go(
-                        WKit.fetchData(this.page, datasetName, param),
-                        result => result?.response?.data,
-                        data => data && render.forEach(fn => this[fn](data))
-                    )
-                )
-            ).catch(e => { console.error('[AssetTree]', e); this.hidePopup(); });
-        }
-
-        function hideDetail() { this.hidePopup(); }
-
-        function renderTree(data) {
-            this._treeData = data;
-            this._updateTreeView();
-        }
-
-        function _updateTreeView() {
-            const container = this.popupQuery('.tree-container');
-            if (!container || !this._treeData) return;
-
-            const { zones } = this._treeData;
-            const html = this._buildTreeHTML(zones);
-            container.innerHTML = html;
-            this._bindTreeEvents(container);
-        }
-
-        function _buildTreeHTML(zones) {
-            const searchTerm = this._searchTerm.toLowerCase();
-            const filterStatus = this._filterStatus;
+        function buildTreeHTML(zones) {
+            const searchTerm = _searchTerm.toLowerCase();
+            const filterStatus = _filterStatus;
 
             let html = '<ul class="tree-root">';
 
             zones.forEach(zone => {
                 const zoneId = `zone-${zone.id}`;
-                const isExpanded = this._expandedNodes.has(zoneId);
+                const isExpanded = _expandedNodes.has(zoneId);
 
+                // 필터링된 자산 수집
                 const filteredTypes = {};
                 let zoneHasMatch = false;
 
@@ -447,8 +243,8 @@
 
                 Object.entries(filteredTypes).forEach(([type, assets]) => {
                     const typeId = `${zoneId}-${type}`;
-                    const isTypeExpanded = this._expandedNodes.has(typeId);
-                    const typeIcon = this.typeIcons[type] || '📦';
+                    const isTypeExpanded = _expandedNodes.has(typeId);
+                    const typeIcon = typeIcons[type] || '📦';
 
                     html += `
                         <li class="tree-node type-node ${isTypeExpanded ? 'expanded' : ''}">
@@ -462,7 +258,7 @@
                     `;
 
                     assets.forEach(asset => {
-                        const statusColor = this.statusColors[asset.status] || '#888';
+                        const statusColor = statusColors[asset.status] || '#888';
                         html += `
                             <li class="tree-node asset-node" data-asset-id="${asset.id}" data-asset-type="${type}">
                                 <div class="node-header asset-header">
@@ -484,90 +280,125 @@
             return html;
         }
 
-        function _bindTreeEvents(container) {
-            container.querySelectorAll('.node-toggle').forEach(toggle => {
+        function bindTreeEvents(treeContainer) {
+            // 토글 클릭
+            treeContainer.querySelectorAll('.node-toggle').forEach(toggle => {
                 toggle.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const header = e.target.closest('.node-header');
                     const nodeId = header.dataset.nodeId;
-                    if (nodeId) this._toggleNode(nodeId);
+                    if (nodeId) {
+                        toggleNode(nodeId);
+                    }
                 });
             });
 
-            container.querySelectorAll('.asset-node').forEach(node => {
+            // 자산 클릭
+            treeContainer.querySelectorAll('.asset-node').forEach(node => {
                 node.addEventListener('click', () => {
                     const assetId = node.dataset.assetId;
                     const assetType = node.dataset.assetType;
-                    this._onAssetClick(assetId, assetType);
+                    onAssetClick(assetId, assetType);
                 });
             });
         }
 
-        function _toggleNode(nodeId) {
-            if (this._expandedNodes.has(nodeId)) {
-                this._expandedNodes.delete(nodeId);
+        function toggleNode(nodeId) {
+            if (_expandedNodes.has(nodeId)) {
+                _expandedNodes.delete(nodeId);
             } else {
-                this._expandedNodes.add(nodeId);
+                _expandedNodes.add(nodeId);
             }
-            this._updateTreeView();
+            updateTreeView();
         }
 
-        function _onAssetClick(assetId, assetType) {
-            WKit.emit3DEvent(this.page, `@${assetType}Focus`, { assetId });
+        function onAssetClick(assetId, assetType) {
+            logEvent(`Asset clicked: ${assetId} (${assetType})`);
 
-            this.popupQuery('.asset-node.selected')?.classList.remove('selected');
-            this.popupQuery(`[data-asset-id="${assetId}"]`)?.classList.add('selected');
+            // 선택 상태 표시
+            const prevSelected = container.querySelector('.asset-node.selected');
+            if (prevSelected) prevSelected.classList.remove('selected');
+
+            const currentNode = container.querySelector(`[data-asset-id="${assetId}"]`);
+            if (currentNode) currentNode.classList.add('selected');
         }
 
-        function _onSearch(term) {
-            this._searchTerm = term;
-            this._updateTreeView();
+        // ======================
+        // SEARCH & FILTER
+        // ======================
+
+        function onSearch(term) {
+            _searchTerm = term;
+            updateTreeView();
         }
 
-        function _onFilterChange(status) {
-            this._filterStatus = status;
-            this._updateTreeView();
+        function onFilterChange(status) {
+            _filterStatus = status;
+            updateTreeView();
         }
 
-        function _expandAll() {
-            if (!this._treeData) return;
-            this._treeData.zones.forEach(zone => {
-                this._expandedNodes.add(`zone-${zone.id}`);
+        function expandAll() {
+            if (!_treeData) return;
+            _treeData.zones.forEach(zone => {
+                _expandedNodes.add(`zone-${zone.id}`);
                 Object.keys(zone.assets).forEach(type => {
-                    this._expandedNodes.add(`zone-${zone.id}-${type}`);
+                    _expandedNodes.add(`zone-${zone.id}-${type}`);
                 });
             });
-            this._updateTreeView();
+            updateTreeView();
         }
 
-        function _collapseAll() {
-            this._expandedNodes.clear();
-            this._expandedNodes.add('root');
-            this._updateTreeView();
-        }
-
-        function onInstanceUnLoad() {
-            this.destroyPopup?.();
-            console.log('[AssetTree] Destroyed');
+        function collapseAll() {
+            _expandedNodes.clear();
+            _expandedNodes.add('root');
+            updateTreeView();
         }
 
         // ======================
-        // PREVIEW CONTROLS
+        // EVENT LOG
         // ======================
-        function showAssetTree() {
-            if (!instance) createInstance();
-            instance.showDetail();
+
+        function logEvent(message) {
+            const log = document.getElementById('eventLog');
+            const item = document.createElement('div');
+            item.className = 'event-log-item';
+            item.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            log.appendChild(item);
+            log.scrollTop = log.scrollHeight;
         }
 
-        function destroyInstance() {
-            if (instance) {
-                onInstanceUnLoad.call(instance);
-                instance = null;
-                updateInstanceInfo();
-            }
-        }
+        // ======================
+        // EVENT BINDING
+        // ======================
 
-        console.log('[AssetTree Preview] Ready');
+        container.querySelector('.refresh-btn').addEventListener('click', () => {
+            logEvent('Refresh clicked');
+            renderTree(MOCK_DATA.assetTree);
+        });
+
+        container.querySelector('.search-input').addEventListener('input', (e) => {
+            onSearch(e.target.value);
+        });
+
+        container.querySelector('.status-filter').addEventListener('change', (e) => {
+            onFilterChange(e.target.value);
+        });
+
+        container.querySelector('.expand-all-btn').addEventListener('click', () => {
+            logEvent('Expand All clicked');
+            expandAll();
+        });
+
+        container.querySelector('.collapse-all-btn').addEventListener('click', () => {
+            logEvent('Collapse All clicked');
+            collapseAll();
+        });
+
+        // ======================
+        // INITIAL RENDER
+        // ======================
+
+        renderTree(MOCK_DATA.assetTree);
     </script>
 </body>
 </html>

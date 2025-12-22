@@ -3,484 +3,334 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overview - Preview (register.js 구조)</title>
+    <title>Overview Component Preview - ECO Dashboard</title>
+
+    <!-- ECharts CDN -->
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+
+    <!-- Tabulator CDN -->
     <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0f1219;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
         }
-        .preview-controls { display: flex; gap: 12px; }
-        .preview-btn {
-            padding: 10px 20px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.15s;
+
+        /* Container: Figma 선택 요소 크기 */
+        #component-container {
+            width: 800px;
+            height: 100vh;
+            margin: 0 auto;
+            padding: 20px;
         }
-        .preview-btn:hover { background: #2563eb; }
-        .preview-btn.destroy { background: #6b7280; }
-        .preview-btn.destroy:hover { background: #4b5563; }
-        .instance-info { font-size: 12px; color: #6b7280; margin-top: 8px; }
     </style>
+    <link rel="stylesheet" href="styles/component.css">
 </head>
 <body>
-    <div class="preview-controls">
-        <button class="preview-btn" onclick="showOverview()">Show Overview</button>
-        <button class="preview-btn destroy" onclick="destroyInstance()">Destroy</button>
-    </div>
-    <div class="instance-info" id="instance-info">Instance: not created</div>
-    <div id="popup-host"></div>
+    <!-- Component Container -->
+    <div id="component-container">
+        <!-- Overview Component (views/component.html) -->
+        <div class="overview-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">ECO Overview</h2>
+                <button class="refresh-btn" title="Refresh">↻</button>
+            </div>
 
-    <script>
-        // ======================
-        // TEMPLATE DATA
-        // ======================
-        const htmlCode = `
-            <template id="popup-overview">
-                <div class="popup-overlay">
-                    <div class="popup-content">
-                        <div class="popup-header">
-                            <h2 class="popup-title">ECO Overview</h2>
-                            <div class="header-actions">
-                                <button class="refresh-btn">↻</button>
-                                <button class="close-btn">×</button>
-                            </div>
+            <div class="panel-body">
+                <!-- 상태 요약 섹션 -->
+                <div class="section summary-section">
+                    <h3 class="section-title">Asset Status</h3>
+                    <div class="summary-grid">
+                        <div class="summary-card total">
+                            <span class="summary-label">전체</span>
+                            <span class="summary-value total-count">0</span>
                         </div>
-                        <div class="popup-body">
-                            <div class="section summary-section">
-                                <h3 class="section-title">Asset Status</h3>
-                                <div class="summary-grid">
-                                    <div class="summary-card total"><span class="summary-label">전체</span><span class="summary-value total-count">0</span></div>
-                                    <div class="summary-card normal"><span class="summary-label">정상</span><span class="summary-value normal-count">0</span></div>
-                                    <div class="summary-card warning"><span class="summary-label">경고</span><span class="summary-value warning-count">0</span></div>
-                                    <div class="summary-card critical"><span class="summary-label">위험</span><span class="summary-value critical-count">0</span></div>
-                                </div>
-                            </div>
-                            <div class="section assets-section">
-                                <div class="assets-by-type">
-                                    <h3 class="section-title">Assets by Type</h3>
-                                    <div class="type-grid">
-                                        <div class="type-card asset-ups"><span class="type-icon">⚡</span><span class="type-label">UPS</span><div class="type-stats"><span class="type-total">0</span><span class="type-detail"><span class="type-normal">0</span>/<span class="type-warning">0</span>/<span class="type-critical">0</span></span></div></div>
-                                        <div class="type-card asset-pdu"><span class="type-icon">🔌</span><span class="type-label">PDU</span><div class="type-stats"><span class="type-total">0</span><span class="type-detail"><span class="type-normal">0</span>/<span class="type-warning">0</span>/<span class="type-critical">0</span></span></div></div>
-                                        <div class="type-card asset-crac"><span class="type-icon">❄️</span><span class="type-label">CRAC</span><div class="type-stats"><span class="type-total">0</span><span class="type-detail"><span class="type-normal">0</span>/<span class="type-warning">0</span>/<span class="type-critical">0</span></span></div></div>
-                                        <div class="type-card asset-sensor"><span class="type-icon">🌡️</span><span class="type-label">Sensor</span><div class="type-stats"><span class="type-total">0</span><span class="type-detail"><span class="type-normal">0</span>/<span class="type-warning">0</span>/<span class="type-critical">0</span></span></div></div>
-                                    </div>
-                                </div>
-                                <div class="status-chart-container"><div class="status-chart"></div></div>
-                            </div>
-                            <div class="section kpi-section">
-                                <h3 class="section-title">Key Performance Indicators</h3>
-                                <div class="kpi-grid">
-                                    <div class="kpi-card"><span class="kpi-label">총 전력</span><span class="kpi-value kpi-power">-</span></div>
-                                    <div class="kpi-card"><span class="kpi-label">평균 부하율</span><span class="kpi-value kpi-load">-</span></div>
-                                    <div class="kpi-card"><span class="kpi-label">PUE</span><span class="kpi-value kpi-pue">-</span></div>
-                                    <div class="kpi-card"><span class="kpi-label">평균 온도</span><span class="kpi-value kpi-temp">-</span></div>
-                                    <div class="kpi-card"><span class="kpi-label">평균 습도</span><span class="kpi-value kpi-humidity">-</span></div>
-                                </div>
-                            </div>
-                            <div class="section events-section">
-                                <h3 class="section-title">Recent Events</h3>
-                                <div class="event-table"></div>
-                            </div>
+                        <div class="summary-card normal">
+                            <span class="summary-label">정상</span>
+                            <span class="summary-value normal-count">0</span>
+                        </div>
+                        <div class="summary-card warning">
+                            <span class="summary-label">경고</span>
+                            <span class="summary-value warning-count">0</span>
+                        </div>
+                        <div class="summary-card critical">
+                            <span class="summary-label">위험</span>
+                            <span class="summary-value critical-count">0</span>
                         </div>
                     </div>
                 </div>
-            </template>
-        `;
 
-        const cssCode = `
-            .popup-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-            .popup-content { background: #1a1f2e; border-radius: 12px; width: 800px; max-width: 95vw; max-height: 90vh; overflow: hidden; box-shadow: 0 24px 48px rgba(0,0,0,0.4); border: 1px solid #2a3142; }
-            .popup-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: linear-gradient(135deg, #252b3d 0%, #1a1f2e 100%); border-bottom: 1px solid #2a3142; }
-            .popup-title { margin: 0; font-size: 18px; font-weight: 600; color: #fff; }
-            .header-actions { display: flex; gap: 8px; }
-            .refresh-btn, .close-btn { width: 32px; height: 32px; border: none; border-radius: 6px; background: #2a3142; color: #8892a0; font-size: 18px; cursor: pointer; }
-            .refresh-btn:hover, .close-btn:hover { background: #3a4152; color: #fff; }
-            .popup-body { padding: 20px; overflow-y: auto; max-height: calc(90vh - 60px); }
-            .section { margin-bottom: 24px; }
-            .section-title { font-size: 14px; font-weight: 600; color: #8892a0; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; }
-            .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-            .summary-card { background: #252b3d; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #2a3142; }
-            .summary-card.total { border-left: 3px solid #3b82f6; }
-            .summary-card.normal { border-left: 3px solid #22c55e; }
-            .summary-card.warning { border-left: 3px solid #f59e0b; }
-            .summary-card.critical { border-left: 3px solid #ef4444; }
-            .summary-label { display: block; font-size: 12px; color: #8892a0; margin-bottom: 4px; }
-            .summary-value { display: block; font-size: 28px; font-weight: 700; }
-            .summary-card.total .summary-value { color: #3b82f6; }
-            .summary-card.normal .summary-value { color: #22c55e; }
-            .summary-card.warning .summary-value { color: #f59e0b; }
-            .summary-card.critical .summary-value { color: #ef4444; }
-            .assets-section { display: grid; grid-template-columns: 1fr 200px; gap: 20px; }
-            .type-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .type-card { background: #252b3d; border-radius: 8px; padding: 12px; border: 1px solid #2a3142; display: flex; align-items: center; gap: 12px; }
-            .type-icon { font-size: 24px; }
-            .type-label { font-size: 14px; font-weight: 600; color: #e0e6ed; }
-            .type-stats { margin-left: auto; text-align: right; }
-            .type-total { display: block; font-size: 20px; font-weight: 700; color: #3b82f6; }
-            .type-detail { font-size: 11px; color: #8892a0; }
-            .type-detail .type-normal { color: #22c55e; }
-            .type-detail .type-warning { color: #f59e0b; }
-            .type-detail .type-critical { color: #ef4444; }
-            .status-chart-container { background: #252b3d; border-radius: 8px; border: 1px solid #2a3142; padding: 12px; }
-            .status-chart { width: 100%; height: 150px; }
-            .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-            .kpi-card { background: #252b3d; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #2a3142; }
-            .kpi-label { display: block; font-size: 11px; color: #8892a0; margin-bottom: 8px; }
-            .kpi-value { display: block; font-size: 20px; font-weight: 700; color: #3b82f6; }
-            .event-table { background: #252b3d; border-radius: 8px; border: 1px solid #2a3142; overflow: hidden; }
+                <!-- 자산 타입별 현황 & 도넛 차트 -->
+                <div class="section assets-section">
+                    <div class="assets-by-type">
+                        <h3 class="section-title">Assets by Type</h3>
+                        <div class="type-grid">
+                            <div class="type-card asset-ups">
+                                <span class="type-icon">⚡</span>
+                                <span class="type-label">UPS</span>
+                                <div class="type-stats">
+                                    <span class="type-total">0</span>
+                                    <span class="type-detail">
+                                        <span class="type-normal">0</span> /
+                                        <span class="type-warning">0</span> /
+                                        <span class="type-critical">0</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="type-card asset-pdu">
+                                <span class="type-icon">🔌</span>
+                                <span class="type-label">PDU</span>
+                                <div class="type-stats">
+                                    <span class="type-total">0</span>
+                                    <span class="type-detail">
+                                        <span class="type-normal">0</span> /
+                                        <span class="type-warning">0</span> /
+                                        <span class="type-critical">0</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="type-card asset-crac">
+                                <span class="type-icon">❄️</span>
+                                <span class="type-label">CRAC</span>
+                                <div class="type-stats">
+                                    <span class="type-total">0</span>
+                                    <span class="type-detail">
+                                        <span class="type-normal">0</span> /
+                                        <span class="type-warning">0</span> /
+                                        <span class="type-critical">0</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="type-card asset-sensor">
+                                <span class="type-icon">🌡️</span>
+                                <span class="type-label">Sensor</span>
+                                <div class="type-stats">
+                                    <span class="type-total">0</span>
+                                    <span class="type-detail">
+                                        <span class="type-normal">0</span> /
+                                        <span class="type-warning">0</span> /
+                                        <span class="type-critical">0</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="status-chart-container">
+                        <div class="status-chart"></div>
+                    </div>
+                </div>
 
-            /* Tabulator Dark Theme for Shadow DOM */
-            .tabulator { background-color: #252b3d; border: none; font-size: 13px; }
-            .tabulator-header { background-color: #1a1f2e; border-bottom: 1px solid #2a3142; color: #8892a0; }
-            .tabulator-header .tabulator-col { background-color: #1a1f2e; border-right: 1px solid #2a3142; }
-            .tabulator-header .tabulator-col-content { padding: 10px 12px; }
-            .tabulator-header .tabulator-col-title { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
-            .tabulator-tableholder { background-color: #252b3d; }
-            .tabulator-row { background-color: #252b3d; border-bottom: 1px solid #2a3142; color: #e0e6ed; }
-            .tabulator-row:hover { background-color: #2a3142; }
-            .tabulator-row.tabulator-row-even { background-color: #1f2536; }
-            .tabulator-row.tabulator-row-even:hover { background-color: #2a3142; }
-            .tabulator-cell { padding: 10px 12px; border-right: none; }
-            .tabulator-placeholder { background-color: #252b3d; color: #6b7280; }
-            .tabulator-placeholder span { color: #6b7280; font-size: 13px; }
-            .tabulator-footer { background-color: #1a1f2e; border-top: 1px solid #2a3142; color: #8892a0; }
-        `;
+                <!-- KPI 섹션 -->
+                <div class="section kpi-section">
+                    <h3 class="section-title">Key Performance Indicators</h3>
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <span class="kpi-label">총 전력</span>
+                            <span class="kpi-value kpi-power">-</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">평균 부하율</span>
+                            <span class="kpi-value kpi-load">-</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">PUE</span>
+                            <span class="kpi-value kpi-pue">-</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">평균 온도</span>
+                            <span class="kpi-value kpi-temp">-</span>
+                        </div>
+                        <div class="kpi-card">
+                            <span class="kpi-label">평균 습도</span>
+                            <span class="kpi-value kpi-humidity">-</span>
+                        </div>
+                    </div>
+                </div>
 
-        // ======================
-        // MOCK DATA
-        // ======================
-        const mockOverviewData = {
-            summary: { total: 24, normal: 20, warning: 3, critical: 1 },
-            assetsByType: {
-                ups: { total: 4, normal: 3, warning: 1, critical: 0 },
-                pdu: { total: 8, normal: 6, warning: 1, critical: 1 },
-                crac: { total: 4, normal: 4, warning: 0, critical: 0 },
-                sensor: { total: 8, normal: 7, warning: 1, critical: 0 }
+                <!-- 최근 이벤트 섹션 -->
+                <div class="section events-section">
+                    <h3 class="section-title">Recent Events</h3>
+                    <div class="event-table"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mock Data -->
+    <script>
+        const MOCK_DATA = {
+            overview: {
+                summary: { total: 24, normal: 20, warning: 3, critical: 1 },
+                assetsByType: {
+                    ups: { total: 4, normal: 3, warning: 1, critical: 0 },
+                    pdu: { total: 8, normal: 6, warning: 1, critical: 1 },
+                    crac: { total: 4, normal: 4, warning: 0, critical: 0 },
+                    sensor: { total: 8, normal: 7, warning: 1, critical: 0 }
+                },
+                kpi: { totalPower: 142.5, avgLoad: 67.3, pue: 1.52, avgTemp: 24.8, avgHumidity: 52.1 }
             },
-            kpi: { totalPower: 142.5, avgLoad: 67.3, pue: 1.52, avgTemp: 24.8, avgHumidity: 52.1 }
-        };
-
-        const mockEventsData = {
-            events: [
-                { id: 'evt-1', time: '14:30', asset: 'ups-002', type: 'UPS', severity: 'warning', message: 'Battery level below threshold' },
-                { id: 'evt-2', time: '14:15', asset: 'pdu-003', type: 'PDU', severity: 'critical', message: 'Power consumption spike' },
-                { id: 'evt-3', time: '14:00', asset: 'sensor-004', type: 'Sensor', severity: 'warning', message: 'High temperature detected' },
-                { id: 'evt-4', time: '13:45', asset: 'crac-001', type: 'CRAC', severity: 'info', message: 'Cooling system optimized' },
-                { id: 'evt-5', time: '13:30', asset: 'ups-001', type: 'UPS', severity: 'info', message: 'Connection restored' }
-            ]
-        };
-
-        function getMockData(datasetName) {
-            switch (datasetName) {
-                case 'overview': return mockOverviewData;
-                case 'overviewEvents': return mockEventsData;
-                default: return {};
-            }
-        }
-
-        // ======================
-        // MOCK IMPLEMENTATIONS
-        // ======================
-        const fx = {
-            go: (data, ...fns) => fns.reduce((acc, fn) => acc.then ? acc.then(fn) : Promise.resolve(fn(acc)), Promise.resolve(data)),
-            each: (fn) => (arr) => { arr.forEach(fn); return arr; }
-        };
-
-        const WKit = {
-            fetchData: (page, datasetName, param) => {
-                console.log('[WKit.fetchData]', datasetName, param);
-                return Promise.resolve({ response: { data: getMockData(datasetName) } });
-            }
-        };
-
-        const PopupMixin = {
-            applyShadowPopupMixin: (ctx, config) => {
-                let shadowRoot = null;
-                let _chart = null;
-                let _table = null;
-
-                ctx.showPopup = () => {
-                    const host = ctx.page.element;
-                    if (!host.shadowRoot) {
-                        shadowRoot = host.attachShadow({ mode: 'open' });
-                    } else {
-                        shadowRoot = host.shadowRoot;
-                        shadowRoot.innerHTML = '';
-                    }
-
-                    // Tabulator CSS를 Shadow DOM 내부에 주입
-                    const tabulatorLink = document.createElement('link');
-                    tabulatorLink.rel = 'stylesheet';
-                    tabulatorLink.href = 'https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css';
-                    shadowRoot.appendChild(tabulatorLink);
-
-                    const style = document.createElement('style');
-                    style.textContent = config.getStyles();
-                    shadowRoot.appendChild(style);
-                    const content = document.createElement('div');
-                    content.innerHTML = config.getHTML();
-                    shadowRoot.appendChild(content);
-                    ctx._shadowRoot = shadowRoot;
-                    config.onCreated?.();
-                    console.log('[PopupMixin] Popup shown');
-                };
-
-                ctx.hidePopup = () => {
-                    if (ctx._shadowRoot) {
-                        ctx._shadowRoot.innerHTML = '';
-                        console.log('[PopupMixin] Popup hidden');
-                    }
-                };
-
-                ctx.destroyPopup = () => {
-                    if (_chart) { _chart.dispose(); _chart = null; }
-                    if (_table) { _table.destroy(); _table = null; }
-                    if (ctx._shadowRoot) { ctx._shadowRoot.innerHTML = ''; ctx._shadowRoot = null; }
-                    console.log('[PopupMixin] Popup destroyed');
-                };
-
-                ctx.popupQuery = (sel) => ctx._shadowRoot?.querySelector(sel);
-                ctx.popupQueryAll = (sel) => ctx._shadowRoot?.querySelectorAll(sel) || [];
-                ctx.bindPopupEvents = (events) => {
-                    Object.entries(events).forEach(([eventType, handlers]) => {
-                        Object.entries(handlers).forEach(([selector, handler]) => {
-                            ctx.popupQueryAll(selector).forEach(el => el.addEventListener(eventType, handler));
-                        });
-                    });
-                };
-
-                ctx._getChartRef = () => _chart;
-                ctx._setChartRef = (c) => { _chart = c; };
-                ctx._getTableRef = () => _table;
-                ctx._setTableRef = (t) => { _table = t; };
-            },
-
-            applyEChartsMixin: (ctx) => {
-                ctx.createChart = (selector) => {
-                    const container = ctx.popupQuery(selector);
-                    if (container) {
-                        const chart = echarts.init(container);
-                        ctx._setChartRef(chart);
-                        console.log('[EChartsMixin] Chart created');
-                    }
-                };
-                ctx.updateChart = (selector, option) => {
-                    let chart = ctx._getChartRef();
-                    if (!chart) {
-                        const container = ctx.popupQuery(selector);
-                        if (container) { chart = echarts.init(container); ctx._setChartRef(chart); }
-                    }
-                    if (chart) { chart.setOption(option); console.log('[EChartsMixin] Chart updated'); }
-                };
-            },
-
-            applyTabulatorMixin: (ctx) => {
-                ctx.createTable = (selector) => {
-                    console.log('[TabulatorMixin] Table container registered:', selector);
-                };
-
-                ctx.updateTable = (selector, data, options) => {
-                    let table = ctx._getTableRef();
-                    if (table) { table.destroy(); }
-                    const container = ctx.popupQuery(selector);
-                    if (container) {
-                        table = new Tabulator(container, { ...options, data });
-                        ctx._setTableRef(table);
-                        console.log('[TabulatorMixin] Table updated');
-                    }
-                };
+            overviewEvents: {
+                events: [
+                    { id: 'evt-1', time: '14:30', asset: 'ups-002', type: 'UPS', severity: 'warning', message: 'Battery level below threshold' },
+                    { id: 'evt-2', time: '14:15', asset: 'pdu-003', type: 'PDU', severity: 'critical', message: 'Power consumption spike' },
+                    { id: 'evt-3', time: '14:00', asset: 'sensor-004', type: 'Sensor', severity: 'warning', message: 'High temperature detected' },
+                    { id: 'evt-4', time: '13:45', asset: 'crac-001', type: 'CRAC', severity: 'info', message: 'Cooling system optimized' },
+                    { id: 'evt-5', time: '13:30', asset: 'ups-001', type: 'UPS', severity: 'info', message: 'Connection restored' }
+                ]
             }
         };
+    </script>
+
+    <!-- Render Functions (from scripts/register.js) -->
+    <script>
+        const container = document.getElementById('component-container');
 
         // ======================
-        // TEMPLATE HELPER
+        // DATA CONFIG
         // ======================
-        function extractTemplate(htmlCode, templateId) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlCode, 'text/html');
-            const template = doc.querySelector(`template#${templateId}`);
-            return template?.innerHTML || '';
+
+        const summaryConfig = {
+            total: { selector: '.total-count' },
+            normal: { selector: '.normal-count' },
+            warning: { selector: '.warning-count' },
+            critical: { selector: '.critical-count' }
+        };
+
+        const kpiConfig = [
+            { key: 'totalPower', selector: '.kpi-power', suffix: 'kW' },
+            { key: 'avgLoad', selector: '.kpi-load', suffix: '%' },
+            { key: 'pue', selector: '.kpi-pue', suffix: '' },
+            { key: 'avgTemp', selector: '.kpi-temp', suffix: '°C' },
+            { key: 'avgHumidity', selector: '.kpi-humidity', suffix: '%' }
+        ];
+
+        const assetTypeConfig = [
+            { key: 'ups', selector: '.asset-ups' },
+            { key: 'pdu', selector: '.asset-pdu' },
+            { key: 'crac', selector: '.asset-crac' },
+            { key: 'sensor', selector: '.asset-sensor' }
+        ];
+
+        // ======================
+        // ECHARTS INITIALIZATION
+        // ======================
+
+        const chartContainer = container.querySelector('.status-chart');
+        let chartInstance = null;
+
+        if (chartContainer) {
+            chartInstance = echarts.init(chartContainer);
+
+            // Handle resize with ResizeObserver
+            const resizeObserver = new ResizeObserver(() => {
+                chartInstance && chartInstance.resize();
+            });
+            resizeObserver.observe(chartContainer);
         }
 
         // ======================
-        // COMPONENT INSTANCE
+        // TABULATOR INITIALIZATION
         // ======================
-        let instance = null;
 
-        function createInstance() {
-            if (instance) onInstanceUnLoad.call(instance);
-            instance = {
-                id: 'preview-overview',
-                page: { element: document.getElementById('popup-host') },
-                properties: { publishCode: { htmlCode, cssCode } },
-                setter: {}
-            };
-            initComponent.call(instance);
-            updateInstanceInfo();
+        const tableContainer = container.querySelector('.event-table');
+        let tableInstance = null;
+
+        if (tableContainer) {
+            tableContainer.id = 'overview-event-table';
+
+            tableInstance = new Tabulator('#overview-event-table', {
+                layout: 'fitColumns',
+                height: 200,
+                placeholder: 'No events',
+                columns: [
+                    { title: 'Time', field: 'time', widthGrow: 1.5 },
+                    { title: 'Asset', field: 'asset', widthGrow: 1 },
+                    { title: 'Type', field: 'type', widthGrow: 0.8 },
+                    {
+                        title: 'Severity',
+                        field: 'severity',
+                        widthGrow: 0.8,
+                        formatter: function(cell) {
+                            const value = cell.getValue();
+                            const colors = { critical: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+                            return `<span style="color: ${colors[value] || '#888'}">${value.toUpperCase()}</span>`;
+                        }
+                    },
+                    { title: 'Message', field: 'message', widthGrow: 3 }
+                ]
+            });
         }
 
-        function updateInstanceInfo() {
-            const info = document.getElementById('instance-info');
-            info.textContent = instance ? `Instance: ${instance.id}` : 'Instance: not created';
-        }
-
         // ======================
-        // COMPONENT LIFECYCLE
+        // RENDER FUNCTIONS
         // ======================
-        function initComponent() {
-            const { fetchData } = WKit;
-            const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
-            this.datasetInfo = [
-                { datasetName: 'overview', param: {}, render: ['renderOverview'] },
-                { datasetName: 'overviewEvents', param: {}, render: ['renderEventTable'] }
-            ];
+        function renderOverview(response) {
+            const { summary, assetsByType, kpi } = response;
+            console.log('[Overview] renderOverview');
 
-            this.summaryConfig = {
-                total: { selector: '.total-count' },
-                normal: { selector: '.normal-count' },
-                warning: { selector: '.warning-count' },
-                critical: { selector: '.critical-count' }
-            };
+            // 자산 상태 요약
+            if (summary) {
+                Object.entries(summaryConfig).forEach(([key, config]) => {
+                    const el = container.querySelector(config.selector);
+                    if (el) el.textContent = summary[key] || 0;
+                });
+            }
 
-            this.kpiConfig = [
-                { key: 'totalPower', selector: '.kpi-power', suffix: 'kW' },
-                { key: 'avgLoad', selector: '.kpi-load', suffix: '%' },
-                { key: 'pue', selector: '.kpi-pue', suffix: '' },
-                { key: 'avgTemp', selector: '.kpi-temp', suffix: '°C' },
-                { key: 'avgHumidity', selector: '.kpi-humidity', suffix: '%' }
-            ];
+            // 타입별 자산 현황
+            if (assetsByType) {
+                assetTypeConfig.forEach(({ key, selector }) => {
+                    const el = container.querySelector(selector);
+                    if (el && assetsByType[key]) {
+                        const typeData = assetsByType[key];
+                        const totalEl = el.querySelector('.type-total');
+                        const normalEl = el.querySelector('.type-normal');
+                        const warningEl = el.querySelector('.type-warning');
+                        const criticalEl = el.querySelector('.type-critical');
 
-            this.assetTypeConfig = [
-                { key: 'ups', selector: '.asset-ups' },
-                { key: 'pdu', selector: '.asset-pdu' },
-                { key: 'crac', selector: '.asset-crac' },
-                { key: 'sensor', selector: '.asset-sensor' }
-            ];
-
-            this.tableColumns = [
-                { title: 'Time', field: 'time', widthGrow: 1.5 },
-                { title: 'Asset', field: 'asset', widthGrow: 1 },
-                { title: 'Type', field: 'type', widthGrow: 0.8 },
-                { title: 'Severity', field: 'severity', widthGrow: 0.8, formatter: (cell) => {
-                    const value = cell.getValue();
-                    const colors = { critical: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
-                    return `<span style="color: ${colors[value] || '#888'}">${value.toUpperCase()}</span>`;
-                }},
-                { title: 'Message', field: 'message', widthGrow: 3 }
-            ];
-
-            this.renderOverview = renderOverview.bind(this);
-            this.renderStatusChart = renderStatusChart.bind(this);
-            this.renderEventTable = renderEventTable.bind(this);
-            this.showDetail = showDetail.bind(this);
-            this.hideDetail = hideDetail.bind(this);
-
-            this.templateConfig = { popup: 'popup-overview' };
-            this.popupCreatedConfig = {
-                chartSelector: '.status-chart',
-                tableSelector: '.event-table',
-                events: {
-                    click: {
-                        '.close-btn': () => this.hideDetail(),
-                        '.refresh-btn': () => this.showDetail()
+                        if (totalEl) totalEl.textContent = typeData.total;
+                        if (normalEl) normalEl.textContent = typeData.normal;
+                        if (warningEl) warningEl.textContent = typeData.warning;
+                        if (criticalEl) criticalEl.textContent = typeData.critical;
                     }
-                }
-            };
+                });
+            }
 
-            const { htmlCode, cssCode } = this.properties.publishCode || {};
-            this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
-            this.getPopupStyles = () => cssCode || '';
-            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+            // KPI 렌더링
+            if (kpi) {
+                kpiConfig.forEach(({ key, selector, suffix }) => {
+                    const el = container.querySelector(selector);
+                    if (el) el.textContent = `${kpi[key]}${suffix}`;
+                });
+            }
 
-            applyShadowPopupMixin(this, {
-                getHTML: this.getPopupHTML,
-                getStyles: this.getPopupStyles,
-                onCreated: this.onPopupCreated
-            });
-
-            applyEChartsMixin(this);
-            applyTabulatorMixin(this);
-
-            console.log('[Overview] Registered');
-        }
-
-        function onPopupCreated(config) {
-            if (config.chartSelector) this.createChart(config.chartSelector);
-            if (config.tableSelector) this.createTable(config.tableSelector);
-            if (config.events) this.bindPopupEvents(config.events);
-        }
-
-        function showDetail() {
-            this.showPopup();
-            fx.go(
-                this.datasetInfo,
-                fx.each(({ datasetName, param, render }) =>
-                    fx.go(
-                        WKit.fetchData(this.page, datasetName, param),
-                        result => result?.response?.data,
-                        data => data && render.forEach(fn => this[fn](data))
-                    )
-                )
-            ).catch(e => { console.error('[Overview]', e); this.hidePopup(); });
-        }
-
-        function hideDetail() { this.hidePopup(); }
-
-        function renderOverview(data) {
-            const { summary, assetsByType, kpi } = data;
-
-            // Summary
-            Object.entries(this.summaryConfig).forEach(([key, config]) => {
-                const el = this.popupQuery(config.selector);
-                if (el) el.textContent = summary[key] || 0;
-            });
-
-            // Assets by type
-            this.assetTypeConfig.forEach(({ key, selector }) => {
-                const el = this.popupQuery(selector);
-                if (el && assetsByType[key]) {
-                    const d = assetsByType[key];
-                    const totalEl = el.querySelector('.type-total');
-                    const normalEl = el.querySelector('.type-normal');
-                    const warningEl = el.querySelector('.type-warning');
-                    const criticalEl = el.querySelector('.type-critical');
-                    if (totalEl) totalEl.textContent = d.total;
-                    if (normalEl) normalEl.textContent = d.normal;
-                    if (warningEl) warningEl.textContent = d.warning;
-                    if (criticalEl) criticalEl.textContent = d.critical;
-                }
-            });
-
-            // KPI
-            this.kpiConfig.forEach(({ key, selector, suffix }) => {
-                const el = this.popupQuery(selector);
-                if (el) el.textContent = `${kpi[key]}${suffix}`;
-            });
-
-            this.renderStatusChart(summary);
+            // 상태 도넛 차트
+            if (summary && chartInstance) {
+                renderStatusChart(summary);
+            }
         }
 
         function renderStatusChart(summary) {
             const option = {
                 tooltip: { trigger: 'item' },
-                legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#8892a0', fontSize: 11 } },
+                legend: {
+                    orient: 'vertical',
+                    right: 10,
+                    top: 'center',
+                    textStyle: { color: '#8892a0', fontSize: 11 }
+                },
                 series: [{
-                    type: 'pie', radius: ['50%', '70%'], center: ['35%', '50%'],
+                    type: 'pie',
+                    radius: ['50%', '70%'],
+                    center: ['35%', '50%'],
                     avoidLabelOverlap: false,
                     itemStyle: { borderRadius: 4, borderColor: '#1a1f2e', borderWidth: 2 },
                     label: { show: false },
@@ -491,40 +341,46 @@
                     ]
                 }]
             };
-            this.updateChart('.status-chart', option);
-        }
 
-        function renderEventTable(data) {
-            this.updateTable('.event-table', data.events || [], {
-                layout: 'fitColumns',
-                height: 200,
-                placeholder: 'No events',
-                columns: this.tableColumns
-            });
-        }
-
-        function onInstanceUnLoad() {
-            this.destroyPopup?.();
-            console.log('[Overview] Destroyed');
-        }
-
-        // ======================
-        // PREVIEW CONTROLS
-        // ======================
-        function showOverview() {
-            if (!instance) createInstance();
-            instance.showDetail();
-        }
-
-        function destroyInstance() {
-            if (instance) {
-                onInstanceUnLoad.call(instance);
-                instance = null;
-                updateInstanceInfo();
+            try {
+                chartInstance.setOption(option);
+            } catch (error) {
+                console.error('[Overview] ECharts setOption error:', error);
             }
         }
 
-        console.log('[Overview Preview] Ready');
+        function renderEventTable(response) {
+            const { events } = response;
+            console.log(`[Overview] renderEventTable: ${events?.length || 0} events`);
+
+            if (!events || !tableInstance) return;
+
+            tableInstance.setData(events);
+        }
+
+        // ======================
+        // EVENT BINDING
+        // ======================
+
+        container.querySelector('.refresh-btn').addEventListener('click', () => {
+            console.log('[Overview] Refresh clicked');
+            renderOverview(MOCK_DATA.overview);
+            renderEventTable(MOCK_DATA.overviewEvents);
+        });
+
+        // ======================
+        // INITIAL RENDER
+        // ======================
+
+        // Wait for Tabulator to be ready
+        if (tableInstance) {
+            tableInstance.on('tableBuilt', () => {
+                renderOverview(MOCK_DATA.overview);
+                renderEventTable(MOCK_DATA.overviewEvents);
+            });
+        } else {
+            renderOverview(MOCK_DATA.overview);
+        }
     </script>
 </body>
 </html>
