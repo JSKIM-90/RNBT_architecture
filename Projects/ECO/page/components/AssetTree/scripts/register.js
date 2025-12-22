@@ -9,7 +9,7 @@
  * - 검색/필터 기능
  *
  * Subscribes to: assetTree
- * Events: @assetSelected, @refreshClicked, @searchChanged, @filterChanged
+ * Events: @refreshClicked (외부 발송), assetSelected (CustomEvent)
  */
 
 const { subscribe } = GlobalDataPublisher;
@@ -60,14 +60,16 @@ this.statusColors = {
 };
 
 // ======================
-// EVENT BINDING
+// EVENT BINDING (페이지 핸들러로 발송)
 // ======================
 
 this.customEvents = {
     click: {
         '.refresh-btn': '@refreshClicked',
         '.expand-all-btn': '@expandAllClicked',
-        '.collapse-all-btn': '@collapseAllClicked'
+        '.collapse-all-btn': '@collapseAllClicked',
+        '.node-toggle': '@nodeToggled',
+        '.asset-node': '@assetClicked'
     },
     input: {
         '.search-input': '@searchChanged'
@@ -80,39 +82,75 @@ this.customEvents = {
 bindEvents(this, this.customEvents);
 
 // ======================
-// INTERNAL EVENT HANDLERS
+// INTERNAL HANDLERS
 // ======================
 
-this._onSearch = onSearch.bind(this);
-this._onFilterChange = onFilterChange.bind(this);
-this._expandAll = expandAll.bind(this);
-this._collapseAll = collapseAll.bind(this);
-this._toggleNode = toggleNode.bind(this);
-this._onAssetClick = onAssetClick.bind(this);
 this._updateTreeView = updateTreeView.bind(this);
-this._buildTreeHTML = buildTreeHTML.bind(this);
-this._bindTreeEvents = bindTreeEvents.bind(this);
+this._buildTree = buildTree.bind(this);
+this._createZoneNode = createZoneNode.bind(this);
+this._createTypeNode = createTypeNode.bind(this);
+this._createAssetNode = createAssetNode.bind(this);
 
-// Bind internal handlers to DOM events
-const searchInput = this.element.querySelector('.search-input');
-if (searchInput) {
-    searchInput.addEventListener('input', (e) => this._onSearch(e.target.value));
-}
+// ======================
+// PUBLIC API (페이지 핸들러에서 호출)
+// ======================
 
-const statusFilter = this.element.querySelector('.status-filter');
-if (statusFilter) {
-    statusFilter.addEventListener('change', (e) => this._onFilterChange(e.target.value));
-}
+this.search = function(term) {
+    this._searchTerm = term;
+    this._updateTreeView();
+};
 
-const expandAllBtn = this.element.querySelector('.expand-all-btn');
-if (expandAllBtn) {
-    expandAllBtn.addEventListener('click', () => this._expandAll());
-}
+this.filter = function(status) {
+    this._filterStatus = status;
+    this._updateTreeView();
+};
 
-const collapseAllBtn = this.element.querySelector('.collapse-all-btn');
-if (collapseAllBtn) {
-    collapseAllBtn.addEventListener('click', () => this._collapseAll());
-}
+this.expandAll = function() {
+    if (!this._treeData) return;
+    this._treeData.zones.forEach(zone => {
+        this._expandedNodes.add(`zone-${zone.id}`);
+        Object.keys(zone.assets).forEach(type => {
+            this._expandedNodes.add(`zone-${zone.id}-${type}`);
+        });
+    });
+    this._updateTreeView();
+};
+
+this.collapseAll = function() {
+    this._expandedNodes.clear();
+    this._expandedNodes.add('root');
+    this._updateTreeView();
+};
+
+this.toggleNode = function(nodeId) {
+    if (this._expandedNodes.has(nodeId)) {
+        this._expandedNodes.delete(nodeId);
+    } else {
+        this._expandedNodes.add(nodeId);
+    }
+    this._updateTreeView();
+};
+
+this.selectAsset = function(assetId, assetType) {
+    console.log(`[AssetTree] Asset selected: ${assetId} (${assetType})`);
+
+    // 선택 상태 표시
+    const prevSelected = this.element.querySelector('.asset-node.selected');
+    if (prevSelected) prevSelected.classList.remove('selected');
+
+    const currentNode = this.element.querySelector(`[data-asset-id="${assetId}"]`);
+    if (currentNode) currentNode.classList.add('selected');
+};
+
+// ======================
+// TEMPLATE REFERENCES
+// ======================
+
+this._templates = {
+    zone: this.element.querySelector('#tpl-zone-node'),
+    type: this.element.querySelector('#tpl-type-node'),
+    asset: this.element.querySelector('#tpl-asset-node')
+};
 
 // ======================
 // RENDER FUNCTIONS
@@ -127,24 +165,18 @@ function renderTree(response) {
 }
 
 function updateTreeView() {
-    const container = this.element.querySelector('.tree-container');
-    if (!container || !this._treeData) return;
+    const treeRoot = this.element.querySelector('.tree-root');
+    if (!treeRoot || !this._treeData) return;
 
-    const html = this._buildTreeHTML(this._treeData.zones);
-    container.innerHTML = html;
-    this._bindTreeEvents(container);
+    treeRoot.innerHTML = '';
+    this._buildTree(treeRoot, this._treeData.zones);
 }
 
-function buildTreeHTML(zones) {
+function buildTree(treeRoot, zones) {
     const searchTerm = this._searchTerm.toLowerCase();
     const filterStatus = this._filterStatus;
 
-    let html = '<ul class="tree-root">';
-
     zones.forEach(zone => {
-        const zoneId = `zone-${zone.id}`;
-        const isExpanded = this._expandedNodes.has(zoneId);
-
         // 필터링된 자산 수집
         const filteredTypes = {};
         let zoneHasMatch = false;
@@ -166,136 +198,75 @@ function buildTreeHTML(zones) {
 
         if (!zoneHasMatch && searchTerm) return;
 
-        html += `
-            <li class="tree-node zone-node ${isExpanded ? 'expanded' : ''}">
-                <div class="node-header" data-node-id="${zoneId}">
-                    <span class="node-toggle">${isExpanded ? '▼' : '▶'}</span>
-                    <span class="node-icon">📁</span>
-                    <span class="node-label">${zone.name}</span>
-                    <span class="node-count">${zone.totalAssets}</span>
-                </div>
-                <ul class="node-children" style="display: ${isExpanded ? 'block' : 'none'}">
-        `;
+        const zoneNode = this._createZoneNode(zone);
+        const zoneChildren = zoneNode.querySelector('.node-children');
 
         Object.entries(filteredTypes).forEach(([type, assets]) => {
-            const typeId = `${zoneId}-${type}`;
-            const isTypeExpanded = this._expandedNodes.has(typeId);
-            const typeIcon = this.typeIcons[type] || '📦';
-
-            html += `
-                <li class="tree-node type-node ${isTypeExpanded ? 'expanded' : ''}">
-                    <div class="node-header" data-node-id="${typeId}">
-                        <span class="node-toggle">${isTypeExpanded ? '▼' : '▶'}</span>
-                        <span class="node-icon">${typeIcon}</span>
-                        <span class="node-label">${type.toUpperCase()}</span>
-                        <span class="node-count">${assets.length}</span>
-                    </div>
-                    <ul class="node-children" style="display: ${isTypeExpanded ? 'block' : 'none'}">
-            `;
+            const typeNode = this._createTypeNode(zone.id, type, assets.length);
+            const typeChildren = typeNode.querySelector('.node-children');
 
             assets.forEach(asset => {
-                const statusColor = this.statusColors[asset.status] || '#888';
-                html += `
-                    <li class="tree-node asset-node" data-asset-id="${asset.id}" data-asset-type="${type}">
-                        <div class="node-header asset-header">
-                            <span class="status-dot" style="background: ${statusColor}"></span>
-                            <span class="node-label">${asset.name}</span>
-                            <span class="asset-id">${asset.id}</span>
-                        </div>
-                    </li>
-                `;
+                const assetNode = this._createAssetNode(asset, type);
+                typeChildren.appendChild(assetNode);
             });
 
-            html += '</ul></li>';
+            zoneChildren.appendChild(typeNode);
         });
 
-        html += '</ul></li>';
-    });
-
-    html += '</ul>';
-    return html;
-}
-
-function bindTreeEvents(container) {
-    const ctx = this;
-
-    // 토글 클릭
-    container.querySelectorAll('.node-toggle').forEach(toggle => {
-        toggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const header = e.target.closest('.node-header');
-            const nodeId = header.dataset.nodeId;
-            if (nodeId) {
-                ctx._toggleNode(nodeId);
-            }
-        });
-    });
-
-    // 자산 클릭
-    container.querySelectorAll('.asset-node').forEach(node => {
-        node.addEventListener('click', () => {
-            const assetId = node.dataset.assetId;
-            const assetType = node.dataset.assetType;
-            ctx._onAssetClick(assetId, assetType);
-        });
+        treeRoot.appendChild(zoneNode);
     });
 }
 
-function toggleNode(nodeId) {
-    if (this._expandedNodes.has(nodeId)) {
-        this._expandedNodes.delete(nodeId);
-    } else {
-        this._expandedNodes.add(nodeId);
-    }
-    this._updateTreeView();
+function createZoneNode(zone) {
+    const zoneId = `zone-${zone.id}`;
+    const isExpanded = this._expandedNodes.has(zoneId);
+
+    const node = this._templates.zone.content.cloneNode(true).firstElementChild;
+    node.classList.toggle('expanded', isExpanded);
+
+    const header = node.querySelector('.node-header');
+    header.dataset.nodeId = zoneId;
+
+    node.querySelector('.node-toggle').textContent = isExpanded ? '▼' : '▶';
+    node.querySelector('.node-label').textContent = zone.name;
+    node.querySelector('.node-count').textContent = zone.totalAssets;
+    node.querySelector('.node-children').style.display = isExpanded ? 'block' : 'none';
+
+    return node;
 }
 
-function onAssetClick(assetId, assetType) {
-    console.log(`[AssetTree] Asset clicked: ${assetId} (${assetType})`);
+function createTypeNode(zoneId, type, count) {
+    const typeId = `zone-${zoneId}-${type}`;
+    const isExpanded = this._expandedNodes.has(typeId);
+    const typeIcon = this.typeIcons[type] || '📦';
 
-    // 선택 상태 표시
-    const prevSelected = this.element.querySelector('.asset-node.selected');
-    if (prevSelected) prevSelected.classList.remove('selected');
+    const node = this._templates.type.content.cloneNode(true).firstElementChild;
+    node.classList.toggle('expanded', isExpanded);
 
-    const currentNode = this.element.querySelector(`[data-asset-id="${assetId}"]`);
-    if (currentNode) currentNode.classList.add('selected');
+    const header = node.querySelector('.node-header');
+    header.dataset.nodeId = typeId;
 
-    // 커스텀 이벤트 발송 (3D 컴포넌트와 연동용)
-    this.element.dispatchEvent(new CustomEvent('assetSelected', {
-        bubbles: true,
-        detail: { assetId, assetType }
-    }));
+    node.querySelector('.node-toggle').textContent = isExpanded ? '▼' : '▶';
+    node.querySelector('.node-icon').textContent = typeIcon;
+    node.querySelector('.node-label').textContent = type.toUpperCase();
+    node.querySelector('.node-count').textContent = count;
+    node.querySelector('.node-children').style.display = isExpanded ? 'block' : 'none';
+
+    return node;
 }
 
-// ======================
-// SEARCH & FILTER
-// ======================
+function createAssetNode(asset, type) {
+    const statusColor = this.statusColors[asset.status] || '#888';
 
-function onSearch(term) {
-    this._searchTerm = term;
-    this._updateTreeView();
-}
+    const node = this._templates.asset.content.cloneNode(true).firstElementChild;
+    node.dataset.assetId = asset.id;
+    node.dataset.assetType = type;
 
-function onFilterChange(status) {
-    this._filterStatus = status;
-    this._updateTreeView();
-}
+    node.querySelector('.status-dot').style.background = statusColor;
+    node.querySelector('.node-label').textContent = asset.name;
+    node.querySelector('.asset-id').textContent = asset.id;
 
-function expandAll() {
-    if (!this._treeData) return;
-    this._treeData.zones.forEach(zone => {
-        this._expandedNodes.add(`zone-${zone.id}`);
-        Object.keys(zone.assets).forEach(type => {
-            this._expandedNodes.add(`zone-${zone.id}-${type}`);
-        });
-    });
-    this._updateTreeView();
-}
-
-function collapseAll() {
-    this._expandedNodes.clear();
-    this._expandedNodes.add('root');
-    this._updateTreeView();
+    return node;
 }
 
 console.log('[AssetTree] Registered');

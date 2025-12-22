@@ -93,6 +93,56 @@ this.eventBusHandlers = {
         }
         console.log('[Page] Sensor clicked:', targetInstance.id);
         targetInstance.showDetail();
+    },
+
+    // ======================
+    // AssetTree Handlers
+    // ======================
+
+    '@refreshClicked': () => {
+        console.log('[Page] AssetTree refresh clicked');
+        // TODO: GlobalDataPublisher로 assetTree 데이터 재발행
+    },
+
+    '@expandAllClicked': ({ targetInstance }) => {
+        console.log('[Page] AssetTree expand all');
+        targetInstance.expandAll();
+    },
+
+    '@collapseAllClicked': ({ targetInstance }) => {
+        console.log('[Page] AssetTree collapse all');
+        targetInstance.collapseAll();
+    },
+
+    '@searchChanged': ({ event, targetInstance }) => {
+        const term = event.target.value;
+        console.log('[Page] AssetTree search:', term);
+        targetInstance.search(term);
+    },
+
+    '@filterChanged': ({ event, targetInstance }) => {
+        const status = event.target.value;
+        console.log('[Page] AssetTree filter:', status);
+        targetInstance.filter(status);
+    },
+
+    '@nodeToggled': ({ event, targetInstance }) => {
+        const header = event.target.closest('.node-header');
+        const nodeId = header?.dataset.nodeId;
+        if (nodeId) {
+            console.log('[Page] AssetTree node toggled:', nodeId);
+            targetInstance.toggleNode(nodeId);
+        }
+    },
+
+    '@assetClicked': ({ event, targetInstance }) => {
+        const assetNode = event.target.closest('.asset-node');
+        const assetId = assetNode?.dataset.assetId;
+        const assetType = assetNode?.dataset.assetType;
+        if (assetId) {
+            console.log('[Page] AssetTree asset clicked:', assetId, assetType);
+            targetInstance.selectAsset(assetId, assetType);
+        }
     }
 };
 

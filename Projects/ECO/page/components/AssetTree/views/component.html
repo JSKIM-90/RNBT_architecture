@@ -25,7 +25,7 @@
 
     <div class="panel-body">
         <div class="tree-container">
-            <!-- Tree will be rendered here -->
+            <ul class="tree-root"></ul>
         </div>
     </div>
 
@@ -37,3 +37,38 @@
         </div>
     </div>
 </div>
+
+<!-- Tree Node Templates -->
+<template id="tpl-zone-node">
+    <li class="tree-node zone-node">
+        <div class="node-header" data-node-id="">
+            <span class="node-toggle">▶</span>
+            <span class="node-icon">📁</span>
+            <span class="node-label"></span>
+            <span class="node-count"></span>
+        </div>
+        <ul class="node-children"></ul>
+    </li>
+</template>
+
+<template id="tpl-type-node">
+    <li class="tree-node type-node">
+        <div class="node-header" data-node-id="">
+            <span class="node-toggle">▶</span>
+            <span class="node-icon"></span>
+            <span class="node-label"></span>
+            <span class="node-count"></span>
+        </div>
+        <ul class="node-children"></ul>
+    </li>
+</template>
+
+<template id="tpl-asset-node">
+    <li class="tree-node asset-node" data-asset-id="" data-asset-type="">
+        <div class="node-header asset-header">
+            <span class="status-dot"></span>
+            <span class="node-label"></span>
+            <span class="asset-id"></span>
+        </div>
+    </li>
+</template>

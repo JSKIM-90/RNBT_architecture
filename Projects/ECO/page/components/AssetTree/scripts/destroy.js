@@ -38,15 +38,22 @@ this._filterStatus = null;
 // ======================
 
 this.renderTree = null;
-this._onSearch = null;
-this._onFilterChange = null;
-this._expandAll = null;
-this._collapseAll = null;
-this._toggleNode = null;
-this._onAssetClick = null;
 this._updateTreeView = null;
-this._buildTreeHTML = null;
-this._bindTreeEvents = null;
+this._buildTree = null;
+this._createZoneNode = null;
+this._createTypeNode = null;
+this._createAssetNode = null;
+this._templates = null;
+
+// Public API
+this.search = null;
+this.filter = null;
+this.expandAll = null;
+this.collapseAll = null;
+this.toggleNode = null;
+this.selectAsset = null;
+
+// Config
 this.typeIcons = null;
 this.statusColors = null;
 
