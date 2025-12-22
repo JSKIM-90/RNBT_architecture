@@ -1,0 +1,75 @@
+<!--
+  UPS - Shadow DOM Popup Template
+-->
+<template id="popup-ups">
+    <div class="popup-overlay">
+        <div class="popup-content">
+            <!-- Header -->
+            <div class="popup-header">
+                <div class="header-info">
+                    <h2 class="ups-name">-</h2>
+                    <span class="ups-zone">-</span>
+                </div>
+                <div class="header-actions">
+                    <span class="ups-status" data-status="normal">Normal</span>
+                    <button class="close-btn" type="button" aria-label="Close">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="popup-body">
+                <!-- Current Values -->
+                <div class="current-values">
+                    <div class="value-card">
+                        <div class="value-label">Load</div>
+                        <div class="value-number">
+                            <span class="ups-load">-</span>
+                        </div>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-label">Battery</div>
+                        <div class="value-number">
+                            <span class="ups-battery">-</span>
+                        </div>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-label">Input</div>
+                        <div class="value-number">
+                            <span class="ups-input-voltage">-</span>
+                        </div>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-label">Output</div>
+                        <div class="value-number">
+                            <span class="ups-output-voltage">-</span>
+                        </div>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-label">Runtime</div>
+                        <div class="value-number">
+                            <span class="ups-runtime">-</span>
+                        </div>
+                    </div>
+                    <div class="value-card">
+                        <div class="value-label">Mode</div>
+                        <div class="value-number mode">
+                            <span class="ups-mode">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="chart-section">
+                    <div class="chart-header">
+                        <span class="chart-title">Load & Battery History</span>
+                    </div>
+                    <div class="chart-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
