@@ -847,9 +847,9 @@ disposeAllThreeResources(this);
 
 ---
 
-## Functional Component Pattern
+## 컴포넌트 개발 사례: 자기 완결 컴포넌트
 
-자기 완결 컴포넌트(Self-Contained Component) 개발 패턴 가이드입니다.
+Default JS 템플릿을 기반으로 Shadow DOM Popup + Chart 기능을 확장한 개발 사례입니다.
 
 참조:
 - [Projects/IPSILON_3D](Projects/IPSILON_3D/)
