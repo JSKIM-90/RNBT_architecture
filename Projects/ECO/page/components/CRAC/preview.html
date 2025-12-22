@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRAC - Preview (register.js 구조)</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1219;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .preview-controls { display: flex; gap: 12px; }
+
+        .preview-btn {
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .preview-btn:hover { background: #2563eb; }
+        .preview-btn.warning { background: #eab308; color: #000; }
+        .preview-btn.critical { background: #ef4444; }
+        .preview-btn.destroy { background: #6b7280; }
+        .preview-btn.destroy:hover { background: #4b5563; }
+
+        .instance-info { font-size: 12px; color: #6b7280; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="preview-controls">
+        <button class="preview-btn" onclick="showNormal()">Normal CRAC</button>
+        <button class="preview-btn warning" onclick="showWarning()">Warning CRAC</button>
+        <button class="preview-btn critical" onclick="showCritical()">Critical CRAC</button>
+        <button class="preview-btn destroy" onclick="destroyInstance()">Destroy</button>
+    </div>
+    <div class="instance-info" id="instance-info">Instance: not created</div>
+
+    <div id="popup-host"></div>
+
+    <script>
+        // ======================
+        // TEMPLATE DATA
+        // ======================
+        const htmlCode = `
+            <template id="popup-crac">
+                <div class="popup-overlay">
+                    <div class="popup-content">
+                        <div class="popup-header">
+                            <div class="header-info">
+                                <h2 class="crac-name">-</h2>
+                                <span class="crac-zone">-</span>
+                            </div>
+                            <div class="header-actions">
+                                <span class="crac-status" data-status="normal">Normal</span>
+                                <button class="close-btn" type="button" aria-label="Close">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="popup-body">
+                            <div class="values-section">
+                                <div class="section-title">Temperature</div>
+                                <div class="temp-values">
+                                    <div class="value-card supply">
+                                        <div class="value-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                                <path d="M12 19V5M12 5L6 11M12 5L18 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </div>
+                                        <div class="value-info">
+                                            <div class="value-label">Supply</div>
+                                            <div class="value-number">
+                                                <span class="crac-supply-temp">-</span>
+                                                <span class="value-unit">°C</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="value-card return">
+                                        <div class="value-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                                <path d="M12 5V19M12 19L6 13M12 19L18 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </div>
+                                        <div class="value-info">
+                                            <div class="value-label">Return</div>
+                                            <div class="value-number">
+                                                <span class="crac-return-temp">-</span>
+                                                <span class="value-unit">°C</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="status-values">
+                                <div class="status-card">
+                                    <div class="status-label">Humidity</div>
+                                    <div class="status-number">
+                                        <span class="crac-humidity">-</span>
+                                        <span class="status-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="status-card">
+                                    <div class="status-label">Fan Speed</div>
+                                    <div class="status-number">
+                                        <span class="crac-fan-speed">-</span>
+                                        <span class="status-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="status-card">
+                                    <div class="status-label">Setpoint</div>
+                                    <div class="status-number">
+                                        <span class="crac-setpoint">-</span>
+                                        <span class="status-unit">°C</span>
+                                    </div>
+                                </div>
+                                <div class="status-card">
+                                    <div class="status-label">Mode</div>
+                                    <div class="status-number mode">
+                                        <span class="crac-mode">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="chart-section">
+                                <div class="chart-header">
+                                    <span class="chart-title">Temperature & Humidity History</span>
+                                </div>
+                                <div class="chart-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        `;
+
+        const cssCode = `
+            .popup-overlay {
+                position: fixed; top: 0; left: 0;
+                width: 100vw; height: 100vh;
+                background: rgba(0, 0, 0, 0.6);
+                display: flex; align-items: center; justify-content: center;
+                z-index: 1000;
+            }
+
+            .popup-content {
+                background: #1a1f2e;
+                border-radius: 12px;
+                width: 560px; max-width: 90vw; max-height: 90vh;
+                overflow: hidden;
+                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+                border: 1px solid #2a3142;
+            }
+
+            .popup-header {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 20px 24px; border-bottom: 1px solid #2a3142;
+            }
+
+            .header-info { display: flex; flex-direction: column; gap: 4px; }
+            .crac-name { margin: 0; font-size: 18px; font-weight: 600; color: #e0e6ed; }
+            .crac-zone { font-size: 13px; color: #8892a0; }
+
+            .header-actions { display: flex; align-items: center; gap: 12px; }
+            .crac-status { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; text-transform: capitalize; }
+            .crac-status[data-status="normal"] { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+            .crac-status[data-status="warning"] { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+            .crac-status[data-status="critical"] { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+            .close-btn {
+                display: flex; align-items: center; justify-content: center;
+                width: 32px; height: 32px; padding: 0;
+                background: transparent; border: none; border-radius: 6px;
+                color: #8892a0; cursor: pointer;
+                transition: background 0.15s, color 0.15s;
+            }
+            .close-btn:hover { background: #2a3142; color: #e0e6ed; }
+
+            .popup-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+            .values-section { display: flex; flex-direction: column; gap: 12px; }
+            .section-title { font-size: 12px; font-weight: 500; color: #8892a0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .temp-values { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+            .value-card {
+                background: #252b3b; border-radius: 8px; padding: 16px;
+                display: flex; align-items: center; gap: 12px;
+            }
+            .value-card.supply .value-icon { color: #3b82f6; }
+            .value-card.return .value-icon { color: #ef4444; }
+
+            .value-icon {
+                display: flex; align-items: center; justify-content: center;
+                width: 40px; height: 40px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;
+            }
+
+            .value-info { display: flex; flex-direction: column; gap: 2px; }
+            .value-label { font-size: 11px; color: #8892a0; text-transform: uppercase; }
+            .value-number { display: flex; align-items: baseline; gap: 2px; }
+            .crac-supply-temp, .crac-return-temp { font-size: 24px; font-weight: 600; color: #e0e6ed; }
+            .value-unit { font-size: 14px; color: #8892a0; }
+
+            .status-values { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+            .status-card { background: #252b3b; border-radius: 8px; padding: 12px; text-align: center; }
+            .status-label { font-size: 10px; color: #8892a0; margin-bottom: 6px; text-transform: uppercase; }
+            .status-number { display: flex; align-items: baseline; justify-content: center; gap: 2px; }
+            .crac-humidity, .crac-fan-speed, .crac-setpoint { font-size: 18px; font-weight: 600; color: #e0e6ed; }
+            .crac-mode { font-size: 12px; font-weight: 500; color: #3b82f6; text-transform: uppercase; }
+            .status-number.mode { justify-content: center; }
+            .status-unit { font-size: 11px; color: #8892a0; }
+
+            .chart-section { background: #252b3b; border-radius: 8px; overflow: hidden; }
+            .chart-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #2a3142; }
+            .chart-title { font-size: 14px; font-weight: 500; color: #e0e6ed; }
+            .chart-container { width: 100%; height: 200px; }
+        `;
+
+        // ======================
+        // MOCK IMPLEMENTATIONS
+        // ======================
+
+        const fx = {
+            go: (data, ...fns) => fns.reduce((acc, fn) => acc.then ? acc.then(fn) : Promise.resolve(fn(acc)), Promise.resolve(data)),
+            each: (fn) => (arr) => { arr.forEach(fn); return arr; }
+        };
+
+        const WKit = {
+            bind3DEvents: (ctx, events) => console.log('[WKit.bind3DEvents]', Object.keys(events)),
+            fetchData: (page, datasetName, param) => {
+                console.log('[WKit.fetchData]', datasetName, param);
+                return Promise.resolve({ response: { data: getMockData(datasetName) } });
+            }
+        };
+
+        // Mock data
+        const mockCRACData = {
+            normal: { name: 'CRAC-A01', zone: 'Zone-A', status: 'normal', supplyTemp: 18.2, returnTemp: 24.5, humidity: 48, fanSpeed: 75, setpoint: 18.0, mode: 'cooling' },
+            warning: { name: 'CRAC-B02', zone: 'Zone-B', status: 'warning', supplyTemp: 20.5, returnTemp: 28.8, humidity: 62, fanSpeed: 95, setpoint: 18.0, mode: 'cooling' },
+            critical: { name: 'CRAC-C03', zone: 'Zone-C', status: 'critical', supplyTemp: 22.0, returnTemp: 32.5, humidity: 72, fanSpeed: 100, setpoint: 18.0, mode: 'cooling' }
+        };
+
+        let currentStatus = 'normal';
+
+        function generateHistoryData() {
+            const timestamps = [];
+            const supplyTemps = [];
+            const returnTemps = [];
+            const humidities = [];
+            const now = new Date();
+
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 3600000);
+                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
+
+                const baseSupply = 18 + Math.sin(i / 8) * 1;
+                supplyTemps.push(Math.round((baseSupply + (Math.random() - 0.5) * 2) * 10) / 10);
+
+                const baseReturn = 24 + Math.sin(i / 6) * 2;
+                returnTemps.push(Math.round((baseReturn + (Math.random() - 0.5) * 3) * 10) / 10);
+
+                const baseHumidity = 50 + Math.sin(i / 10) * 5;
+                humidities.push(Math.round(Math.max(35, Math.min(65, baseHumidity + (Math.random() - 0.5) * 8)) * 10) / 10);
+            }
+
+            return { timestamps, supplyTemps, returnTemps, humidities };
+        }
+
+        function getMockData(datasetName) {
+            switch (datasetName) {
+                case 'crac': return mockCRACData[currentStatus];
+                case 'cracHistory': return generateHistoryData();
+                default: return {};
+            }
+        }
+
+        // Mock PopupMixin
+        const PopupMixin = {
+            applyShadowPopupMixin: (ctx, config) => {
+                let shadowRoot = null;
+                let _chart = null;
+
+                ctx.showPopup = () => {
+                    const host = ctx.page.element;
+                    if (!host.shadowRoot) {
+                        shadowRoot = host.attachShadow({ mode: 'open' });
+                    } else {
+                        shadowRoot = host.shadowRoot;
+                        shadowRoot.innerHTML = '';
+                    }
+
+                    const style = document.createElement('style');
+                    style.textContent = config.getStyles();
+                    shadowRoot.appendChild(style);
+
+                    const content = document.createElement('div');
+                    content.innerHTML = config.getHTML();
+                    shadowRoot.appendChild(content);
+
+                    ctx._shadowRoot = shadowRoot;
+                    config.onCreated?.();
+                    console.log('[PopupMixin] Popup shown');
+                };
+
+                ctx.hidePopup = () => {
+                    if (ctx._shadowRoot) {
+                        ctx._shadowRoot.innerHTML = '';
+                        console.log('[PopupMixin] Popup hidden');
+                    }
+                };
+
+                ctx.destroyPopup = () => {
+                    if (_chart) { _chart.dispose(); _chart = null; }
+                    if (ctx._shadowRoot) {
+                        ctx._shadowRoot.innerHTML = '';
+                        ctx._shadowRoot = null;
+                    }
+                    console.log('[PopupMixin] Popup destroyed');
+                };
+
+                ctx.popupQuery = (sel) => ctx._shadowRoot?.querySelector(sel);
+                ctx.popupQueryAll = (sel) => ctx._shadowRoot?.querySelectorAll(sel) || [];
+                ctx.bindPopupEvents = (events) => {
+                    Object.entries(events).forEach(([eventType, handlers]) => {
+                        Object.entries(handlers).forEach(([selector, handler]) => {
+                            ctx.popupQueryAll(selector).forEach(el => el.addEventListener(eventType, handler));
+                        });
+                    });
+                };
+
+                ctx._getChartRef = () => _chart;
+                ctx._setChartRef = (c) => { _chart = c; };
+            },
+
+            applyEChartsMixin: (ctx) => {
+                ctx.createChart = (selector) => {
+                    const container = ctx.popupQuery(selector);
+                    if (container) {
+                        const chart = echarts.init(container);
+                        ctx._setChartRef(chart);
+                        console.log('[EChartsMixin] Chart created');
+                    }
+                };
+
+                ctx.updateChart = (selector, option) => {
+                    let chart = ctx._getChartRef();
+                    if (!chart) {
+                        const container = ctx.popupQuery(selector);
+                        if (container) {
+                            chart = echarts.init(container);
+                            ctx._setChartRef(chart);
+                        }
+                    }
+                    if (chart) {
+                        chart.setOption(option);
+                        console.log('[EChartsMixin] Chart updated');
+                    }
+                };
+            }
+        };
+
+        // ======================
+        // TEMPLATE HELPER
+        // ======================
+        function extractTemplate(htmlCode, templateId) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlCode, 'text/html');
+            const template = doc.querySelector(`template#${templateId}`);
+            return template?.innerHTML || '';
+        }
+
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // ======================
+        // COMPONENT INSTANCE
+        // ======================
+        let instance = null;
+
+        function createInstance() {
+            if (instance) { onInstanceUnLoad.call(instance); }
+
+            instance = {
+                id: 'preview-crac',
+                page: { element: document.getElementById('popup-host') },
+                properties: { publishCode: { htmlCode, cssCode } },
+                setter: { ecoAssetInfo: { assetId: 'mock-crac-001' } }
+            };
+
+            initComponent.call(instance);
+            updateInstanceInfo();
+        }
+
+        function updateInstanceInfo() {
+            const info = document.getElementById('instance-info');
+            info.textContent = instance ? `Instance: ${instance.id}` : 'Instance: not created';
+        }
+
+        // ======================
+        // COMPONENT LIFECYCLE
+        // ======================
+
+        function initComponent() {
+            const { bind3DEvents, fetchData } = WKit;
+            const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
+
+            const component = this;
+            const assetId = component.setter.ecoAssetInfo?.assetId || 'crac-001';
+
+            component.datasetInfo = [
+                { datasetName: 'crac', param: { id: assetId }, render: ['renderCRACInfo'] },
+                { datasetName: 'cracHistory', param: { id: assetId }, render: ['renderChart'] }
+            ];
+
+            component.baseInfoConfig = [
+                { key: 'name', selector: '.crac-name' },
+                { key: 'zone', selector: '.crac-zone' },
+                { key: 'status', selector: '.crac-status', dataAttr: 'status' }
+            ];
+
+            component.cracInfoConfig = [
+                { key: 'supplyTemp', selector: '.crac-supply-temp' },
+                { key: 'returnTemp', selector: '.crac-return-temp' },
+                { key: 'humidity', selector: '.crac-humidity' },
+                { key: 'fanSpeed', selector: '.crac-fan-speed' },
+                { key: 'setpoint', selector: '.crac-setpoint' },
+                { key: 'mode', selector: '.crac-mode' }
+            ];
+
+            component.chartConfig = {
+                xKey: 'timestamps',
+                series: [
+                    { yKey: 'supplyTemps', name: 'Supply', color: '#3b82f6', yAxisIndex: 0 },
+                    { yKey: 'returnTemps', name: 'Return', color: '#ef4444', yAxisIndex: 0 },
+                    { yKey: 'humidities', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
+                ],
+                yAxis: [
+                    { name: '°C', position: 'left' },
+                    { name: '%', position: 'right' }
+                ],
+                optionBuilder: getDualAxisChartOption
+            };
+
+            component.renderCRACInfo = function(data) {
+                const config = [...component.baseInfoConfig, ...component.cracInfoConfig];
+                fx.go(config, fx.each(({ key, selector, dataAttr }) => {
+                    const el = component.popupQuery(selector);
+                    if (el) {
+                        el.textContent = data[key];
+                        if (dataAttr) el.dataset[dataAttr] = data[key];
+                    }
+                }));
+            };
+
+            component.renderChart = function(data) {
+                const { optionBuilder, ...chartConfig } = component.chartConfig;
+                const option = optionBuilder(chartConfig, data);
+                component.updateChart('.chart-container', option);
+            };
+
+            component.showDetail = showDetail.bind(component);
+            component.hideDetail = hideDetail.bind(component);
+
+            component.customEvents = { click: '@cracClicked' };
+            bind3DEvents(component, component.customEvents);
+
+            component.templateConfig = { popup: 'popup-crac' };
+            component.popupCreatedConfig = {
+                chartSelector: '.chart-container',
+                events: { click: { '.close-btn': () => component.hideDetail() } }
+            };
+
+            const { htmlCode, cssCode } = component.properties.publishCode || {};
+            component.getPopupHTML = () => extractTemplate(htmlCode || '', component.templateConfig.popup);
+            component.getPopupStyles = () => cssCode || '';
+            component.onPopupCreated = onPopupCreated.bind(component, component.popupCreatedConfig);
+
+            applyShadowPopupMixin(component, {
+                getHTML: component.getPopupHTML,
+                getStyles: component.getPopupStyles,
+                onCreated: component.onPopupCreated
+            });
+
+            applyEChartsMixin(component);
+
+            console.log('[CRAC] Registered:', assetId);
+        }
+
+        function showDetail() {
+            this.showPopup();
+            fx.go(
+                this.datasetInfo,
+                fx.each(({ datasetName, param, render }) =>
+                    fx.go(
+                        WKit.fetchData(this.page, datasetName, param),
+                        result => result?.response?.data,
+                        data => data && render.forEach(fn => this[fn](data))
+                    )
+                )
+            ).catch(e => {
+                console.error('[CRAC]', e);
+                this.hidePopup();
+            });
+        }
+
+        function hideDetail() { this.hidePopup(); }
+
+        function getDualAxisChartOption(config, data) {
+            const { xKey, series: seriesConfig, yAxis: yAxisConfig } = config;
+
+            return {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 }
+                },
+                legend: {
+                    data: seriesConfig.map(s => s.name),
+                    top: 8,
+                    textStyle: { color: '#8892a0', fontSize: 11 }
+                },
+                grid: { left: 50, right: 50, top: 40, bottom: 24 },
+                xAxis: {
+                    type: 'category',
+                    data: data[xKey],
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 }
+                },
+                yAxis: yAxisConfig.map((axis, index) => ({
+                    type: 'value',
+                    name: axis.name,
+                    position: axis.position,
+                    axisLine: { show: true, lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 },
+                    splitLine: { lineStyle: { color: index === 0 ? '#333' : 'transparent' } }
+                })),
+                series: seriesConfig.map(({ yKey, name, color, yAxisIndex }) => ({
+                    name, type: 'line', yAxisIndex,
+                    data: data[yKey], smooth: true, symbol: 'none',
+                    lineStyle: { color, width: 2 },
+                    areaStyle: {
+                        color: {
+                            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: hexToRgba(color, 0.2) },
+                                { offset: 1, color: hexToRgba(color, 0) }
+                            ]
+                        }
+                    }
+                }))
+            };
+        }
+
+        function onPopupCreated({ chartSelector, events }) {
+            if (chartSelector) this.createChart(chartSelector);
+            if (events) this.bindPopupEvents(events);
+        }
+
+        function onInstanceUnLoad() {
+            this.destroyPopup();
+            console.log('[CRAC] Destroyed:', this.id);
+        }
+
+        // ======================
+        // PREVIEW CONTROLS
+        // ======================
+
+        function showNormal() {
+            currentStatus = 'normal';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function showWarning() {
+            currentStatus = 'warning';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function showCritical() {
+            currentStatus = 'critical';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function destroyInstance() {
+            if (instance) {
+                onInstanceUnLoad.call(instance);
+                instance = null;
+                updateInstanceInfo();
+            }
+        }
+    </script>
+</body>
+</html>
