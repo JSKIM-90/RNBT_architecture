@@ -1,7 +1,7 @@
 /*
- * Mixin.js
+ * PopupMixin.js
  *
- * 컴포넌트 기능 확장을 위한 Mixin 모음
+ * Shadow DOM Popup 전용 Mixin 모음
  *
  * ─────────────────────────────────────────────────────────────
  * 사용 가능한 Mixin
@@ -12,12 +12,12 @@
  *    - DOM 쿼리
  *    - 이벤트 바인딩
  *
- * 2. applyEChartsMixin - ECharts 차트 관리
+ * 2. applyEChartsMixin - ECharts 차트 관리 (Popup 전용)
  *    - applyShadowPopupMixin 이후 호출
  *    - 차트 생성/업데이트/조회
  *    - ResizeObserver 자동 연결
  *
- * 3. applyTabulatorMixin - Tabulator 테이블 관리
+ * 3. applyTabulatorMixin - Tabulator 테이블 관리 (Popup 전용)
  *    - applyShadowPopupMixin 이후 호출
  *    - Shadow DOM CSS 자동 주입
  *    - 테이블 생성/업데이트/조회
@@ -26,7 +26,7 @@
  * 사용 예시
  * ─────────────────────────────────────────────────────────────
  *
- *   const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = Mixin;
+ *   const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
  *
  *   applyShadowPopupMixin(this, {
  *       getHTML: () => '<div class="popup">...</div>',
@@ -48,7 +48,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-const Mixin = {};
+const PopupMixin = {};
 
 /**
  * ─────────────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ const Mixin = {};
  * - bindPopupEvents()  : 이벤트 델리게이션 바인딩
  * - destroyPopup()     : 팝업 및 리소스 정리
  */
-Mixin.applyShadowPopupMixin = function(instance, options) {
+PopupMixin.applyShadowPopupMixin = function(instance, options) {
     const { getHTML, getStyles, onCreated } = options;
 
     // Internal state
@@ -176,7 +176,7 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
 
 /**
  * ─────────────────────────────────────────────────────────────
- * applyEChartsMixin - ECharts 차트 관리
+ * applyEChartsMixin - ECharts 차트 관리 (Popup 전용)
  * ─────────────────────────────────────────────────────────────
  *
  * applyShadowPopupMixin 이후에 호출해야 합니다.
@@ -188,9 +188,9 @@ Mixin.applyShadowPopupMixin = function(instance, options) {
  *
  * destroyPopup() 호출 시 차트 자동 정리
  */
-Mixin.applyEChartsMixin = function(instance) {
+PopupMixin.applyEChartsMixin = function(instance) {
     if (!instance._popup) {
-        console.warn('[Mixin] applyEChartsMixin requires applyShadowPopupMixin to be called first');
+        console.warn('[PopupMixin] applyEChartsMixin requires applyShadowPopupMixin to be called first');
         return;
     }
 
@@ -207,7 +207,7 @@ Mixin.applyEChartsMixin = function(instance) {
 
         const container = instance.popupQuery(selector);
         if (!container) {
-            console.warn(`[Mixin] Chart container not found: ${selector}`);
+            console.warn(`[PopupMixin] Chart container not found: ${selector}`);
             return null;
         }
 
@@ -236,14 +236,14 @@ Mixin.applyEChartsMixin = function(instance) {
     instance.updateChart = function(selector, option) {
         const chart = instance.getChart(selector);
         if (!chart) {
-            console.warn(`[Mixin] Chart not found: ${selector}`);
+            console.warn(`[PopupMixin] Chart not found: ${selector}`);
             return;
         }
 
         try {
             chart.setOption(option);
         } catch (e) {
-            console.error(`[Mixin] Chart setOption error:`, e);
+            console.error(`[PopupMixin] Chart setOption error:`, e);
         }
     };
 
@@ -264,7 +264,7 @@ Mixin.applyEChartsMixin = function(instance) {
 
 /**
  * ─────────────────────────────────────────────────────────────
- * applyTabulatorMixin - Shadow DOM 내 Tabulator 테이블 믹스인
+ * applyTabulatorMixin - Shadow DOM 내 Tabulator 테이블 믹스인 (Popup 전용)
  * ─────────────────────────────────────────────────────────────
  *
  * Shadow DOM 팝업 내에서 Tabulator 테이블을 관리합니다.
@@ -307,10 +307,10 @@ Mixin.applyEChartsMixin = function(instance) {
  *   피해야 할 스타일: 색상 오버라이드 (테마가 이미 처리)
  * ─────────────────────────────────────────────────────────────
  */
-Mixin.applyTabulatorMixin = function(instance) {
+PopupMixin.applyTabulatorMixin = function(instance) {
     // _popup이 없으면 applyShadowPopupMixin이 먼저 호출되지 않은 것
     if (!instance._popup) {
-        console.warn('[Mixin] applyTabulatorMixin requires applyShadowPopupMixin to be called first');
+        console.warn('[PopupMixin] applyTabulatorMixin requires applyShadowPopupMixin to be called first');
         return;
     }
 
@@ -345,9 +345,9 @@ Mixin.applyTabulatorMixin = function(instance) {
             style.textContent = cssText;
             shadowRoot.appendChild(style);
 
-            console.log('[Mixin] Tabulator CSS injected into Shadow DOM');
+            console.log('[PopupMixin] Tabulator CSS injected into Shadow DOM');
         } catch (e) {
-            console.error('[Mixin] Failed to inject Tabulator CSS:', e);
+            console.error('[PopupMixin] Failed to inject Tabulator CSS:', e);
             instance._popup.tabulatorCssInjected = false; // 실패 시 재시도 허용
         }
     }
@@ -366,7 +366,7 @@ Mixin.applyTabulatorMixin = function(instance) {
 
         const container = instance.popupQuery(selector);
         if (!container) {
-            console.warn(`[Mixin] Table container not found: ${selector}`);
+            console.warn(`[PopupMixin] Table container not found: ${selector}`);
             return null;
         }
 
@@ -412,14 +412,14 @@ Mixin.applyTabulatorMixin = function(instance) {
     instance.updateTable = function(selector, data) {
         const table = instance.getTable(selector);
         if (!table) {
-            console.warn(`[Mixin] Table not found: ${selector}`);
+            console.warn(`[PopupMixin] Table not found: ${selector}`);
             return;
         }
 
         try {
             table.setData(data);
         } catch (e) {
-            console.error(`[Mixin] Table setData error:`, e);
+            console.error(`[PopupMixin] Table setData error:`, e);
         }
     };
 
@@ -432,7 +432,7 @@ Mixin.applyTabulatorMixin = function(instance) {
     instance.updateTableOptions = function(selector, options) {
         const table = instance.getTable(selector);
         if (!table) {
-            console.warn(`[Mixin] Table not found: ${selector}`);
+            console.warn(`[PopupMixin] Table not found: ${selector}`);
             return;
         }
 
@@ -444,7 +444,7 @@ Mixin.applyTabulatorMixin = function(instance) {
                 table.setData(options.data);
             }
         } catch (e) {
-            console.error(`[Mixin] Table updateOptions error:`, e);
+            console.error(`[PopupMixin] Table updateOptions error:`, e);
         }
     };
 

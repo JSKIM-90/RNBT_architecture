@@ -16,7 +16,7 @@
  */
 
 const { bind3DEvents, fetchData } = WKit;
-const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = Mixin;
+const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
 // ======================
 // TEMPLATE HELPER

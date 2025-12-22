@@ -14,7 +14,7 @@
  */
 
 const { bind3DEvents, fetchData } = WKit;
-const { applyShadowPopupMixin } = Mixin;
+const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 // ======================
 // TEMPLATE HELPER
@@ -115,6 +115,8 @@ function initComponent() {
         getStyles: this.getPopupStyles,
         onCreated: this.onPopupCreated
     });
+
+    applyEChartsMixin(this);
 
     console.log('[TemperatureSensor] Registered:', assetId);
 }

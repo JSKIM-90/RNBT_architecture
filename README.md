@@ -856,7 +856,7 @@ disposeAllThreeResources(this);
 
 참조:
 - [Projects/IPSILON_3D](Projects/IPSILON_3D/)
-- [Utils/Mixin.js](Utils/Mixin.js)
+- [Utils/PopupMixin.js](Utils/PopupMixin.js)
 
 ### 핵심 개념
 
@@ -1182,7 +1182,7 @@ TemperatureSensor/
 
 **버전:** 1.2.0
 **작성일:** 2025-12-16
-**참조:** Utils/Mixin.js, Projects/IPSILON_3D/page/components/TemperatureSensor/
+**참조:** Utils/PopupMixin.js, Projects/IPSILON_3D/page/components/TemperatureSensor/
 
 **변경 이력:**
 

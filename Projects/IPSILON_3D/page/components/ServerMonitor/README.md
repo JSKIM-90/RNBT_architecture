@@ -40,7 +40,7 @@ import 'tabulator-tables/dist/css/tabulator_midnight.min.css';
 `applyTabulatorMixin`에서 CSS 파일을 fetch하여 Shadow DOM에 `<style>` 태그로 주입합니다.
 
 ```javascript
-// Mixin.js - applyTabulatorMixin
+// PopupMixin.js - applyTabulatorMixin
 const TABULATOR_CSS_PATH = 'client/common/libs/tabulator/tabulator_midnight.min.css';
 
 async function injectTabulatorCSS(shadowRoot) {
@@ -152,6 +152,6 @@ shadowRoot.querySelectorAll('.tab-btn').forEach(btn => {
 
 ## 관련 파일
 
-- `Mixin.js`: `applyTabulatorMixin` 구현
+- `PopupMixin.js`: `applyTabulatorMixin` 구현
 - `tabulator_midnight.min.css`: Shadow DOM 주입용 CSS 파일
 - `TemperatureSensor/`: 단일 차트 컴포넌트 예제 (비교용)
