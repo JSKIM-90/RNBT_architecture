@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ServerMonitor - Preview</title>
+    <title>ServerMonitor - Preview (register.js 구조)</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css" rel="stylesheet">
     <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
@@ -54,87 +54,107 @@
             background: #ef4444;
         }
 
+        .preview-btn.destroy {
+            background: #6b7280;
+        }
+
+        .preview-btn.destroy:hover {
+            background: #4b5563;
+        }
+
         #popup-host {
             /* Shadow DOM host */
+        }
+
+        .instance-info {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body>
     <div class="preview-controls">
-        <button class="preview-btn" onclick="showPopup('normal')">Normal Server</button>
-        <button class="preview-btn warning" onclick="showPopup('warning')">Warning Server</button>
-        <button class="preview-btn critical" onclick="showPopup('critical')">Critical Server</button>
+        <button class="preview-btn" onclick="showNormal()">Normal Server</button>
+        <button class="preview-btn warning" onclick="showWarning()">Warning Server</button>
+        <button class="preview-btn critical" onclick="showCritical()">Critical Server</button>
+        <button class="preview-btn destroy" onclick="destroyInstance()">Destroy</button>
     </div>
+    <div class="instance-info" id="instance-info">Instance: not created</div>
 
     <div id="popup-host"></div>
 
     <script>
-        // Load template and styles
-        const templateHTML = `
-            <div class="popup-overlay">
-                <div class="popup-content">
-                    <!-- Header -->
-                    <div class="popup-header">
-                        <div class="header-info">
-                            <h2 class="server-name">-</h2>
-                            <span class="server-zone">-</span>
-                        </div>
-                        <div class="header-actions">
-                            <span class="server-status" data-status="normal">Normal</span>
-                            <button class="close-btn" type="button" aria-label="Close">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Stats Bar -->
-                    <div class="stats-bar">
-                        <div class="stat-item">
-                            <span class="stat-label">CPU</span>
-                            <span class="stat-value server-cpu">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Memory</span>
-                            <span class="stat-value server-memory">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Disk</span>
-                            <span class="stat-value server-disk">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">OS</span>
-                            <span class="stat-value server-os">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Uptime</span>
-                            <span class="stat-value server-uptime">-</span>
-                        </div>
-                    </div>
-
-                    <!-- Tabs -->
-                    <div class="tab-container">
-                        <div class="tab-header">
-                            <button class="tab-btn active" data-tab="overview">Overview</button>
-                            <button class="tab-btn" data-tab="performance">Performance</button>
+        // ======================
+        // TEMPLATE DATA (publishCode에서 로드되는 것과 동일)
+        // ======================
+        const htmlCode = `
+            <template id="popup-server">
+                <div class="popup-overlay">
+                    <div class="popup-content">
+                        <!-- Header -->
+                        <div class="popup-header">
+                            <div class="header-info">
+                                <h2 class="server-name">-</h2>
+                                <span class="server-zone">-</span>
+                            </div>
+                            <div class="header-actions">
+                                <span class="server-status" data-status="normal">Normal</span>
+                                <button class="close-btn" type="button" aria-label="Close">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Tab: Overview (Table) -->
-                        <div class="tab-panel active" data-panel="overview">
-                            <div class="table-container"></div>
+                        <!-- Stats Bar -->
+                        <div class="stats-bar">
+                            <div class="stat-item">
+                                <span class="stat-label">CPU</span>
+                                <span class="stat-value server-cpu">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Memory</span>
+                                <span class="stat-value server-memory">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Disk</span>
+                                <span class="stat-value server-disk">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">OS</span>
+                                <span class="stat-value server-os">-</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Uptime</span>
+                                <span class="stat-value server-uptime">-</span>
+                            </div>
                         </div>
 
-                        <!-- Tab: Performance (Chart) -->
-                        <div class="tab-panel" data-panel="performance">
-                            <div class="chart-container"></div>
+                        <!-- Tabs -->
+                        <div class="tab-container">
+                            <div class="tab-header">
+                                <button class="tab-btn active" data-tab="overview">Overview</button>
+                                <button class="tab-btn" data-tab="performance">Performance</button>
+                            </div>
+
+                            <!-- Tab: Overview (Table) -->
+                            <div class="tab-panel active" data-panel="overview">
+                                <div class="table-container"></div>
+                            </div>
+
+                            <!-- Tab: Performance (Chart) -->
+                            <div class="tab-panel" data-panel="performance">
+                                <div class="chart-container"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </template>
         `;
 
-        const popupStyles = `
+        const cssCode = `
             .popup-overlay {
                 position: fixed;
                 top: 0;
@@ -351,39 +371,33 @@
             }
         `;
 
-        // Mock data
-        const mockServerData = {
-            normal: {
-                name: 'Server A-1',
-                zone: 'Zone-A',
-                status: 'normal',
-                cpu: 45,
-                memory: 62,
-                disk: 71,
-                os: 'Ubuntu 22.04',
-                uptime: 42
-            },
-            warning: {
-                name: 'Server B-2',
-                zone: 'Zone-B',
-                status: 'warning',
-                cpu: 78,
-                memory: 72,
-                disk: 85,
-                os: 'CentOS 8',
-                uptime: 15
-            },
-            critical: {
-                name: 'Server C-3',
-                zone: 'Zone-C',
-                status: 'critical',
-                cpu: 95,
-                memory: 91,
-                disk: 92,
-                os: 'RHEL 9',
-                uptime: 3
+        // ======================
+        // MOCK IMPLEMENTATIONS (PopupMixin, WKit, fx)
+        // ======================
+
+        // Mock fx (functional utilities)
+        const fx = {
+            go: (data, ...fns) => fns.reduce((acc, fn) => acc.then ? acc.then(fn) : Promise.resolve(fn(acc)), Promise.resolve(data)),
+            each: (fn) => (arr) => { arr.forEach(fn); return arr; }
+        };
+
+        // Mock WKit
+        const WKit = {
+            bind3DEvents: (ctx, events) => console.log('[WKit.bind3DEvents]', Object.keys(events)),
+            fetchData: (page, datasetName, param) => {
+                console.log('[WKit.fetchData]', datasetName, param);
+                return Promise.resolve({ response: { data: getMockData(datasetName) } });
             }
         };
+
+        // Mock data functions
+        const mockServerData = {
+            normal: { name: 'Server A-1', zone: 'Zone-A', status: 'normal', cpu: 45, memory: 62, disk: 71, os: 'Ubuntu 22.04', uptime: 42 },
+            warning: { name: 'Server B-2', zone: 'Zone-B', status: 'warning', cpu: 78, memory: 72, disk: 85, os: 'CentOS 8', uptime: 15 },
+            critical: { name: 'Server C-3', zone: 'Zone-C', status: 'critical', cpu: 95, memory: 91, disk: 92, os: 'RHEL 9', uptime: 3 }
+        };
+
+        let currentServerStatus = 'normal';
 
         const mockProcessData = [
             { pid: 1234, name: 'nginx', user: 'www-data', type: 'Web Server', cpu: 15.2, memory: 256, status: 'normal', uptime: '12h 35m' },
@@ -403,10 +417,8 @@
             for (let i = 23; i >= 0; i--) {
                 const time = new Date(now.getTime() - i * 3600000);
                 timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
-
                 const baseCpu = 45 + Math.sin(i / 4) * 15;
                 const baseMemory = 60 + Math.sin(i / 6) * 10;
-
                 cpu.push(Math.round((baseCpu + (Math.random() - 0.5) * 20) * 10) / 10);
                 memory.push(Math.round((baseMemory + (Math.random() - 0.5) * 15) * 10) / 10);
             }
@@ -414,208 +426,520 @@
             return { timestamps, cpu, memory };
         }
 
-        let shadowRoot = null;
-        let chart = null;
-        let table = null;
-
-        function showPopup(status) {
-            const host = document.getElementById('popup-host');
-
-            // Clear existing
-            if (shadowRoot) {
-                if (chart) { chart.dispose(); chart = null; }
-                if (table) { table.destroy(); table = null; }
-                host.shadowRoot.innerHTML = '';
-            } else {
-                shadowRoot = host.attachShadow({ mode: 'open' });
+        function getMockData(datasetName) {
+            switch (datasetName) {
+                case 'server': return mockServerData[currentServerStatus];
+                case 'serverProcesses': return { processes: mockProcessData };
+                case 'serverHistory': return generateHistoryData();
+                default: return {};
             }
-
-            // Add Tabulator CSS
-            const tabulatorLink = document.createElement('link');
-            tabulatorLink.rel = 'stylesheet';
-            tabulatorLink.href = 'https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css';
-            shadowRoot.appendChild(tabulatorLink);
-
-            // Add styles
-            const style = document.createElement('style');
-            style.textContent = popupStyles;
-            shadowRoot.appendChild(style);
-
-            // Add content
-            const content = document.createElement('div');
-            content.innerHTML = templateHTML;
-            shadowRoot.appendChild(content);
-
-            // Bind data
-            const data = mockServerData[status];
-            shadowRoot.querySelector('.server-name').textContent = data.name;
-            shadowRoot.querySelector('.server-zone').textContent = data.zone;
-
-            const statusEl = shadowRoot.querySelector('.server-status');
-            statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-            statusEl.dataset.status = data.status;
-
-            shadowRoot.querySelector('.server-cpu').textContent = data.cpu + '%';
-            shadowRoot.querySelector('.server-memory').textContent = data.memory + '%';
-            shadowRoot.querySelector('.server-disk').textContent = data.disk + '%';
-            shadowRoot.querySelector('.server-os').textContent = data.os;
-            shadowRoot.querySelector('.server-uptime').textContent = data.uptime + ' days';
-
-            // Bind close
-            shadowRoot.querySelector('.close-btn').addEventListener('click', hidePopup);
-            shadowRoot.querySelector('.popup-overlay').addEventListener('click', (e) => {
-                if (e.target.classList.contains('popup-overlay')) {
-                    hidePopup();
-                }
-            });
-
-            // Tab switching
-            shadowRoot.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const tabName = e.target.dataset.tab;
-                    shadowRoot.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
-                    shadowRoot.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tabName));
-
-                    // Performance 탭 전환 시 차트 리사이즈
-                    if (tabName === 'performance' && chart) {
-                        setTimeout(() => chart.resize(), 10);
-                    }
-                });
-            });
-
-            // Wait for Tabulator CSS to load, then init table
-            setTimeout(() => {
-                const tableContainer = shadowRoot.querySelector('.table-container');
-                table = new Tabulator(tableContainer, {
-                    data: mockProcessData,
-                    layout: 'fitColumns',
-                    height: 250,
-                    placeholder: 'No processes found',
-                    initialSort: [{ column: 'cpu', dir: 'desc' }],
-                    columns: [
-                        { title: 'PID', field: 'pid', widthGrow: 1, hozAlign: 'right' },
-                        { title: 'Name', field: 'name', widthGrow: 2 },
-                        { title: 'User', field: 'user', widthGrow: 1 },
-                        { title: 'Type', field: 'type', widthGrow: 1.5 },
-                        {
-                            title: 'CPU',
-                            field: 'cpu',
-                            widthGrow: 1,
-                            hozAlign: 'right',
-                            formatter: (cell) => {
-                                const value = cell.getValue();
-                                const color = value > 25 ? '#ef4444' : value > 15 ? '#eab308' : '#22c55e';
-                                return `<span style="color: ${color}">${value}%</span>`;
-                            }
-                        },
-                        {
-                            title: 'Mem',
-                            field: 'memory',
-                            widthGrow: 1,
-                            hozAlign: 'right',
-                            formatter: (cell) => `${cell.getValue()}MB`
-                        },
-                        {
-                            title: 'Status',
-                            field: 'status',
-                            widthGrow: 1,
-                            formatter: (cell) => {
-                                const value = cell.getValue();
-                                const colors = { high: '#ef4444', warning: '#eab308', normal: '#22c55e' };
-                                return `<span style="color: ${colors[value] || '#8892a0'}">${value}</span>`;
-                            }
-                        },
-                        { title: 'Up', field: 'uptime', widthGrow: 1, hozAlign: 'right' }
-                    ]
-                });
-
-                // Init chart
-                const chartContainer = shadowRoot.querySelector('.chart-container');
-                chart = echarts.init(chartContainer);
-
-                const historyData = generateHistoryData();
-                const option = {
-                    grid: { left: 45, right: 16, top: 30, bottom: 24 },
-                    legend: {
-                        data: ['CPU', 'Memory'],
-                        top: 0,
-                        textStyle: { color: '#8892a0', fontSize: 11 }
-                    },
-                    tooltip: {
-                        trigger: 'axis',
-                        backgroundColor: '#1a1f2e',
-                        borderColor: '#2a3142',
-                        textStyle: { color: '#e0e6ed', fontSize: 12 }
-                    },
-                    xAxis: {
-                        type: 'category',
-                        data: historyData.timestamps,
-                        axisLine: { lineStyle: { color: '#333' } },
-                        axisLabel: { color: '#888', fontSize: 10 }
-                    },
-                    yAxis: {
-                        type: 'value',
-                        min: 0,
-                        max: 100,
-                        axisLine: { show: false },
-                        axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
-                        splitLine: { lineStyle: { color: '#333' } }
-                    },
-                    series: [
-                        {
-                            name: 'CPU',
-                            type: 'line',
-                            data: historyData.cpu,
-                            smooth: true,
-                            symbol: 'none',
-                            lineStyle: { color: '#3b82f6', width: 2 },
-                            areaStyle: {
-                                color: {
-                                    type: 'linear',
-                                    x: 0, y: 0, x2: 0, y2: 1,
-                                    colorStops: [
-                                        { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-                                        { offset: 1, color: 'rgba(59, 130, 246, 0)' }
-                                    ]
-                                }
-                            }
-                        },
-                        {
-                            name: 'Memory',
-                            type: 'line',
-                            data: historyData.memory,
-                            smooth: true,
-                            symbol: 'none',
-                            lineStyle: { color: '#22c55e', width: 2 },
-                            areaStyle: {
-                                color: {
-                                    type: 'linear',
-                                    x: 0, y: 0, x2: 0, y2: 1,
-                                    colorStops: [
-                                        { offset: 0, color: 'rgba(34, 197, 94, 0.3)' },
-                                        { offset: 1, color: 'rgba(34, 197, 94, 0)' }
-                                    ]
-                                }
-                            }
-                        }
-                    ]
-                };
-
-                chart.setOption(option);
-            }, 100);
         }
 
-        function hidePopup() {
-            if (chart) {
-                chart.dispose();
-                chart = null;
+        // Mock PopupMixin
+        const PopupMixin = {
+            applyShadowPopupMixin: (ctx, config) => {
+                let shadowRoot = null;
+                let _chart = null;
+                let _table = null;
+
+                ctx.showPopup = () => {
+                    const host = ctx.page.element;
+                    if (!host.shadowRoot) {
+                        shadowRoot = host.attachShadow({ mode: 'open' });
+                    } else {
+                        shadowRoot = host.shadowRoot;
+                        shadowRoot.innerHTML = '';
+                    }
+
+                    // Add Tabulator CSS
+                    const tabulatorLink = document.createElement('link');
+                    tabulatorLink.rel = 'stylesheet';
+                    tabulatorLink.href = 'https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css';
+                    shadowRoot.appendChild(tabulatorLink);
+
+                    // Add custom styles
+                    const style = document.createElement('style');
+                    style.textContent = config.getStyles();
+                    shadowRoot.appendChild(style);
+
+                    // Add content
+                    const content = document.createElement('div');
+                    content.innerHTML = config.getHTML();
+                    shadowRoot.appendChild(content);
+
+                    ctx._shadowRoot = shadowRoot;
+                    config.onCreated?.();
+                    console.log('[PopupMixin] Popup shown');
+                };
+
+                ctx.hidePopup = () => {
+                    if (ctx._shadowRoot) {
+                        ctx._shadowRoot.innerHTML = '';
+                        console.log('[PopupMixin] Popup hidden');
+                    }
+                };
+
+                ctx.destroyPopup = () => {
+                    if (_chart) { _chart.dispose(); _chart = null; }
+                    if (_table) { _table.destroy(); _table = null; }
+                    if (ctx._shadowRoot) {
+                        ctx._shadowRoot.innerHTML = '';
+                        ctx._shadowRoot = null;
+                    }
+                    console.log('[PopupMixin] Popup destroyed');
+                };
+
+                ctx.popupQuery = (sel) => ctx._shadowRoot?.querySelector(sel);
+                ctx.popupQueryAll = (sel) => ctx._shadowRoot?.querySelectorAll(sel) || [];
+                ctx.bindPopupEvents = (events) => {
+                    Object.entries(events).forEach(([eventType, handlers]) => {
+                        Object.entries(handlers).forEach(([selector, handler]) => {
+                            ctx.popupQueryAll(selector).forEach(el => el.addEventListener(eventType, handler));
+                        });
+                    });
+                };
+
+                // Store references for cleanup
+                ctx._getChartRef = () => _chart;
+                ctx._setChartRef = (c) => { _chart = c; };
+                ctx._getTableRef = () => _table;
+                ctx._setTableRef = (t) => { _table = t; };
+            },
+
+            applyEChartsMixin: (ctx) => {
+                ctx.createChart = (selector) => {
+                    const container = ctx.popupQuery(selector);
+                    if (container) {
+                        const chart = echarts.init(container);
+                        ctx._setChartRef(chart);
+                        console.log('[EChartsMixin] Chart created');
+                    }
+                };
+
+                ctx.updateChart = (selector, option) => {
+                    let chart = ctx._getChartRef();
+                    if (!chart) {
+                        const container = ctx.popupQuery(selector);
+                        if (container) {
+                            chart = echarts.init(container);
+                            ctx._setChartRef(chart);
+                        }
+                    }
+                    if (chart) {
+                        chart.setOption(option);
+                        console.log('[EChartsMixin] Chart updated');
+                    }
+                };
+
+                ctx.resizeChart = () => {
+                    const chart = ctx._getChartRef();
+                    if (chart) chart.resize();
+                };
+            },
+
+            applyTabulatorMixin: (ctx) => {
+                ctx.createTable = (selector) => {
+                    // Table will be created on update
+                    console.log('[TabulatorMixin] Table container registered:', selector);
+                };
+
+                ctx.updateTable = (selector, data, options) => {
+                    let table = ctx._getTableRef();
+                    if (table) {
+                        table.destroy();
+                    }
+                    const container = ctx.popupQuery(selector);
+                    if (container) {
+                        table = new Tabulator(container, { ...options, data });
+                        ctx._setTableRef(table);
+                        console.log('[TabulatorMixin] Table updated');
+                    }
+                };
             }
-            if (table) {
-                table.destroy();
-                table = null;
+        };
+
+        // ======================
+        // TEMPLATE HELPER (register.js와 동일)
+        // ======================
+        function extractTemplate(htmlCode, templateId) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlCode, 'text/html');
+            const template = doc.querySelector(`template#${templateId}`);
+            return template?.innerHTML || '';
+        }
+
+        // ======================
+        // COMPONENT INSTANCE
+        // ======================
+        let instance = null;
+
+        function createInstance() {
+            if (instance) {
+                onInstanceUnLoad.call(instance);
             }
-            if (shadowRoot) {
-                shadowRoot.innerHTML = '';
+
+            instance = {
+                id: 'preview-server',
+                page: { element: document.getElementById('popup-host') },
+                properties: { publishCode: { htmlCode, cssCode } },
+                setter: { ipsilonAssetInfo: { assetId: 'mock-server-001' } }
+            };
+
+            initComponent.call(instance);
+            updateInstanceInfo();
+        }
+
+        function updateInstanceInfo() {
+            const info = document.getElementById('instance-info');
+            info.textContent = instance ? `Instance: ${instance.id}` : 'Instance: not created';
+        }
+
+        // ======================
+        // COMPONENT LIFECYCLE (register.js와 동일한 구조)
+        // ======================
+
+        function initComponent() {
+            const { bind3DEvents, fetchData } = WKit;
+            const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
+
+            // ======================
+            // 1. 데이터 정의
+            // ======================
+            const assetId = this.setter.ipsilonAssetInfo.assetId;
+
+            this.datasetInfo = [
+                { datasetName: 'server', param: { id: assetId }, render: ['renderServerInfo'] },
+                { datasetName: 'serverProcesses', param: { id: assetId }, render: ['renderProcessTable'] },
+                { datasetName: 'serverHistory', param: { id: assetId }, render: ['renderPerformanceChart'] }
+            ];
+
+            // ======================
+            // 2. Data Config (API 필드 매핑)
+            // ======================
+            this.baseInfoConfig = [
+                { key: 'name', selector: '.server-name' },
+                { key: 'zone', selector: '.server-zone' },
+                { key: 'status', selector: '.server-status', dataAttr: 'status' }
+            ];
+
+            this.serverInfoConfig = [
+                { key: 'cpu', selector: '.server-cpu', suffix: '%' },
+                { key: 'memory', selector: '.server-memory', suffix: '%' },
+                { key: 'disk', selector: '.server-disk', suffix: '%' },
+                { key: 'os', selector: '.server-os' },
+                { key: 'uptime', selector: '.server-uptime', suffix: ' days' }
+            ];
+
+            // ======================
+            // 3. Table Config - Tabulator 컬럼 정의
+            // ======================
+            this.tableConfig = {
+                selector: '.table-container',
+                columns: [
+                    { title: 'PID', field: 'pid', widthGrow: 1, hozAlign: 'right' },
+                    { title: 'Name', field: 'name', widthGrow: 2 },
+                    { title: 'User', field: 'user', widthGrow: 1 },
+                    { title: 'Type', field: 'type', widthGrow: 1.5 },
+                    {
+                        title: 'CPU',
+                        field: 'cpu',
+                        widthGrow: 1,
+                        hozAlign: 'right',
+                        formatter: (cell) => {
+                            const value = cell.getValue();
+                            const color = value > 25 ? '#ef4444' : value > 15 ? '#eab308' : '#22c55e';
+                            return `<span style="color: ${color}">${value}%</span>`;
+                        }
+                    },
+                    {
+                        title: 'Mem',
+                        field: 'memory',
+                        widthGrow: 1,
+                        hozAlign: 'right',
+                        formatter: (cell) => `${cell.getValue()}MB`
+                    },
+                    {
+                        title: 'Status',
+                        field: 'status',
+                        widthGrow: 1,
+                        formatter: (cell) => {
+                            const value = cell.getValue();
+                            const colors = { high: '#ef4444', warning: '#eab308', normal: '#22c55e' };
+                            return `<span style="color: ${colors[value] || '#8892a0'}">${value}</span>`;
+                        }
+                    },
+                    { title: 'Up', field: 'uptime', widthGrow: 1, hozAlign: 'right' }
+                ],
+                optionBuilder: this._getTableOption.bind(this)
+            };
+
+            // ======================
+            // 4. Chart Config - ECharts 옵션 빌더 (다중 시리즈)
+            // ======================
+            this.chartConfig = {
+                selector: '.chart-container',
+                xKey: 'timestamps',
+                series: [
+                    { yKey: 'cpu', name: 'CPU', color: '#3b82f6', smooth: true, areaStyle: true },
+                    { yKey: 'memory', name: 'Memory', color: '#22c55e', smooth: true, areaStyle: true }
+                ],
+                optionBuilder: getMultiLineChartOption
+            };
+
+            // ======================
+            // 5. 렌더링 함수 바인딩
+            // ======================
+            this.renderServerInfo = renderServerInfo.bind(this, [...this.baseInfoConfig, ...this.serverInfoConfig]);
+            this.renderProcessTable = renderProcessTable.bind(this, this.tableConfig);
+            this.renderPerformanceChart = renderPerformanceChart.bind(this, this.chartConfig);
+
+            // ======================
+            // 6. Public Methods
+            // ======================
+            this.showDetail = showDetail.bind(this);
+            this.hideDetail = hideDetail.bind(this);
+            this._switchTab = switchTab.bind(this);
+            this._getTableOption = getTableOption.bind(this);
+
+            // ======================
+            // 7. 이벤트 발행
+            // ======================
+            this.customEvents = {
+                click: '@serverClicked'
+            };
+
+            bind3DEvents(this, this.customEvents);
+
+            // ======================
+            // 8. Template Config
+            // ======================
+            this.templateConfig = {
+                popup: 'popup-server',
+            };
+
+            // ======================
+            // 9. Popup (template 기반 탭)
+            // ======================
+            this.popupCreatedConfig = {
+                chartSelector: '.chart-container',
+                tableSelector: '.table-container',
+                events: {
+                    click: {
+                        '.close-btn': () => this.hideDetail(),
+                        '.tab-btn': (e) => this._switchTab(e.target.dataset.tab)
+                    }
+                }
+            };
+
+            const { htmlCode, cssCode } = this.properties.publishCode || {};
+            this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+            this.getPopupStyles = () => cssCode || '';
+            this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+
+            applyShadowPopupMixin(this, {
+                getHTML: this.getPopupHTML,
+                getStyles: this.getPopupStyles,
+                onCreated: this.onPopupCreated
+            });
+
+            applyEChartsMixin(this);
+            applyTabulatorMixin(this);
+
+            console.log('[ServerMonitor] Registered:', assetId);
+        }
+
+        // ======================
+        // PUBLIC METHODS (register.js와 동일)
+        // ======================
+
+        function showDetail() {
+            this.showPopup();
+            this._switchTab('overview');
+
+            fx.go(
+                this.datasetInfo,
+                fx.each(({ datasetName, param, render }) =>
+                    fx.go(
+                        WKit.fetchData(this.page, datasetName, param),
+                        result => result?.response?.data,
+                        data => data && render.forEach(fn => this[fn](data))
+                    )
+                )
+            ).catch(e => {
+                console.error('[ServerMonitor]', e);
+                this.hidePopup();
+            });
+        }
+
+        function hideDetail() {
+            this.hidePopup();
+        }
+
+        function switchTab(tabName) {
+            const buttons = this.popupQueryAll('.tab-btn');
+            const panels = this.popupQueryAll('.tab-panel');
+
+            buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+            panels.forEach(panel => panel.classList.toggle('active', panel.dataset.panel === tabName));
+
+            // Performance 탭 전환 시 차트 리사이즈
+            if (tabName === 'performance') {
+                setTimeout(() => this.resizeChart?.(), 10);
+            }
+        }
+
+        // ======================
+        // RENDER FUNCTIONS (register.js와 동일)
+        // ======================
+
+        function renderServerInfo(config, data) {
+            fx.go(
+                config,
+                fx.each(({ key, selector, dataAttr, suffix }) => {
+                    const el = this.popupQuery(selector);
+                    if (!el) return;
+                    const value = data[key];
+                    el.textContent = suffix ? `${value}${suffix}` : value;
+                    dataAttr && (el.dataset[dataAttr] = value);
+                })
+            );
+        }
+
+        function renderProcessTable(config, data) {
+            const { optionBuilder } = config;
+            const option = optionBuilder(config, data.processes);
+            this.updateTable('.table-container', data.processes, option);
+        }
+
+        function renderPerformanceChart(config, data) {
+            const { optionBuilder, ...chartConfig } = config;
+            const option = optionBuilder(chartConfig, data);
+            this.updateChart('.chart-container', option);
+        }
+
+        // ======================
+        // TABLE OPTION BUILDER (register.js와 동일)
+        // ======================
+
+        function getTableOption(config, data) {
+            return {
+                layout: 'fitColumns',
+                responsiveLayout: 'collapse',
+                height: 250,
+                placeholder: 'No processes found',
+                initialSort: [{ column: 'cpu', dir: 'desc' }],
+                columns: config.columns
+            };
+        }
+
+        // ======================
+        // CHART OPTION BUILDER (register.js와 동일)
+        // ======================
+
+        function getMultiLineChartOption(config, data) {
+            const { xKey, series: seriesConfig } = config;
+
+            return {
+                grid: { left: 45, right: 16, top: 30, bottom: 24 },
+                legend: {
+                    data: seriesConfig.map(s => s.name),
+                    top: 0,
+                    textStyle: { color: '#8892a0', fontSize: 11 }
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#1a1f2e',
+                    borderColor: '#2a3142',
+                    textStyle: { color: '#e0e6ed', fontSize: 12 }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: data[xKey],
+                    axisLine: { lineStyle: { color: '#333' } },
+                    axisLabel: { color: '#888', fontSize: 10 }
+                },
+                yAxis: {
+                    type: 'value',
+                    min: 0,
+                    max: 100,
+                    axisLine: { show: false },
+                    axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
+                    splitLine: { lineStyle: { color: '#333' } }
+                },
+                series: seriesConfig.map(({ yKey, name, color, smooth, areaStyle }) => ({
+                    name,
+                    type: 'line',
+                    data: data[yKey],
+                    smooth,
+                    symbol: 'none',
+                    lineStyle: { color, width: 2 },
+                    areaStyle: areaStyle ? {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: hexToRgba(color, 0.3) },
+                                { offset: 1, color: hexToRgba(color, 0) }
+                            ]
+                        }
+                    } : null
+                }))
+            };
+        }
+
+        function hexToRgba(hex, alpha) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        // ======================
+        // POPUP LIFECYCLE (register.js와 동일)
+        // ======================
+
+        function onPopupCreated({ chartSelector, tableSelector, events }) {
+            chartSelector && this.createChart(chartSelector);
+            tableSelector && this.createTable(tableSelector);
+            events && this.bindPopupEvents(events);
+        }
+
+        // ======================
+        // DESTROY (destroy.js와 동일한 구조)
+        // ======================
+
+        function onInstanceUnLoad() {
+            this.destroyPopup();
+            console.log('[ServerMonitor] Destroyed:', this.id);
+        }
+
+        // ======================
+        // PREVIEW CONTROLS
+        // ======================
+
+        function showNormal() {
+            currentServerStatus = 'normal';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function showWarning() {
+            currentServerStatus = 'warning';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function showCritical() {
+            currentServerStatus = 'critical';
+            if (!instance) createInstance();
+            instance.showDetail();
+        }
+
+        function destroyInstance() {
+            if (instance) {
+                onInstanceUnLoad.call(instance);
+                instance = null;
+                updateInstanceInfo();
             }
         }
     </script>
