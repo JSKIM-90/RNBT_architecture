@@ -1,0 +1,44 @@
+<!-- AssetTree Popup Template -->
+<template id="popup-asset-tree">
+    <div class="asset-tree-popup">
+        <div class="popup-header">
+            <h2 class="popup-title">Asset Navigator</h2>
+            <div class="header-actions">
+                <button class="refresh-btn" title="Refresh">↻</button>
+                <button class="close-btn" title="Close">×</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" class="search-input" placeholder="Search assets...">
+            </div>
+            <div class="filter-box">
+                <select class="status-filter">
+                    <option value="all">All Status</option>
+                    <option value="normal">Normal</option>
+                    <option value="warning">Warning</option>
+                    <option value="critical">Critical</option>
+                </select>
+            </div>
+            <div class="tree-actions">
+                <button class="expand-all-btn" title="Expand All">⊞</button>
+                <button class="collapse-all-btn" title="Collapse All">⊟</button>
+            </div>
+        </div>
+
+        <div class="popup-body">
+            <div class="tree-container">
+                <!-- Tree will be rendered here -->
+            </div>
+        </div>
+
+        <div class="popup-footer">
+            <div class="legend">
+                <span class="legend-item"><span class="dot normal"></span> Normal</span>
+                <span class="legend-item"><span class="dot warning"></span> Warning</span>
+                <span class="legend-item"><span class="dot critical"></span> Critical</span>
+            </div>
+        </div>
+    </div>
+</template>

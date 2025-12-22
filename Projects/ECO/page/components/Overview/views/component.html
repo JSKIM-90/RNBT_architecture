@@ -1,0 +1,130 @@
+<!-- Overview Popup Template -->
+<template id="popup-overview">
+    <div class="overview-popup">
+        <div class="popup-header">
+            <h2 class="popup-title">ECO Overview</h2>
+            <div class="header-actions">
+                <button class="refresh-btn">↻</button>
+                <button class="close-btn">×</button>
+            </div>
+        </div>
+
+        <div class="popup-body">
+            <!-- 상태 요약 섹션 -->
+            <div class="section summary-section">
+                <h3 class="section-title">Asset Status</h3>
+                <div class="summary-grid">
+                    <div class="summary-card total">
+                        <span class="summary-label">전체</span>
+                        <span class="summary-value total-count">0</span>
+                    </div>
+                    <div class="summary-card normal">
+                        <span class="summary-label">정상</span>
+                        <span class="summary-value normal-count">0</span>
+                    </div>
+                    <div class="summary-card warning">
+                        <span class="summary-label">경고</span>
+                        <span class="summary-value warning-count">0</span>
+                    </div>
+                    <div class="summary-card critical">
+                        <span class="summary-label">위험</span>
+                        <span class="summary-value critical-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 자산 타입별 현황 & 도넛 차트 -->
+            <div class="section assets-section">
+                <div class="assets-by-type">
+                    <h3 class="section-title">Assets by Type</h3>
+                    <div class="type-grid">
+                        <div class="type-card asset-ups">
+                            <span class="type-icon">⚡</span>
+                            <span class="type-label">UPS</span>
+                            <div class="type-stats">
+                                <span class="type-total">0</span>
+                                <span class="type-detail">
+                                    <span class="type-normal">0</span> /
+                                    <span class="type-warning">0</span> /
+                                    <span class="type-critical">0</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="type-card asset-pdu">
+                            <span class="type-icon">🔌</span>
+                            <span class="type-label">PDU</span>
+                            <div class="type-stats">
+                                <span class="type-total">0</span>
+                                <span class="type-detail">
+                                    <span class="type-normal">0</span> /
+                                    <span class="type-warning">0</span> /
+                                    <span class="type-critical">0</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="type-card asset-crac">
+                            <span class="type-icon">❄️</span>
+                            <span class="type-label">CRAC</span>
+                            <div class="type-stats">
+                                <span class="type-total">0</span>
+                                <span class="type-detail">
+                                    <span class="type-normal">0</span> /
+                                    <span class="type-warning">0</span> /
+                                    <span class="type-critical">0</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="type-card asset-sensor">
+                            <span class="type-icon">🌡️</span>
+                            <span class="type-label">Sensor</span>
+                            <div class="type-stats">
+                                <span class="type-total">0</span>
+                                <span class="type-detail">
+                                    <span class="type-normal">0</span> /
+                                    <span class="type-warning">0</span> /
+                                    <span class="type-critical">0</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="status-chart-container">
+                    <div class="status-chart"></div>
+                </div>
+            </div>
+
+            <!-- KPI 섹션 -->
+            <div class="section kpi-section">
+                <h3 class="section-title">Key Performance Indicators</h3>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <span class="kpi-label">총 전력</span>
+                        <span class="kpi-value kpi-power">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">평균 부하율</span>
+                        <span class="kpi-value kpi-load">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">PUE</span>
+                        <span class="kpi-value kpi-pue">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">평균 온도</span>
+                        <span class="kpi-value kpi-temp">-</span>
+                    </div>
+                    <div class="kpi-card">
+                        <span class="kpi-label">평균 습도</span>
+                        <span class="kpi-value kpi-humidity">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 최근 이벤트 섹션 -->
+            <div class="section events-section">
+                <h3 class="section-title">Recent Events</h3>
+                <div class="event-table"></div>
+            </div>
+        </div>
+    </div>
+</template>
