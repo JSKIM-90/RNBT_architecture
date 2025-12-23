@@ -60,6 +60,7 @@ const ComponentMixin = {};
  * FreeCode 기반 2D 컴포넌트 Mixin
  *
  * WVDOMComponent를 상속받은 컴포넌트에 FreeCode 기능을 추가합니다.
+ * preview 이벤트 실행은 WVDOMComponent.onLoadPage()에서 처리됩니다.
  *
  * @param {Object} instance - 컴포넌트 인스턴스 (this)
  */
@@ -84,8 +85,11 @@ ComponentMixin.applyFreeCodeMixin = function(instance) {
 
   /**
    * 페이지 로드 시 호출
+   * preview 이벤트 실행은 WVDOMComponent.onLoadPage()에서 처리됩니다.
    */
+  const originalOnLoadPage = instance.onLoadPage;
   instance.onLoadPage = function() {
+    // 빈 코드일 때 미리보기 이미지 표시
     if (
       instance.properties.publishCode.htmlCode === '' &&
       instance.properties.publishCode.cssCode === '' &&
@@ -95,24 +99,9 @@ ComponentMixin.applyFreeCodeMixin = function(instance) {
       instance.setPreviewImage(instance.element);
     }
 
-    if (instance.isEditorMode && instance.events.preview) {
-      const previewCode = instance.events.preview;
-      let isValidCode = true;
-      try {
-        new Function(previewCode).bind(instance);
-      } catch (e) {
-        isValidCode = false;
-        return;
-      }
-
-      try {
-        if (isValidCode && instance.element) {
-          const previewOptionFunc = new Function(previewCode).bind(instance);
-          previewOptionFunc();
-        }
-      } catch (error) {
-        console.warn('preview event error', error);
-      }
+    // 부모 클래스의 onLoadPage 호출 (preview 이벤트 실행)
+    if (originalOnLoadPage) {
+      originalOnLoadPage.call(instance);
     }
   };
 

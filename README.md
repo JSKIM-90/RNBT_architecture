@@ -3957,3 +3957,143 @@ WVComponent._onDestroy()     ← DESTROY 이벤트 발생
 ```
 
 > **권장:** destroy 이벤트 대신 beforeDestroy에서 리소스 정리를 수행하세요.
+
+---
+
+## 부록: 컴포넌트 로드 시점 초기화 패턴
+
+### 개요
+
+RNBT 아키텍처에서 컴포넌트는 수동적(passive)이고, 페이지가 오케스트레이터 역할을 합니다.
+그러나 일부 컴포넌트는 로드 시점에 자체적인 초기화 로직이 필요할 수 있습니다.
+
+이 섹션에서는 컴포넌트가 로드 시점에 무언가를 수행해야 할 때 사용할 수 있는 패턴들을 설명합니다.
+
+### 기본 원칙
+
+**컴포넌트 개발자가 사용하는 훅:**
+- `_onImmediateUpdateDisplay()` - 로드 시점 로직
+- `_onDestroy()` - 정리 시점 로직
+
+**프레임워크 내부 메서드 (건드리지 않음):**
+- `onLoadPage()` - WVDOMComponent에서 처리
+
+```javascript
+class MyComponent extends WVDOMComponent {
+  constructor() {
+    super();
+    ComponentMixin.applyFreeCodeMixin(this);
+  }
+
+  _onImmediateUpdateDisplay() {
+    super._onImmediateUpdateDisplay();
+    // 여기서 초기화 로직 수행
+    // - element 접근 가능 (this.element)
+    // - properties 접근 가능 (this.properties)
+  }
+
+  _onDestroy() {
+    // 정리 로직
+    super._onDestroy();
+  }
+}
+```
+
+### 패턴 1: 자기 완결 컴포넌트의 직접 fetch
+
+컴포넌트가 자체적으로 데이터를 가져와야 하는 경우:
+
+```javascript
+_onImmediateUpdateDisplay() {
+  super._onImmediateUpdateDisplay();
+
+  // element가 준비된 시점이므로 fetch 실행
+  this.fetchData();
+}
+
+async fetchData() {
+  try {
+    const data = await fetch(this.properties.apiEndpoint);
+    const json = await data.json();
+    this.renderData(json);
+  } catch (error) {
+    console.error('[MyComponent] fetch error:', error);
+  }
+}
+```
+
+### 패턴 2: GlobalDataPublisher 구독
+
+페이지 레벨에서 관리되는 데이터를 구독하는 경우:
+
+```javascript
+_onImmediateUpdateDisplay() {
+  super._onImmediateUpdateDisplay();
+
+  // 토픽 구독 - 페이지에서 데이터가 발행되면 콜백 실행
+  this.subscription = GlobalDataPublisher.subscribe('myTopic', (data) => {
+    this.renderData(data);
+  });
+}
+
+_onDestroy() {
+  // 구독 해제
+  if (this.subscription) {
+    this.subscription.unsubscribe();
+    this.subscription = null;
+  }
+  super._onDestroy();
+}
+```
+
+### 패턴 3: WEventBus emit으로 페이지 핸들러 트리거
+
+컴포넌트가 준비되었음을 페이지에 알리고, 페이지가 후속 작업을 수행하는 경우:
+
+**컴포넌트 (register.js):**
+```javascript
+_onImmediateUpdateDisplay() {
+  super._onImmediateUpdateDisplay();
+
+  // 컴포넌트 준비 완료를 페이지에 알림
+  WEventBus.emit('@componentReady', {
+    targetInstance: this,
+    event: { componentId: this.id }
+  });
+}
+```
+
+**페이지 (before_load.js):**
+```javascript
+this.eventBusHandlers = {
+  '@componentReady': async ({ event, targetInstance }) => {
+    // 컴포넌트가 준비되면 데이터 fetch 후 전달
+    const data = await fetchData(this, 'myapi', { id: event.componentId });
+    targetInstance.setData(data);
+  }
+};
+
+onEventBusHandlers(this.eventBusHandlers);
+```
+
+### 패턴 선택 가이드
+
+| 시나리오 | 권장 패턴 | 이유 |
+|----------|----------|------|
+| 컴포넌트가 자체 API 엔드포인트를 가짐 | 패턴 1: 직접 fetch | 완전한 자기 완결성 |
+| 여러 컴포넌트가 같은 데이터를 공유 | 패턴 2: 구독 | 데이터 중복 fetch 방지, 페이지 레벨 관리 |
+| 컴포넌트 초기화 시점을 페이지가 알아야 함 | 패턴 3: emit | 페이지가 오케스트레이션 |
+| 브라우저 이벤트를 기다려야 함 | 패턴 3: emit | 정확한 시점 제어 |
+
+### 주의사항
+
+1. **`onLoadPage`를 직접 구현하지 마세요**
+   - `onLoadPage`는 프레임워크 내부 메서드입니다
+   - Mixin에서 `originalOnLoadPage` 패턴으로 확장할 수는 있지만, 일반 컴포넌트에서는 `_onImmediateUpdateDisplay`를 사용하세요
+
+2. **element 접근은 `_onImmediateUpdateDisplay` 이후에**
+   - `_onImmediateUpdateDisplay` 호출 시점에 `this.element`가 준비되어 있습니다
+   - constructor에서는 element가 없습니다
+
+3. **정리는 반드시 수행**
+   - 구독, 이벤트 리스너, interval 등은 `_onDestroy`에서 정리하세요
