@@ -2667,15 +2667,3 @@ onEventBusHandlers(this.eventBusHandlers);
 | 컴포넌트 초기화 시점을 페이지가 알아야 함 | 패턴 3: emit | 페이지가 오케스트레이션 |
 | 브라우저 이벤트를 기다려야 함 | 패턴 3: emit | 정확한 시점 제어 |
 
-### 주의사항
-
-1. **`onLoadPage`를 직접 구현하지 마세요**
-   - `onLoadPage`는 프레임워크 내부 메서드입니다
-   - 일반 컴포넌트에서는 `_onViewerReady()`를 사용하세요
-
-2. **element 접근은 `_onViewerReady` 이후에**
-   - `_onViewerReady` 호출 시점에 `this.element`가 준비되어 있습니다
-   - constructor에서는 element가 없습니다
-
-3. **정리는 반드시 수행**
-   - 구독, 이벤트 리스너, interval 등은 `_onViewerDestroy()`에서 정리하세요
