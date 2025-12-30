@@ -1805,41 +1805,40 @@ PopupMixin.applyTabulatorMixin = function(instance) {
 
 ---
 
-### 완전한 예제 1: TemperatureSensor
+### 완전한 예제: TempHumiditySensor (ECO 프로젝트)
 
-단일 차트를 가진 자기 완결 3D 컴포넌트 예제입니다.
+이중 축 차트(온도+습도)를 가진 자기 완결 3D 컴포넌트입니다.
+
+> **실제 구현 코드**: `Projects/ECO/page/components/TempHumiditySensor/`
 
 **구조:**
 
 ```
-TemperatureSensor/
+TempHumiditySensor/
+├── views/
+│   └── component.html    # Shadow DOM 팝업 템플릿
+├── styles/
+│   └── component.css     # 팝업 스타일
 ├── scripts/
-│   ├── register.js    # 초기화 + 메서드 정의
+│   ├── register.js       # 초기화 + 메서드 정의
 │   └── beforeDestroy.js  # 정리
-└── preview.html       # 독립 테스트
+└── preview.html          # 독립 테스트
 ```
 
 **특징:**
 - 3D 오브젝트 클릭 → `showDetail()` → Shadow DOM 팝업 표시
-- 팝업 내 ECharts 차트 자동 관리
-- 닫기 버튼 → `hideDetail()` → 팝업 숨김
+- 이중 축 ECharts 차트 (온도 좌측, 습도 우측)
+- Config 기반 설계 (baseInfoConfig, sensorInfoConfig, chartConfig)
 
 #### register.js
 
 ```javascript
-/*
- * TemperatureSensor - Self-Contained 3D Component
+/**
+ * TempHumiditySensor - Self-Contained 3D Component
  *
- * applyShadowPopupMixin을 사용한 자기 완결 컴포넌트 예제
- *
- * 핵심 구조:
- * 1. datasetInfo - 데이터 정의
- * 2. Data Config - API 필드 매핑
- * 3. 렌더링 함수 바인딩
- * 4. Public Methods - Page에서 호출
- * 5. customEvents - 이벤트 발행
- * 6. Template Data - HTML/CSS (publishCode에서 로드)
- * 7. Popup - template 기반 Shadow DOM 팝업
+ * 온습도 센서 컴포넌트
+ * - 현재 온도/습도 표시
+ * - 온습도 히스토리 차트 (이중 축)
  */
 
 const { bind3DEvents, fetchData } = WKit;
@@ -1855,13 +1854,20 @@ function extractTemplate(htmlCode, templateId) {
     return template?.innerHTML || '';
 }
 
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 initComponent.call(this);
 
 function initComponent() {
     // ======================
-    // 1. 데이터 정의
+    // DATA DEFINITION
     // ======================
-    const assetId = this.setter.ipsilonAssetInfo.assetId;
+    const assetId = this.setter.ecoAssetInfo?.assetId || 'sensor-001';
 
     this.datasetInfo = [
         { datasetName: 'sensor', param: { id: assetId }, render: ['renderSensorInfo'] },
@@ -1869,16 +1875,14 @@ function initComponent() {
     ];
 
     // ======================
-    // 2. Data Config (API 필드 매핑)
+    // DATA CONFIG
     // ======================
-    // 공통: 자산 기본 정보
     this.baseInfoConfig = [
         { key: 'name', selector: '.sensor-name' },
         { key: 'zone', selector: '.sensor-zone' },
         { key: 'status', selector: '.sensor-status', dataAttr: 'status' }
     ];
 
-    // 도메인 특화: 센서 측정값
     this.sensorInfoConfig = [
         { key: 'temperature', selector: '.sensor-temp' },
         { key: 'humidity', selector: '.sensor-humidity' }
@@ -1887,25 +1891,30 @@ function initComponent() {
     this.chartConfig = {
         xKey: 'timestamps',
         series: [
-            { yKey: 'temperatures', color: '#3b82f6', smooth: true, areaStyle: true }
+            { yKey: 'temperatures', name: 'Temperature', color: '#3b82f6', yAxisIndex: 0 },
+            { yKey: 'humidities', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
         ],
-        optionBuilder: getLineChartOption
+        yAxis: [
+            { name: '°C', position: 'left' },
+            { name: '%', position: 'right' }
+        ],
+        optionBuilder: getDualAxisChartOption
     };
 
     // ======================
-    // 3. 렌더링 함수 바인딩
+    // RENDER FUNCTIONS
     // ======================
-    this.renderSensorInfo = renderSensorInfo.bind(this, [...this.baseInfoConfig, ...this.sensorInfoConfig]);
-    this.renderChart = renderChart.bind(this, this.chartConfig);
+    this.renderSensorInfo = renderSensorInfo.bind(this);
+    this.renderChart = renderChart.bind(this);
 
     // ======================
-    // 4. Public Methods
+    // PUBLIC METHODS
     // ======================
     this.showDetail = showDetail.bind(this);
     this.hideDetail = hideDetail.bind(this);
 
     // ======================
-    // 5. 이벤트 발행
+    // CUSTOM EVENTS
     // ======================
     this.customEvents = {
         click: '@sensorClicked'
@@ -1914,16 +1923,12 @@ function initComponent() {
     bind3DEvents(this, this.customEvents);
 
     // ======================
-    // 6. Template Config
+    // TEMPLATE CONFIG
     // ======================
     this.templateConfig = {
-        popup: 'popup-sensor',  // 팝업용 template ID
-        // tooltip: 'tooltip-info',  // 향후 확장
+        popup: 'popup-sensor'
     };
 
-    // ======================
-    // 7. Popup (template 기반)
-    // ======================
     this.popupCreatedConfig = {
         chartSelector: '.chart-container',
         events: {
@@ -1933,11 +1938,19 @@ function initComponent() {
         }
     };
 
-    // publishCode에서 HTML/CSS 가져오기
+    // ======================
+    // POPUP SETUP
+    // ======================
     const { htmlCode, cssCode } = this.properties.publishCode || {};
-    this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+    const ctx = this;
+
+    this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
     this.getPopupStyles = () => cssCode || '';
-    this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+    this.onPopupCreated = function() {
+        const { chartSelector, events } = ctx.popupCreatedConfig;
+        if (chartSelector) ctx.createChart(chartSelector);
+        if (events) ctx.bindPopupEvents(events);
+    };
 
     applyShadowPopupMixin(this, {
         getHTML: this.getPopupHTML,
@@ -1947,879 +1960,55 @@ function initComponent() {
 
     applyEChartsMixin(this);
 
-    console.log('[TemperatureSensor] Registered:', assetId);
-}
-
-// ======================
-// PUBLIC METHODS
-// ======================
-
-function showDetail() {
-    this.showPopup();
-    fx.go(
-        this.datasetInfo,
-        fx.each(({ datasetName, param, render }) =>
-            fx.go(
-                fetchData(this.page, datasetName, param),
-                result => result?.response?.data,
-                data => data && render.forEach(fn => this[fn](data))
-            )
-        )
-    ).catch(e => {
-        console.error('[TemperatureSensor]', e);
-        this.hidePopup();
-    });
-}
-
-function renderSensorInfo(config, data) {
-    fx.go(
-        config,
-        fx.each(({ key, selector, dataAttr }) => {
-            const el = this.popupQuery(selector);
-            el.textContent = data[key];
-            dataAttr && (el.dataset[dataAttr] = data[key]);
-        })
-    );
-}
-
-function renderChart(config, data) {
-    const { optionBuilder, ...chartConfig } = config;
-    const option = optionBuilder(chartConfig, data);
-    this.updateChart('.chart-container', option);
-}
-
-function hideDetail() {
-    this.hidePopup();
-}
-
-// ======================
-// CHART OPTION BUILDER
-// ======================
-
-function getLineChartOption(config, data) {
-    const { xKey, series: seriesConfig } = config;
-
-    return {
-        grid: {
-            left: 40,
-            right: 16,
-            top: 16,
-            bottom: 24
-        },
-        xAxis: {
-            type: 'category',
-            data: data[xKey],
-            axisLine: { lineStyle: { color: '#333' } },
-            axisLabel: { color: '#888', fontSize: 10 }
-        },
-        yAxis: {
-            type: 'value',
-            axisLine: { show: false },
-            axisLabel: { color: '#888', fontSize: 10 },
-            splitLine: { lineStyle: { color: '#333' } }
-        },
-        series: seriesConfig.map(({ yKey, color, smooth, areaStyle }) => ({
-            type: 'line',
-            data: data[yKey],
-            smooth: smooth,
-            symbol: 'none',
-            lineStyle: { color: color, width: 2 },
-            areaStyle: areaStyle ? {
-                color: {
-                    type: 'linear',
-                    x: 0, y: 0, x2: 0, y2: 1,
-                    colorStops: [
-                        { offset: 0, color: hexToRgba(color, 0.3) },
-                        { offset: 1, color: hexToRgba(color, 0) }
-                    ]
-                }
-            } : null
-        }))
-    };
-}
-
-function getBarChartOption(config, data) {
-    const { xKey, series: seriesConfig } = config;
-
-    return {
-        grid: {
-            left: 40,
-            right: 16,
-            top: 16,
-            bottom: 24
-        },
-        xAxis: {
-            type: 'category',
-            data: data[xKey],
-            axisLine: { lineStyle: { color: '#333' } },
-            axisLabel: { color: '#888', fontSize: 10 }
-        },
-        yAxis: {
-            type: 'value',
-            axisLine: { show: false },
-            axisLabel: { color: '#888', fontSize: 10 },
-            splitLine: { lineStyle: { color: '#333' } }
-        },
-        series: seriesConfig.map(({ yKey, color, barWidth }) => ({
-            type: 'bar',
-            data: data[yKey],
-            barWidth: barWidth || '60%',
-            itemStyle: { color: color, borderRadius: [4, 4, 0, 0] }
-        }))
-    };
-}
-
-function hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-// ======================
-// POPUP LIFECYCLE
-// ======================
-
-function onPopupCreated({chartSelector, events}) {
-    chartSelector && this.createChart(chartSelector);
-    events && this.bindPopupEvents(events)
-}
-```
-
-#### preview.html
-
-```html
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TemperatureSensor - Preview</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0f1219;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .preview-controls {
-            display: flex;
-            gap: 12px;
-        }
-
-        .preview-btn {
-            padding: 10px 20px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .preview-btn:hover {
-            background: #2563eb;
-        }
-
-        .preview-btn.warning {
-            background: #eab308;
-            color: #000;
-        }
-
-        .preview-btn.critical {
-            background: #ef4444;
-        }
-
-        #popup-host {
-            /* Shadow DOM host */
-        }
-    </style>
-</head>
-<body>
-    <div class="preview-controls">
-        <button class="preview-btn" onclick="showPopup('normal')">Normal Sensor</button>
-        <button class="preview-btn warning" onclick="showPopup('warning')">Warning Sensor</button>
-        <button class="preview-btn critical" onclick="showPopup('critical')">Critical Sensor</button>
-    </div>
-
-    <div id="popup-host"></div>
-
-    <script>
-        // Load template and styles
-        const templateHTML = `
-            <div class="popup-overlay">
-                <div class="popup-content">
-                    <!-- Header -->
-                    <div class="popup-header">
-                        <div class="header-info">
-                            <h2 class="sensor-name">-</h2>
-                            <span class="sensor-zone">-</span>
-                        </div>
-                        <div class="header-actions">
-                            <span class="sensor-status" data-status="normal">Normal</span>
-                            <button class="close-btn" type="button" aria-label="Close">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="popup-body">
-                        <!-- Current Values -->
-                        <div class="current-values">
-                            <div class="value-card">
-                                <div class="value-label">Temperature</div>
-                                <div class="value-number">
-                                    <span class="sensor-temp">-</span>
-                                    <span class="value-unit">&deg;C</span>
-                                </div>
-                            </div>
-                            <div class="value-card">
-                                <div class="value-label">Humidity</div>
-                                <div class="value-number">
-                                    <span class="sensor-humidity">-</span>
-                                    <span class="value-unit">%</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Chart -->
-                        <div class="chart-section">
-                            <div class="chart-header">
-                                <span class="chart-title">Temperature History</span>
-                            </div>
-                            <div class="chart-container"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const popupStyles = `
-            .popup-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(0, 0, 0, 0.6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-            }
-
-            .popup-content {
-                background: #1a1f2e;
-                border-radius: 12px;
-                width: 480px;
-                max-width: 90vw;
-                max-height: 90vh;
-                overflow: hidden;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
-                border: 1px solid #2a3142;
-            }
-
-            .popup-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px 24px;
-                border-bottom: 1px solid #2a3142;
-            }
-
-            .header-info {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .sensor-name {
-                margin: 0;
-                font-size: 18px;
-                font-weight: 600;
-                color: #e0e6ed;
-            }
-
-            .sensor-zone {
-                font-size: 13px;
-                color: #8892a0;
-            }
-
-            .header-actions {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .sensor-status {
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: 500;
-                text-transform: capitalize;
-            }
-
-            .sensor-status[data-status="normal"] {
-                background: rgba(34, 197, 94, 0.15);
-                color: #22c55e;
-            }
-
-            .sensor-status[data-status="warning"] {
-                background: rgba(234, 179, 8, 0.15);
-                color: #eab308;
-            }
-
-            .sensor-status[data-status="critical"] {
-                background: rgba(239, 68, 68, 0.15);
-                color: #ef4444;
-            }
-
-            .close-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 32px;
-                height: 32px;
-                padding: 0;
-                background: transparent;
-                border: none;
-                border-radius: 6px;
-                color: #8892a0;
-                cursor: pointer;
-                transition: background 0.15s, color 0.15s;
-            }
-
-            .close-btn:hover {
-                background: #2a3142;
-                color: #e0e6ed;
-            }
-
-            .popup-body {
-                padding: 24px;
-                display: flex;
-                flex-direction: column;
-                gap: 24px;
-            }
-
-            .current-values {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 16px;
-            }
-
-            .value-card {
-                background: #252b3b;
-                border-radius: 8px;
-                padding: 16px;
-            }
-
-            .value-label {
-                font-size: 12px;
-                color: #8892a0;
-                margin-bottom: 8px;
-            }
-
-            .value-number {
-                display: flex;
-                align-items: baseline;
-                gap: 4px;
-            }
-
-            .sensor-temp,
-            .sensor-humidity {
-                font-size: 32px;
-                font-weight: 600;
-                color: #e0e6ed;
-            }
-
-            .value-unit {
-                font-size: 16px;
-                color: #8892a0;
-            }
-
-            .chart-section {
-                background: #252b3b;
-                border-radius: 8px;
-                overflow: hidden;
-            }
-
-            .chart-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 12px 16px;
-                border-bottom: 1px solid #2a3142;
-            }
-
-            .chart-title {
-                font-size: 14px;
-                font-weight: 500;
-                color: #e0e6ed;
-            }
-
-            .chart-container {
-                width: 100%;
-                height: 200px;
-            }
-        `;
-
-        // Mock data
-        const mockSensorData = {
-            normal: {
-                name: 'Temperature Sensor A-1',
-                zone: 'Zone-A',
-                status: 'normal',
-                temperature: 24.5,
-                humidity: 45
-            },
-            warning: {
-                name: 'Temperature Sensor B-2',
-                zone: 'Zone-B',
-                status: 'warning',
-                temperature: 29.8,
-                humidity: 62
-            },
-            critical: {
-                name: 'Temperature Sensor C-3',
-                zone: 'Zone-C',
-                status: 'critical',
-                temperature: 36.2,
-                humidity: 78
-            }
-        };
-
-        function generateHistoryData() {
-            const timestamps = [];
-            const temperatures = [];
-            const now = new Date();
-
-            for (let i = 23; i >= 0; i--) {
-                const time = new Date(now.getTime() - i * 3600000);
-                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
-                const baseTemp = 23 + Math.sin(i / 6) * 2;
-                const noise = (Math.random() - 0.5) * 3;
-                temperatures.push(Math.round((baseTemp + noise) * 10) / 10);
-            }
-
-            return { timestamps, temperatures };
-        }
-
-        let shadowRoot = null;
-        let chart = null;
-
-        function showPopup(status) {
-            const host = document.getElementById('popup-host');
-
-            // Clear existing
-            if (shadowRoot) {
-                host.shadowRoot.innerHTML = '';
-            } else {
-                shadowRoot = host.attachShadow({ mode: 'open' });
-            }
-
-            // Add styles
-            const style = document.createElement('style');
-            style.textContent = popupStyles;
-            shadowRoot.appendChild(style);
-
-            // Add content
-            const content = document.createElement('div');
-            content.innerHTML = templateHTML;
-            shadowRoot.appendChild(content);
-
-            // Bind data
-            const data = mockSensorData[status];
-            shadowRoot.querySelector('.sensor-name').textContent = data.name;
-            shadowRoot.querySelector('.sensor-zone').textContent = data.zone;
-
-            const statusEl = shadowRoot.querySelector('.sensor-status');
-            statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-            statusEl.dataset.status = data.status;
-
-            shadowRoot.querySelector('.sensor-temp').textContent = data.temperature;
-            shadowRoot.querySelector('.sensor-humidity').textContent = data.humidity;
-
-            // Bind close
-            shadowRoot.querySelector('.close-btn').addEventListener('click', hidePopup);
-            shadowRoot.querySelector('.popup-overlay').addEventListener('click', (e) => {
-                if (e.target.classList.contains('popup-overlay')) {
-                    hidePopup();
-                }
-            });
-
-            // Init chart
-            const chartContainer = shadowRoot.querySelector('.chart-container');
-            chart = echarts.init(chartContainer);
-
-            const historyData = generateHistoryData();
-            const option = {
-                grid: { left: 40, right: 16, top: 16, bottom: 24 },
-                xAxis: {
-                    type: 'category',
-                    data: historyData.timestamps,
-                    axisLine: { lineStyle: { color: '#333' } },
-                    axisLabel: { color: '#888', fontSize: 10 }
-                },
-                yAxis: {
-                    type: 'value',
-                    axisLine: { show: false },
-                    axisLabel: { color: '#888', fontSize: 10 },
-                    splitLine: { lineStyle: { color: '#333' } }
-                },
-                series: [{
-                    type: 'line',
-                    data: historyData.temperatures,
-                    smooth: true,
-                    symbol: 'none',
-                    lineStyle: { color: '#3b82f6', width: 2 },
-                    areaStyle: {
-                        color: {
-                            type: 'linear',
-                            x: 0, y: 0, x2: 0, y2: 1,
-                            colorStops: [
-                                { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-                                { offset: 1, color: 'rgba(59, 130, 246, 0)' }
-                            ]
-                        }
-                    }
-                }]
-            };
-
-            chart.setOption(option);
-        }
-
-        function hidePopup() {
-            if (chart) {
-                chart.dispose();
-                chart = null;
-            }
-            if (shadowRoot) {
-                shadowRoot.innerHTML = '';
-            }
-        }
-    </script>
-</body>
-</html>
-```
-
----
-
-### 완전한 예제 2: ServerMonitor
-
-탭 UI + 테이블 + 차트를 가진 자기 완결 3D 컴포넌트 예제입니다.
-
-**구조:**
-
-```
-ServerMonitor/
-├── scripts/
-│   ├── register.js    # 초기화 + 메서드 정의
-│   └── beforeDestroy.js  # 정리
-└── preview.html       # 독립 테스트
-```
-
-**특징:**
-- 3D 오브젝트 클릭 → `showDetail()` → Shadow DOM 팝업 표시
-- 탭 전환 (Overview / Performance)
-- Tabulator 테이블 + ECharts 차트 자동 관리
-- Shadow DOM에 Tabulator CSS 자동 주입
-
-#### register.js
-
-```javascript
-/*
- * ServerMonitor - Self-Contained 3D Component (Tabbed UI)
- *
- * applyShadowPopupMixin + applyTabulatorMixin을 사용한 탭 팝업 컴포넌트 예제
- *
- * 핵심 구조:
- * 1. datasetInfo - 데이터 정의 (server, processes, history)
- * 2. Data Config - API 필드 매핑
- * 3. Table Config - Tabulator 컬럼 정의
- * 4. Chart Config - ECharts 옵션 빌더 (다중 시리즈)
- * 5. 렌더링 함수 바인딩
- * 6. Public Methods - Page에서 호출
- * 7. customEvents - 이벤트 발행
- * 8. Template Data - HTML/CSS (publishCode에서 로드)
- * 9. Popup - template 기반 탭 Shadow DOM 팝업
- */
-
-const { bind3DEvents, fetchData } = WKit;
-const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
-
-// ======================
-// TEMPLATE HELPER
-// ======================
-function extractTemplate(htmlCode, templateId) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlCode, 'text/html');
-    const template = doc.querySelector(`template#${templateId}`);
-    return template?.innerHTML || '';
-}
-
-initComponent.call(this);
-
-function initComponent() {
-    // ======================
-    // 1. 데이터 정의
-    // ======================
-    const assetId = this.setter.ipsilonAssetInfo.assetId;
-
-    this.datasetInfo = [
-        { datasetName: 'server', param: { id: assetId }, render: ['renderServerInfo'] },
-        { datasetName: 'serverProcesses', param: { id: assetId }, render: ['renderProcessTable'] },
-        { datasetName: 'serverHistory', param: { id: assetId }, render: ['renderPerformanceChart'] }
-    ];
-
-    // ======================
-    // 2. Data Config (API 필드 매핑)
-    // ======================
-    this.baseInfoConfig = [
-        { key: 'name', selector: '.server-name' },
-        { key: 'zone', selector: '.server-zone' },
-        { key: 'status', selector: '.server-status', dataAttr: 'status' }
-    ];
-
-    this.serverInfoConfig = [
-        { key: 'cpu', selector: '.server-cpu', suffix: '%' },
-        { key: 'memory', selector: '.server-memory', suffix: '%' },
-        { key: 'disk', selector: '.server-disk', suffix: '%' },
-        { key: 'os', selector: '.server-os' },
-        { key: 'uptime', selector: '.server-uptime', suffix: ' days' }
-    ];
-
-    // ======================
-    // 3. Table Config - Tabulator 컬럼 정의
-    // ======================
-    this.tableConfig = {
-        selector: '.table-container',
-        columns: [
-            { title: 'PID', field: 'pid', widthGrow: 1, hozAlign: 'right' },
-            { title: 'Name', field: 'name', widthGrow: 2 },
-            { title: 'User', field: 'user', widthGrow: 1 },
-            { title: 'Type', field: 'type', widthGrow: 1.5 },
-            {
-                title: 'CPU',
-                field: 'cpu',
-                widthGrow: 1,
-                hozAlign: 'right',
-                formatter: (cell) => {
-                    const value = cell.getValue();
-                    const color = value > 25 ? '#ef4444' : value > 15 ? '#eab308' : '#22c55e';
-                    return `<span style="color: ${color}">${value}%</span>`;
-                }
-            },
-            {
-                title: 'Mem',
-                field: 'memory',
-                widthGrow: 1,
-                hozAlign: 'right',
-                formatter: (cell) => `${cell.getValue()}MB`
-            },
-            {
-                title: 'Status',
-                field: 'status',
-                widthGrow: 1,
-                formatter: (cell) => {
-                    const value = cell.getValue();
-                    const colors = { high: '#ef4444', warning: '#eab308', normal: '#22c55e' };
-                    return `<span style="color: ${colors[value] || '#8892a0'}">${value}</span>`;
-                }
-            },
-            { title: 'Up', field: 'uptime', widthGrow: 1, hozAlign: 'right' }
-        ],
-        optionBuilder: this._getTableOption.bind(this)
-    };
-
-    // ======================
-    // 4. Chart Config - ECharts 옵션 빌더 (다중 시리즈)
-    // ======================
-    this.chartConfig = {
-        selector: '.chart-container',
-        xKey: 'timestamps',
-        series: [
-            { yKey: 'cpu', name: 'CPU', color: '#3b82f6', smooth: true, areaStyle: true },
-            { yKey: 'memory', name: 'Memory', color: '#22c55e', smooth: true, areaStyle: true }
-        ],
-        optionBuilder: getMultiLineChartOption
-    };
-
-    // ======================
-    // 5. 렌더링 함수 바인딩
-    // ======================
-    this.renderServerInfo = renderServerInfo.bind(this, [...this.baseInfoConfig, ...this.serverInfoConfig]);
-    this.renderProcessTable = renderProcessTable.bind(this, this.tableConfig);
-    this.renderPerformanceChart = renderPerformanceChart.bind(this, this.chartConfig);
-
-    // ======================
-    // 6. Public Methods
-    // ======================
-    this.showDetail = showDetail.bind(this);
-    this.hideDetail = hideDetail.bind(this);
-    this._switchTab = switchTab.bind(this);
-    this._getTableOption = getTableOption.bind(this);
-
-    // ======================
-    // 7. 이벤트 발행
-    // ======================
-    this.customEvents = {
-        click: '@serverClicked'
-    };
-
-    bind3DEvents(this, this.customEvents);
-
-    // ======================
-    // 8. Template Config
-    // ======================
-    this.templateConfig = {
-        popup: 'popup-server',
-    };
-
-    // ======================
-    // 9. Popup (template 기반 탭)
-    // ======================
-    this.popupCreatedConfig = {
-        chartSelector: '.chart-container',
-        tableSelector: '.table-container',
-        events: {
-            click: {
-                '.close-btn': () => this.hideDetail(),
-                '.tab-btn': (e) => this._switchTab(e.target.dataset.tab)
-            }
-        }
-    };
-
-    const { htmlCode, cssCode } = this.properties.publishCode || {};
-    this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
-    this.getPopupStyles = () => cssCode || '';
-    this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
-
-    applyShadowPopupMixin(this, {
-        getHTML: this.getPopupHTML,
-        getStyles: this.getPopupStyles,
-        onCreated: this.onPopupCreated
-    });
-
-    applyEChartsMixin(this);
-    applyTabulatorMixin(this);
-
-    console.log('[ServerMonitor] Registered:', assetId);
-}
-
-// ======================
-// PUBLIC METHODS
-// ======================
-
-function showDetail() {
-    this.showPopup();
-    this._switchTab('overview');
-
-    fx.go(
-        this.datasetInfo,
-        fx.each(({ datasetName, param, render }) =>
-            fx.go(
-                fetchData(this.page, datasetName, param),
-                result => result?.response?.data,
-                data => data && render.forEach(fn => this[fn](data))
-            )
-        )
-    ).catch(e => {
-        console.error('[ServerMonitor]', e);
-        this.hidePopup();
-    });
-}
-
-function hideDetail() {
-    this.hidePopup();
-}
-
-function switchTab(tabName) {
-    const buttons = this.popupQueryAll('.tab-btn');
-    const panels = this.popupQueryAll('.tab-panel');
-
-    buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
-    panels.forEach(panel => panel.classList.toggle('active', panel.dataset.panel === tabName));
+    console.log('[TempHumiditySensor] Registered:', assetId);
 }
 
 // ======================
 // RENDER FUNCTIONS
 // ======================
-
-function renderServerInfo(config, data) {
+function renderSensorInfo(data) {
+    const config = [...this.baseInfoConfig, ...this.sensorInfoConfig];
     fx.go(
         config,
-        fx.each(({ key, selector, dataAttr, suffix }) => {
+        fx.each(({ key, selector, dataAttr }) => {
             const el = this.popupQuery(selector);
-            if (!el) return;
-            const value = data[key];
-            el.textContent = suffix ? `${value}${suffix}` : value;
-            dataAttr && (el.dataset[dataAttr] = value);
+            if (el) {
+                el.textContent = data[key];
+                if (dataAttr) el.dataset[dataAttr] = data[key];
+            }
         })
     );
 }
 
-function renderProcessTable(config, data) {
-    const { optionBuilder } = config;
-    const option = optionBuilder(config, data.processes);
-    this.updateTable('.table-container', data.processes, option);
-}
-
-function renderPerformanceChart(config, data) {
-    const { optionBuilder, ...chartConfig } = config;
+function renderChart(data) {
+    const { optionBuilder, ...chartConfig } = this.chartConfig;
     const option = optionBuilder(chartConfig, data);
     this.updateChart('.chart-container', option);
 }
 
 // ======================
-// TABLE OPTION BUILDER
+// CHART OPTION BUILDER (이중 축)
 // ======================
-
-function getTableOption(config, data) {
-    return {
-        layout: 'fitColumns',
-        responsiveLayout: 'collapse',
-        height: 250,
-        placeholder: 'No processes found',
-        initialSort: [{ column: 'cpu', dir: 'desc' }],
-        columns: config.columns
-    };
-}
-
-// ======================
-// CHART OPTION BUILDER
-// ======================
-
-function getMultiLineChartOption(config, data) {
-    const { xKey, series: seriesConfig } = config;
+function getDualAxisChartOption(config, data) {
+    const { xKey, series: seriesConfig, yAxis: yAxisConfig } = config;
 
     return {
-        grid: { left: 45, right: 16, top: 30, bottom: 24 },
-        legend: {
-            data: seriesConfig.map(s => s.name),
-            top: 0,
-            textStyle: { color: '#8892a0', fontSize: 11 }
-        },
         tooltip: {
             trigger: 'axis',
-            backgroundColor: '#1a1f2e',
+            backgroundColor: 'rgba(26, 31, 46, 0.95)',
             borderColor: '#2a3142',
             textStyle: { color: '#e0e6ed', fontSize: 12 }
+        },
+        legend: {
+            data: seriesConfig.map(s => s.name),
+            top: 8,
+            textStyle: { color: '#8892a0', fontSize: 11 }
+        },
+        grid: {
+            left: 50,
+            right: 50,
+            top: 40,
+            bottom: 24
         },
         xAxis: {
             type: 'category',
@@ -2827,679 +2016,72 @@ function getMultiLineChartOption(config, data) {
             axisLine: { lineStyle: { color: '#333' } },
             axisLabel: { color: '#888', fontSize: 10 }
         },
-        yAxis: {
+        yAxis: yAxisConfig.map((axis, index) => ({
             type: 'value',
-            min: 0,
-            max: 100,
-            axisLine: { show: false },
-            axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
-            splitLine: { lineStyle: { color: '#333' } }
-        },
-        series: seriesConfig.map(({ yKey, name, color, smooth, areaStyle }) => ({
-            name,
+            name: axis.name,
+            position: axis.position,
+            axisLine: { show: true, lineStyle: { color: '#333' } },
+            axisLabel: { color: '#888', fontSize: 10 },
+            splitLine: { lineStyle: { color: index === 0 ? '#333' : 'transparent' } }
+        })),
+        series: seriesConfig.map(({ yKey, name, color, yAxisIndex }) => ({
+            name: name,
             type: 'line',
+            yAxisIndex: yAxisIndex,
             data: data[yKey],
-            smooth,
+            smooth: true,
             symbol: 'none',
-            lineStyle: { color, width: 2 },
-            areaStyle: areaStyle ? {
+            lineStyle: { color: color, width: 2 },
+            areaStyle: {
                 color: {
                     type: 'linear',
                     x: 0, y: 0, x2: 0, y2: 1,
                     colorStops: [
-                        { offset: 0, color: hexToRgba(color, 0.3) },
+                        { offset: 0, color: hexToRgba(color, 0.2) },
                         { offset: 1, color: hexToRgba(color, 0) }
                     ]
                 }
-            } : null
+            }
         }))
     };
 }
 
-function hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+// ======================
+// PUBLIC METHODS
+// ======================
+function showDetail() {
+    this.showPopup();
+
+    fx.go(
+        this.datasetInfo,
+        fx.each(({ datasetName, param, render }) =>
+            fx.go(
+                fetchData(this.page, datasetName, param),
+                result => result?.response?.data,
+                data => data && render.forEach(fn => this[fn](data))
+            )
+        )
+    ).catch(e => {
+        console.error('[TempHumiditySensor]', e);
+        this.hidePopup();
+    });
 }
 
-// ======================
-// POPUP LIFECYCLE
-// ======================
-
-function onPopupCreated({ chartSelector, tableSelector, events }) {
-    chartSelector && this.createChart(chartSelector);
-    tableSelector && this.createTable(tableSelector);
-    events && this.bindPopupEvents(events);
+function hideDetail() {
+    this.hidePopup();
 }
 ```
 
-#### preview.html
-
-```html
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ServerMonitor - Preview</title>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
-    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #0f1219;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .preview-controls {
-            display: flex;
-            gap: 12px;
-        }
-
-        .preview-btn {
-            padding: 10px 20px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .preview-btn:hover {
-            background: #2563eb;
-        }
-
-        .preview-btn.warning {
-            background: #eab308;
-            color: #000;
-        }
-
-        .preview-btn.critical {
-            background: #ef4444;
-        }
-
-        #popup-host {
-            /* Shadow DOM host */
-        }
-    </style>
-</head>
-<body>
-    <div class="preview-controls">
-        <button class="preview-btn" onclick="showPopup('normal')">Normal Server</button>
-        <button class="preview-btn warning" onclick="showPopup('warning')">Warning Server</button>
-        <button class="preview-btn critical" onclick="showPopup('critical')">Critical Server</button>
-    </div>
-
-    <div id="popup-host"></div>
-
-    <script>
-        // Load template and styles
-        const templateHTML = `
-            <div class="popup-overlay">
-                <div class="popup-content">
-                    <!-- Header -->
-                    <div class="popup-header">
-                        <div class="header-info">
-                            <h2 class="server-name">-</h2>
-                            <span class="server-zone">-</span>
-                        </div>
-                        <div class="header-actions">
-                            <span class="server-status" data-status="normal">Normal</span>
-                            <button class="close-btn" type="button" aria-label="Close">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Stats Bar -->
-                    <div class="stats-bar">
-                        <div class="stat-item">
-                            <span class="stat-label">CPU</span>
-                            <span class="stat-value server-cpu">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Memory</span>
-                            <span class="stat-value server-memory">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Disk</span>
-                            <span class="stat-value server-disk">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">OS</span>
-                            <span class="stat-value server-os">-</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Uptime</span>
-                            <span class="stat-value server-uptime">-</span>
-                        </div>
-                    </div>
-
-                    <!-- Tabs -->
-                    <div class="tab-container">
-                        <div class="tab-header">
-                            <button class="tab-btn active" data-tab="overview">Overview</button>
-                            <button class="tab-btn" data-tab="performance">Performance</button>
-                        </div>
-
-                        <!-- Tab: Overview (Table) -->
-                        <div class="tab-panel active" data-panel="overview">
-                            <div class="table-container"></div>
-                        </div>
-
-                        <!-- Tab: Performance (Chart) -->
-                        <div class="tab-panel" data-panel="performance">
-                            <div class="chart-container"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const popupStyles = `
-            .popup-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
-                background: rgba(0, 0, 0, 0.6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 1000;
-            }
-
-            .popup-content {
-                background: #1a1f2e;
-                border-radius: 12px;
-                width: 680px;
-                max-width: 90vw;
-                max-height: 90vh;
-                overflow: hidden;
-                box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
-                border: 1px solid #2a3142;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .popup-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px 24px;
-                border-bottom: 1px solid #2a3142;
-            }
-
-            .header-info {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-            }
-
-            .server-name {
-                margin: 0;
-                font-size: 18px;
-                font-weight: 600;
-                color: #e0e6ed;
-            }
-
-            .server-zone {
-                font-size: 13px;
-                color: #8892a0;
-            }
-
-            .header-actions {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-            }
-
-            .server-status {
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: 500;
-                text-transform: capitalize;
-            }
-
-            .server-status[data-status="normal"] {
-                background: rgba(34, 197, 94, 0.15);
-                color: #22c55e;
-            }
-
-            .server-status[data-status="warning"] {
-                background: rgba(234, 179, 8, 0.15);
-                color: #eab308;
-            }
-
-            .server-status[data-status="critical"] {
-                background: rgba(239, 68, 68, 0.15);
-                color: #ef4444;
-            }
-
-            .close-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 32px;
-                height: 32px;
-                padding: 0;
-                background: transparent;
-                border: none;
-                border-radius: 6px;
-                color: #8892a0;
-                cursor: pointer;
-                transition: background 0.15s, color 0.15s;
-            }
-
-            .close-btn:hover {
-                background: #2a3142;
-                color: #e0e6ed;
-            }
-
-            .stats-bar {
-                display: flex;
-                justify-content: space-around;
-                padding: 16px 24px;
-                background: #252b3b;
-                border-bottom: 1px solid #2a3142;
-            }
-
-            .stat-item {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 4px;
-            }
-
-            .stat-label {
-                font-size: 11px;
-                color: #8892a0;
-                text-transform: uppercase;
-            }
-
-            .stat-value {
-                font-size: 16px;
-                font-weight: 600;
-                color: #e0e6ed;
-            }
-
-            .tab-container {
-                display: flex;
-                flex-direction: column;
-                flex: 1;
-                overflow: hidden;
-            }
-
-            .tab-header {
-                display: flex;
-                padding: 0 24px;
-                border-bottom: 1px solid #2a3142;
-            }
-
-            .tab-btn {
-                padding: 12px 20px;
-                background: transparent;
-                border: none;
-                font-size: 13px;
-                font-weight: 500;
-                color: #8892a0;
-                cursor: pointer;
-                position: relative;
-                transition: color 0.15s;
-            }
-
-            .tab-btn:hover {
-                color: #e0e6ed;
-            }
-
-            .tab-btn.active {
-                color: #3b82f6;
-            }
-
-            .tab-btn.active::after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                height: 2px;
-                background: #3b82f6;
-            }
-
-            .tab-panel {
-                display: none;
-                flex: 1;
-                overflow: auto;
-            }
-
-            .tab-panel.active {
-                display: flex;
-                flex-direction: column;
-            }
-
-            .table-container {
-                flex: 1;
-                min-height: 250px;
-                overflow: auto;
-                padding: 16px;
-            }
-
-            /* Tabulator Custom Styles */
-            .table-container .tabulator {
-                border-radius: 8px;
-                font-size: 12px;
-            }
-
-            .table-container .tabulator-header {
-                border-bottom: 2px solid #3b82f6;
-            }
-
-            .table-container .tabulator .tabulator-table {
-                background: transparent;
-            }
-
-            .table-container .tabulator-row {
-                background: transparent !important;
-                min-height: 40px;
-                height: 40px;
-            }
-
-            .chart-container {
-                flex: 1;
-                min-height: 280px;
-                padding: 16px;
-            }
-        `;
-
-        // Mock data
-        const mockServerData = {
-            normal: {
-                name: 'Server A-1',
-                zone: 'Zone-A',
-                status: 'normal',
-                cpu: 45,
-                memory: 62,
-                disk: 71,
-                os: 'Ubuntu 22.04',
-                uptime: 42
-            },
-            warning: {
-                name: 'Server B-2',
-                zone: 'Zone-B',
-                status: 'warning',
-                cpu: 78,
-                memory: 72,
-                disk: 85,
-                os: 'CentOS 8',
-                uptime: 15
-            },
-            critical: {
-                name: 'Server C-3',
-                zone: 'Zone-C',
-                status: 'critical',
-                cpu: 95,
-                memory: 91,
-                disk: 92,
-                os: 'RHEL 9',
-                uptime: 3
-            }
-        };
-
-        const mockProcessData = [
-            { pid: 1234, name: 'nginx', user: 'www-data', type: 'Web Server', cpu: 15.2, memory: 256, status: 'normal', uptime: '12h 35m' },
-            { pid: 2345, name: 'node', user: 'app', type: 'Application', cpu: 28.7, memory: 412, status: 'high', uptime: '5h 12m' },
-            { pid: 3456, name: 'postgres', user: 'postgres', type: 'Database', cpu: 8.5, memory: 1024, status: 'normal', uptime: '42d 3h' },
-            { pid: 4567, name: 'redis', user: 'redis', type: 'Cache', cpu: 3.2, memory: 128, status: 'normal', uptime: '42d 3h' },
-            { pid: 5678, name: 'java', user: 'app', type: 'Application', cpu: 22.1, memory: 2048, status: 'warning', uptime: '8h 45m' },
-            { pid: 6789, name: 'python', user: 'app', type: 'Worker', cpu: 5.8, memory: 320, status: 'normal', uptime: '2d 6h' }
-        ];
-
-        function generateHistoryData() {
-            const timestamps = [];
-            const cpu = [];
-            const memory = [];
-            const now = new Date();
-
-            for (let i = 23; i >= 0; i--) {
-                const time = new Date(now.getTime() - i * 3600000);
-                timestamps.push(time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }));
-
-                const baseCpu = 45 + Math.sin(i / 4) * 15;
-                const baseMemory = 60 + Math.sin(i / 6) * 10;
-
-                cpu.push(Math.round((baseCpu + (Math.random() - 0.5) * 20) * 10) / 10);
-                memory.push(Math.round((baseMemory + (Math.random() - 0.5) * 15) * 10) / 10);
-            }
-
-            return { timestamps, cpu, memory };
-        }
-
-        let shadowRoot = null;
-        let chart = null;
-        let table = null;
-
-        function showPopup(status) {
-            const host = document.getElementById('popup-host');
-
-            // Clear existing
-            if (shadowRoot) {
-                if (chart) { chart.dispose(); chart = null; }
-                if (table) { table.destroy(); table = null; }
-                host.shadowRoot.innerHTML = '';
-            } else {
-                shadowRoot = host.attachShadow({ mode: 'open' });
-            }
-
-            // Add Tabulator CSS
-            const tabulatorLink = document.createElement('link');
-            tabulatorLink.rel = 'stylesheet';
-            tabulatorLink.href = 'https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator_midnight.min.css';
-            shadowRoot.appendChild(tabulatorLink);
-
-            // Add styles
-            const style = document.createElement('style');
-            style.textContent = popupStyles;
-            shadowRoot.appendChild(style);
-
-            // Add content
-            const content = document.createElement('div');
-            content.innerHTML = templateHTML;
-            shadowRoot.appendChild(content);
-
-            // Bind data
-            const data = mockServerData[status];
-            shadowRoot.querySelector('.server-name').textContent = data.name;
-            shadowRoot.querySelector('.server-zone').textContent = data.zone;
-
-            const statusEl = shadowRoot.querySelector('.server-status');
-            statusEl.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-            statusEl.dataset.status = data.status;
-
-            shadowRoot.querySelector('.server-cpu').textContent = data.cpu + '%';
-            shadowRoot.querySelector('.server-memory').textContent = data.memory + '%';
-            shadowRoot.querySelector('.server-disk').textContent = data.disk + '%';
-            shadowRoot.querySelector('.server-os').textContent = data.os;
-            shadowRoot.querySelector('.server-uptime').textContent = data.uptime + ' days';
-
-            // Bind close
-            shadowRoot.querySelector('.close-btn').addEventListener('click', hidePopup);
-            shadowRoot.querySelector('.popup-overlay').addEventListener('click', (e) => {
-                if (e.target.classList.contains('popup-overlay')) {
-                    hidePopup();
-                }
-            });
-
-            // Tab switching
-            shadowRoot.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const tabName = e.target.dataset.tab;
-                    shadowRoot.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
-                    shadowRoot.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === tabName));
-
-                    // Performance 탭 전환 시 차트 리사이즈
-                    if (tabName === 'performance' && chart) {
-                        setTimeout(() => chart.resize(), 10);
-                    }
-                });
-            });
-
-            // Wait for Tabulator CSS to load, then init table
-            setTimeout(() => {
-                const tableContainer = shadowRoot.querySelector('.table-container');
-                table = new Tabulator(tableContainer, {
-                    data: mockProcessData,
-                    layout: 'fitColumns',
-                    height: 250,
-                    placeholder: 'No processes found',
-                    initialSort: [{ column: 'cpu', dir: 'desc' }],
-                    columns: [
-                        { title: 'PID', field: 'pid', widthGrow: 1, hozAlign: 'right' },
-                        { title: 'Name', field: 'name', widthGrow: 2 },
-                        { title: 'User', field: 'user', widthGrow: 1 },
-                        { title: 'Type', field: 'type', widthGrow: 1.5 },
-                        {
-                            title: 'CPU',
-                            field: 'cpu',
-                            widthGrow: 1,
-                            hozAlign: 'right',
-                            formatter: (cell) => {
-                                const value = cell.getValue();
-                                const color = value > 25 ? '#ef4444' : value > 15 ? '#eab308' : '#22c55e';
-                                return `<span style="color: ${color}">${value}%</span>`;
-                            }
-                        },
-                        {
-                            title: 'Mem',
-                            field: 'memory',
-                            widthGrow: 1,
-                            hozAlign: 'right',
-                            formatter: (cell) => `${cell.getValue()}MB`
-                        },
-                        {
-                            title: 'Status',
-                            field: 'status',
-                            widthGrow: 1,
-                            formatter: (cell) => {
-                                const value = cell.getValue();
-                                const colors = { high: '#ef4444', warning: '#eab308', normal: '#22c55e' };
-                                return `<span style="color: ${colors[value] || '#8892a0'}">${value}</span>`;
-                            }
-                        },
-                        { title: 'Up', field: 'uptime', widthGrow: 1, hozAlign: 'right' }
-                    ]
-                });
-
-                // Init chart
-                const chartContainer = shadowRoot.querySelector('.chart-container');
-                chart = echarts.init(chartContainer);
-
-                const historyData = generateHistoryData();
-                const option = {
-                    grid: { left: 45, right: 16, top: 30, bottom: 24 },
-                    legend: {
-                        data: ['CPU', 'Memory'],
-                        top: 0,
-                        textStyle: { color: '#8892a0', fontSize: 11 }
-                    },
-                    tooltip: {
-                        trigger: 'axis',
-                        backgroundColor: '#1a1f2e',
-                        borderColor: '#2a3142',
-                        textStyle: { color: '#e0e6ed', fontSize: 12 }
-                    },
-                    xAxis: {
-                        type: 'category',
-                        data: historyData.timestamps,
-                        axisLine: { lineStyle: { color: '#333' } },
-                        axisLabel: { color: '#888', fontSize: 10 }
-                    },
-                    yAxis: {
-                        type: 'value',
-                        min: 0,
-                        max: 100,
-                        axisLine: { show: false },
-                        axisLabel: { color: '#888', fontSize: 10, formatter: '{value}%' },
-                        splitLine: { lineStyle: { color: '#333' } }
-                    },
-                    series: [
-                        {
-                            name: 'CPU',
-                            type: 'line',
-                            data: historyData.cpu,
-                            smooth: true,
-                            symbol: 'none',
-                            lineStyle: { color: '#3b82f6', width: 2 },
-                            areaStyle: {
-                                color: {
-                                    type: 'linear',
-                                    x: 0, y: 0, x2: 0, y2: 1,
-                                    colorStops: [
-                                        { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
-                                        { offset: 1, color: 'rgba(59, 130, 246, 0)' }
-                                    ]
-                                }
-                            }
-                        },
-                        {
-                            name: 'Memory',
-                            type: 'line',
-                            data: historyData.memory,
-                            smooth: true,
-                            symbol: 'none',
-                            lineStyle: { color: '#22c55e', width: 2 },
-                            areaStyle: {
-                                color: {
-                                    type: 'linear',
-                                    x: 0, y: 0, x2: 0, y2: 1,
-                                    colorStops: [
-                                        { offset: 0, color: 'rgba(34, 197, 94, 0.3)' },
-                                        { offset: 1, color: 'rgba(34, 197, 94, 0)' }
-                                    ]
-                                }
-                            }
-                        }
-                    ]
-                };
-
-                chart.setOption(option);
-            }, 100);
-        }
-
-        function hidePopup() {
-            if (chart) {
-                chart.dispose();
-                chart = null;
-            }
-            if (table) {
-                table.destroy();
-                table = null;
-            }
-            if (shadowRoot) {
-                shadowRoot.innerHTML = '';
-            }
-        }
-    </script>
-</body>
-</html>
+#### beforeDestroy.js
+
+```javascript
+/**
+ * TempHumiditySensor - Destroy Script
+ * 컴포넌트 정리 (Shadow DOM 팝업 + 차트)
+ */
+
+this.destroyPopup();
+console.log('[TempHumiditySensor] Destroyed:', this.setter?.ecoAssetInfo?.assetId);
 ```
 
 ---
@@ -3537,6 +2119,7 @@ sensor.chartConfig.series[0].color = '#ff0000';
 
 | 버전 | 날짜 | 변경 내용 |
 |------|------|-----------|
+| 2.1.0 | 2025-12-30 | 완전한 예제를 ECO TempHumiditySensor로 교체, 예제 2 삭제 |
 | 2.0.0 | 2025-12-22 | Configuration 설계 원칙, PopupMixin 패턴, 완전한 예제 추가 |
 | 1.2.0 | 2025-12-16 | publishCode 연동 완료 |
 | 1.1.0 | 2025-12-16 | Template 기반 구조 반영 |
