@@ -1,5 +1,5 @@
 /*
- * Page - TrendChart Component - destroy
+ * Page - VisitorChart Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -47,4 +47,4 @@ if (this.chartInstance) {
 
 this.renderChart = null;
 
-console.log('[TrendChart] destroy - cleanup completed');
+console.log('[VisitorChart] destroy - cleanup completed');

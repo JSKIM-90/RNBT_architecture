@@ -1,5 +1,6 @@
 /*
- * Page - VisitorChart Component - destroy
+ * Page - Overview Component - beforeDestroy
+ * ECO 종합 현황 대시보드 컴포넌트
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -42,9 +43,22 @@ if (this.chartInstance) {
 }
 
 // ======================
+// TABULATOR CLEANUP
+// ======================
+
+if (this.tableInstance) {
+    this.tableInstance.destroy();
+    this.tableInstance = null;
+}
+
+// ======================
 // HANDLER CLEANUP
 // ======================
 
-this.renderChart = null;
+this.renderOverview = null;
+this.renderEventTable = null;
+this.summaryConfig = null;
+this.kpiConfig = null;
+this.assetTypeConfig = null;
 
-console.log('[VisitorChart] destroy - cleanup completed');
+console.log('[Overview] destroy - cleanup completed');

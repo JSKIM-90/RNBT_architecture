@@ -1,9 +1,10 @@
 /*
- * Page - SummaryPanel Component - destroy
+ * Master - Sidebar Component - beforeDestroy
  * Card Company Dashboard
  */
 
 const { unsubscribe } = GlobalDataPublisher;
+const { removeCustomEvents } = WKit;
 const { each } = fx;
 
 // ======================
@@ -17,9 +18,17 @@ fx.go(
 this.subscriptions = null;
 
 // ======================
+// EVENT CLEANUP
+// ======================
+
+removeCustomEvents(this, this.customEvents);
+this.customEvents = null;
+
+// ======================
 // HANDLER CLEANUP
 // ======================
 
-this.renderSummary = null;
+this.renderAlerts = null;
+this.updateBadge = null;
 
-console.log('[SummaryPanel] destroy - cleanup completed');
+console.log('[Sidebar] destroy - cleanup completed');

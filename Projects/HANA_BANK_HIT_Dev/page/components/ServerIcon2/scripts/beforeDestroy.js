@@ -1,5 +1,5 @@
 /*
- * ServerIcon Component - destroy
+ * ServerIcon2 Component - beforeDestroy
  * Unsubscribes from: serverStatus
  */
 

@@ -1,5 +1,5 @@
 /*
- * Page - AssetTree Component - destroy
+ * Page - AssetTree Component - beforeDestroy
  * 자산 트리 네비게이션 컴포넌트
  */
 

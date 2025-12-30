@@ -1,10 +1,14 @@
 /*
- * Page - BusinessStatus Component - destroy
+ * Page - CpuStatus Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
 const { removeCustomEvents } = WKit;
 const { each } = fx;
+
+// Dispose all ECharts instances
+this.charts.forEach(chart => chart?.dispose());
+this.charts = [];
 
 // Unsubscribe from topics
 fx.go(
@@ -15,4 +19,4 @@ fx.go(
 // Remove event bindings
 removeCustomEvents(this, this.customEvents);
 
-console.log('[BusinessStatus] destroy - cleanup completed');
+console.log('[CpuStatus] destroy - cleanup completed');

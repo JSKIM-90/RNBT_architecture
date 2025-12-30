@@ -27,7 +27,7 @@ example_master_02/
 │   ├── common_component/      # 페이지 스크립트 대체
 │   │   ├── register.js        # 이벤트 핸들러 등록
 │   │   ├── completed.js       # 데이터 발행
-│   │   └── destroy.js         # 리소스 정리
+│   │   └── beforeDestroy.js   # 리소스 정리
 │   ├── views/
 │   │   ├── Header.html        # 카드 정보, 메뉴
 │   │   └── Sidebar.html       # 거래 알림
@@ -36,10 +36,10 @@ example_master_02/
 │   │   └── Sidebar.css
 │   └── components/
 │       ├── Header_register.js
-│       ├── Header_destroy.js
+│       ├── Header_beforeDestroy.js
 │       ├── Header_preview.html
 │       ├── Sidebar_register.js
-│       ├── Sidebar_destroy.js
+│       ├── Sidebar_beforeDestroy.js
 │       └── Sidebar_preview.html
 │
 ├── page/                      # Page 레이어
@@ -140,7 +140,7 @@ function renderTransactions(response) {
 }
 ```
 
-### 정리 (TransactionTable_destroy.js)
+### 정리 (TransactionTable_beforeDestroy.js)
 
 ```javascript
 if (this.tableInstance) {
@@ -183,7 +183,7 @@ function renderChart(response) {
 }
 ```
 
-### 정리 (SpendingChart_destroy.js)
+### 정리 (SpendingChart_beforeDestroy.js)
 
 ```javascript
 if (this.resizeObserver) {

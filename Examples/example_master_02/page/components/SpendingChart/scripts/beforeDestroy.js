@@ -1,6 +1,6 @@
 /*
- * Page - Overview Component - destroy
- * ECO 종합 현황 대시보드 컴포넌트
+ * Page - SpendingChart Component - beforeDestroy
+ * Card Company Dashboard
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -43,22 +43,9 @@ if (this.chartInstance) {
 }
 
 // ======================
-// TABULATOR CLEANUP
-// ======================
-
-if (this.tableInstance) {
-    this.tableInstance.destroy();
-    this.tableInstance = null;
-}
-
-// ======================
 // HANDLER CLEANUP
 // ======================
 
-this.renderOverview = null;
-this.renderEventTable = null;
-this.summaryConfig = null;
-this.kpiConfig = null;
-this.assetTypeConfig = null;
+this.renderChart = null;
 
-console.log('[Overview] destroy - cleanup completed');
+console.log('[SpendingChart] destroy - cleanup completed');

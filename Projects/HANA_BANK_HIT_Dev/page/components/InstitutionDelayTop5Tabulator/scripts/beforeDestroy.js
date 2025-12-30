@@ -1,5 +1,5 @@
 /*
- * Page - InstitutionDelayTop5Tabulator Component - destroy
+ * Page - InstitutionDelayTop5Tabulator Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;

@@ -1,6 +1,5 @@
 /*
- * Master - Sidebar Component - destroy
- * Card Company Dashboard
+ * Master - Header Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -28,7 +27,7 @@ this.customEvents = null;
 // HANDLER CLEANUP
 // ======================
 
-this.renderAlerts = null;
-this.updateBadge = null;
+this.renderUserInfo = null;
+this.renderMenu = null;
 
-console.log('[Sidebar] destroy - cleanup completed');
+console.log('[Header] destroy - cleanup completed');

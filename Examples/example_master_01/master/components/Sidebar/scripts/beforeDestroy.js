@@ -1,6 +1,5 @@
 /*
- * Page - TransactionTable Component - destroy
- * Card Company Dashboard
+ * Master - Sidebar Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -25,22 +24,10 @@ removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
 
 // ======================
-// TABULATOR CLEANUP
-// ======================
-
-if (this.tableInstance) {
-    this.tableInstance.destroy();
-    this.tableInstance = null;
-}
-
-// ======================
 // HANDLER CLEANUP
 // ======================
 
-this.renderTransactions = null;
-this.getPageParams = null;
-this.updatePaginationUI = null;
-this.goToPage = null;
-this.pageState = null;
+this.renderNotifications = null;
+this.updateBadge = null;
 
-console.log('[TransactionTable] destroy - cleanup completed');
+console.log('[Sidebar] destroy - cleanup completed');

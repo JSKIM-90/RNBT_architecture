@@ -26,7 +26,7 @@ example_master_01/
 ├── master/                    # Master 레이어
 │   ├── common_component/      # 페이지 스크립트 대체
 │   │   ├── register.js        # 이벤트 핸들러, 데이터 발행
-│   │   └── destroy.js         # 리소스 정리
+│   │   └── beforeDestroy.js   # 리소스 정리
 │   └── components/
 │       ├── Header/            # 사용자 정보, 메뉴
 │       └── Sidebar/           # 알림 목록
@@ -104,7 +104,7 @@ Master 레이어에서는 페이지 스크립트가 없으므로 `common_compone
 |------|------------|--------------|
 | 스크립트 위치 | page_scripts/ | common_component/ |
 | fetchAndPublish 호출 | `this` (page) | `this.page` (master) |
-| 라이프사이클 | before_load → loaded → before_unload | register → destroy |
+| 라이프사이클 | before_load → loaded → before_unload | register → beforeDestroy |
 
 ### common_component/register.js 핵심
 

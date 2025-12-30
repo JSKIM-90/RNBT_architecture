@@ -1,6 +1,5 @@
 /*
- * Page - SpendingChart Component - destroy
- * Card Company Dashboard
+ * Page - StatsPanel Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -25,27 +24,9 @@ removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
 
 // ======================
-// RESIZE OBSERVER CLEANUP
-// ======================
-
-if (this.resizeObserver) {
-    this.resizeObserver.disconnect();
-    this.resizeObserver = null;
-}
-
-// ======================
-// ECHARTS CLEANUP
-// ======================
-
-if (this.chartInstance) {
-    this.chartInstance.dispose();
-    this.chartInstance = null;
-}
-
-// ======================
 // HANDLER CLEANUP
 // ======================
 
-this.renderChart = null;
+this.renderStats = null;
 
-console.log('[SpendingChart] destroy - cleanup completed');
+console.log('[StatsPanel] destroy - cleanup completed');

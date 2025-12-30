@@ -1,6 +1,5 @@
 /*
- * Master - Header Component - destroy
- * Card Company Dashboard
+ * Page - TrendChart Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -25,10 +24,27 @@ removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
 
 // ======================
+// RESIZE OBSERVER CLEANUP
+// ======================
+
+if (this.resizeObserver) {
+    this.resizeObserver.disconnect();
+    this.resizeObserver = null;
+}
+
+// ======================
+// ECHARTS CLEANUP
+// ======================
+
+if (this.chartInstance) {
+    this.chartInstance.dispose();
+    this.chartInstance = null;
+}
+
+// ======================
 // HANDLER CLEANUP
 // ======================
 
-this.renderCardInfo = null;
-this.renderMenu = null;
+this.renderChart = null;
 
-console.log('[Header] destroy - cleanup completed');
+console.log('[TrendChart] destroy - cleanup completed');

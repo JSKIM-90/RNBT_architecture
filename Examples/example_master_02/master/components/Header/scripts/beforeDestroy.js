@@ -1,5 +1,6 @@
 /*
- * Page - AlertList Component - destroy
+ * Master - Header Component - beforeDestroy
+ * Card Company Dashboard
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -27,6 +28,7 @@ this.customEvents = null;
 // HANDLER CLEANUP
 // ======================
 
-this.renderAlerts = null;
+this.renderCardInfo = null;
+this.renderMenu = null;
 
-console.log('[AlertList] destroy - cleanup completed');
+console.log('[Header] destroy - cleanup completed');

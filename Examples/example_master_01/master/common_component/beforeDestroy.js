@@ -1,12 +1,12 @@
 /*
- * Master - common_component - destroy
- * Card Company Dashboard
+ * Master - common_component - beforeDestroy
  * Role: Acts as page before_unload (since Master's page script doesn't work)
  *
  * Responsibilities:
  * - Stop all intervals
  * - Clear event bus handlers
  * - Unregister data mappings
+ * - NO 3D cleanup (Master has no 3D layer)
  */
 
 const { go, each } = fx;

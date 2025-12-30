@@ -1,5 +1,5 @@
 /*
- * Page - SensorPanel Component - destroy
+ * Page - AlertList Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -27,6 +27,6 @@ this.customEvents = null;
 // HANDLER CLEANUP
 // ======================
 
-this.renderSensors = null;
+this.renderAlerts = null;
 
-console.log('[SensorPanel] destroy - cleanup completed');
+console.log('[AlertList] destroy - cleanup completed');

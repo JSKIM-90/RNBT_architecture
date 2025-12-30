@@ -1,5 +1,5 @@
 /*
- * Page - PerformanceStatus Component - destroy
+ * Page - BusinessStatus Component - beforeDestroy
  */
 
 const { unsubscribe } = GlobalDataPublisher;
@@ -15,4 +15,4 @@ fx.go(
 // Remove event bindings
 removeCustomEvents(this, this.customEvents);
 
-console.log('[PerformanceStatus] destroy - cleanup completed');
+console.log('[BusinessStatus] destroy - cleanup completed');

@@ -629,7 +629,7 @@ bind3DEvents(this, this.customEvents);
 >   - subscriptions 해제
 >   - customEvents, datasetInfo 참조 제거
 >   - geometry, material, texture dispose
-> - DOM 리소스: 자기완결 컴포넌트(Shadow DOM 팝업 등)는 `destroy.js`에서 직접 정리
+> - DOM 리소스: 자기완결 컴포넌트(Shadow DOM 팝업 등)는 `beforeDestroy.js`에서 직접 정리
 >   - `this.destroyPopup()` 등 컴포넌트가 생성한 DOM 리소스 정리
 
 ### 3. 페이지 Default JS
@@ -1801,7 +1801,7 @@ PopupMixin.applyTabulatorMixin = function(instance) {
 TemperatureSensor/
 ├── scripts/
 │   ├── register.js    # 초기화 + 메서드 정의
-│   └── destroy.js     # 정리
+│   └── beforeDestroy.js  # 정리
 └── preview.html       # 독립 테스트
 ```
 
@@ -2516,7 +2516,7 @@ function onPopupCreated({chartSelector, events}) {
 ServerMonitor/
 ├── scripts/
 │   ├── register.js    # 초기화 + 메서드 정의
-│   └── destroy.js     # 정리
+│   └── beforeDestroy.js  # 정리
 └── preview.html       # 독립 테스트
 ```
 
@@ -3490,7 +3490,7 @@ function onPopupCreated({ chartSelector, tableSelector, events }) {
 
 ---
 
-### destroy.js (공통)
+### beforeDestroy.js (공통)
 
 ```javascript
 function onInstanceUnLoad() {
@@ -3854,7 +3854,7 @@ ComponentName/
 ├─ styles/component.css       # 내부 요소 스타일
 ├─ scripts/
 │   ├─ register.js            # 초기화 로직
-│   └─ destroy.js             # 정리 로직
+│   └─ beforeDestroy.js       # 정리 로직
 └─ preview.html               # 독립 테스트
 ```
 
@@ -3863,7 +3863,7 @@ ComponentName/
 | views/component.html | 내부 요소 HTML |
 | styles/component.css | 내부 요소 스타일 |
 | scripts/register.js | 초기화 로직 |
-| scripts/destroy.js | 정리 로직 |
+| scripts/beforeDestroy.js | 정리 로직 |
 | preview.html | 독립 테스트용 |
 
 > **Note:** 컴포넌트 폴더명이 이미 ComponentName이므로 내부 파일명에 중복 불필요

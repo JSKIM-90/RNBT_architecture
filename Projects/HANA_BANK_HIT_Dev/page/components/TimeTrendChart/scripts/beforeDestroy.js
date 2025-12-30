@@ -1,5 +1,5 @@
 /*
- * Page - TimeTrendChart Component - destroy
+ * Page - TimeTrendChart Component - beforeDestroy
  * 시간대별 거래추이
  */
 
