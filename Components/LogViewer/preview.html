@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogViewer Preview</title>
+    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #0d1117;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        h1 { color: #e0e6ed; margin-bottom: 24px; }
+        .preview-container { width: 600px; height: 400px; }
+        .preview-container .log-viewer { height: 100%; }
+        .controls { margin-top: 24px; }
+        .controls button {
+            padding: 8px 16px;
+            margin-right: 8px;
+            background: #4ade80;
+            color: #1a1f2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .controls button.destroy { background: #f87171; }
+    </style>
+</head>
+<body>
+    <h1>LogViewer Component Preview</h1>
+    <div id="component-root" class="preview-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Send Initial Data</button>
+        <button onclick="addRandomLog()">Add Random Log</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('component-root')
+        };
+
+        // HTML 삽입
+        mockThis.appendElement.innerHTML = `
+            <div class="log-viewer">
+                <div class="log-header">
+                    <span class="log-title">-</span>
+                    <div class="log-controls">
+                        <button class="btn-clear">Clear</button>
+                        <button class="btn-scroll">Auto Scroll</button>
+                    </div>
+                </div>
+                <div class="log-container">
+                    <ul class="log-list"></ul>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => {
+                console.log(`[Mock] subscribe: ${topic}`);
+            },
+            unsubscribe: (topic, context) => {
+                console.log(`[Mock] unsubscribe: ${topic}`);
+            }
+        };
+
+        const WKit = {
+            bindEvents: (context, events) => {
+                console.log('[Mock] bindEvents:', events);
+            },
+            removeCustomEvents: (context, events) => {
+                console.log('[Mock] removeCustomEvents:', events);
+            }
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (scripts/register.js 복사)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = WKit;
+
+            const config = {
+                titleKey: 'title',
+                logsKey: 'logs',
+                logFields: {
+                    time: 'time',
+                    level: 'level',
+                    message: 'message'
+                },
+                maxLogs: 100
+            };
+
+            this._autoScroll = true;
+
+            this.renderData = renderData.bind(this, config);
+            this.appendLog = appendLog.bind(this, config);
+            this.clearLogs = clearLogs.bind(this);
+            this.toggleAutoScroll = toggleAutoScroll.bind(this);
+
+            this.subscriptions = {
+                mockTopic: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            this.customEvents = {
+                click: {
+                    '.btn-clear': '@clearClicked',
+                    '.btn-scroll': '@scrollToggled'
+                }
+            };
+
+            bindEvents(this, this.customEvents);
+
+            function renderData(config, response) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.log-title');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const logs = data[config.logsKey];
+                if (logs && Array.isArray(logs)) {
+                    const listEl = this.appendElement.querySelector('.log-list');
+                    listEl.innerHTML = '';
+                    logs.forEach(log => appendLogItem.call(this, config, listEl, log));
+                    scrollToBottom.call(this);
+                }
+            }
+
+            function appendLog(config, response) {
+                const { data } = response;
+                if (!data) return;
+
+                const listEl = this.appendElement.querySelector('.log-list');
+                appendLogItem.call(this, config, listEl, data);
+
+                while (listEl.children.length > config.maxLogs) {
+                    listEl.removeChild(listEl.firstChild);
+                }
+
+                scrollToBottom.call(this);
+            }
+
+            function appendLogItem(config, listEl, log) {
+                const { logFields } = config;
+                const li = document.createElement('li');
+                li.className = 'log-item';
+
+                const level = log[logFields.level] || 'info';
+
+                li.innerHTML = `
+                    <span class="log-time">${log[logFields.time] || '-'}</span>
+                    <span class="log-level ${level}">${level.toUpperCase()}</span>
+                    <span class="log-message">${log[logFields.message] || '-'}</span>
+                `;
+
+                listEl.appendChild(li);
+            }
+
+            function clearLogs() {
+                const listEl = this.appendElement.querySelector('.log-list');
+                listEl.innerHTML = '';
+            }
+
+            function toggleAutoScroll() {
+                this._autoScroll = !this._autoScroll;
+                const btn = this.appendElement.querySelector('.btn-scroll');
+                btn.classList.toggle('disabled', !this._autoScroll);
+            }
+
+            function scrollToBottom() {
+                if (!this._autoScroll) return;
+                const container = this.appendElement.querySelector('.log-container');
+                container.scrollTop = container.scrollHeight;
+            }
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY (scripts/beforeDestroy.js 복사)
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+                const { removeCustomEvents } = WKit;
+                const { each } = fx;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                removeCustomEvents(this, this.customEvents);
+                this.customEvents = null;
+
+                this._autoScroll = null;
+
+                this.renderData = null;
+                this.appendLog = null;
+                this.clearLogs = null;
+                this.toggleAutoScroll = null;
+
+                console.log('[LogViewer] destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST HELPERS
+        // ======================
+
+        function sendMockData() {
+            mockThis.renderData({
+                data: {
+                    title: 'System Logs',
+                    logs: [
+                        { time: '10:23:45', level: 'info', message: 'Application started' },
+                        { time: '10:23:46', level: 'warn', message: 'Cache miss' },
+                        { time: '10:23:47', level: 'error', message: 'Connection failed' }
+                    ]
+                }
+            });
+        }
+
+        const levels = ['info', 'debug', 'warn', 'error'];
+        const messages = [
+            'Request processed',
+            'Cache updated',
+            'Memory usage: 78%',
+            'Connection timeout',
+            'User authenticated'
+        ];
+
+        function addRandomLog() {
+            const now = new Date();
+            mockThis.appendLog({
+                data: {
+                    time: now.toTimeString().split(' ')[0],
+                    level: levels[Math.floor(Math.random() * levels.length)],
+                    message: messages[Math.floor(Math.random() * messages.length)]
+                }
+            });
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>
