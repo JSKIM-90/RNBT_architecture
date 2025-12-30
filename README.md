@@ -84,6 +84,16 @@ RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루�
 
 ```javascript
 class MyChart extends WVDOMComponent {
+  constructor() {
+    super();
+  }
+
+  // 클래스 메서드로 정의 (WScript의 function 정의를 대체)
+  renderChart(data) {
+    const option = { /* ECharts 옵션 */ };
+    this.chart.setOption(option);
+  }
+
   _onViewerReady() {
     // 뷰어 전용 초기화 (super 호출 불필요)
     const chart = echarts.init(this.element.querySelector('#echarts'));
@@ -99,6 +109,10 @@ class MyChart extends WVDOMComponent {
   }
 }
 ```
+
+> **WScript에서 마이그레이션 시 주의**
+> - WScript register에서 정의하던 `function`들은 **클래스 메서드**로 정의
+> - `_onViewerReady()`에는 **초기화 로직만** 작성 (메서드 정의 X)
 
 라이프사이클에 대해 정리하였다. 라이프사이클에 대해 정리한 이유는 작업자가 RENOBIT에서 코드를 작업하는 영역에 대해 이해할 수 있어야 자신이 원하는 코드 작업을 원하는 위치에 작성할 수 있기 때문이다. 이러한 라이프사이클을 기반으로 다음의 아키텍쳐에 따라 코드를 작업할 수 있다.
 
