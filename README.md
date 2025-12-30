@@ -2086,32 +2086,7 @@ console.log('[TempHumiditySensor] Destroyed:', this.setter?.ecoAssetInfo?.assetI
 
 ---
 
-### beforeDestroy.js (공통)
-
-```javascript
-function onInstanceUnLoad() {
-    this.destroyPopup();  // Shadow DOM + 차트 + 테이블 + 이벤트 정리
-    console.log('[ComponentName] Destroyed:', this.id);
-}
-```
-
-> 3D 이벤트 정리: Page의 `disposeAllThreeResources` → `dispose3DTree`에서 자동 처리
-
----
-
-### Config 오버라이드
-
-모든 config가 `this.`에 바인딩되어 있어 외부에서 오버라이드 가능:
-
-```javascript
-// Page에서 특정 인스턴스의 차트 색상 변경
-const sensor = this.getComponentById('sensor-001');
-sensor.chartConfig.series[0].color = '#ff0000';
-```
-
----
-
-**버전:** 2.0.0
+**버전:** 2.1.0
 **작성일:** 2025-12-22
 **참조:** Utils/PopupMixin.js, Projects/IPSILON_3D/page/components/
 
