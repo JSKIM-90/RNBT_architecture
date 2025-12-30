@@ -4,28 +4,27 @@
  * 컴포넌트 기능 확장을 위한 Mixin 모음
  *
  * ─────────────────────────────────────────────────────────────
- * FreeCodeMixin - 2D FreeCode 컴포넌트 Mixin
+ * 뷰어 전용 라이프사이클 훅 (2D/3D 공통)
  * ─────────────────────────────────────────────────────────────
  *
- * 용도: WVDOMComponent 기반 2D 컴포넌트에 FreeCode 기능 추가
+ * _onViewerReady()
+ *   - 뷰어 모드에서만 실행 (WScript register 직전)
+ *   - WScript register에서 옮겨온 뷰어 전용 로직 배치
  *
- * 사용법:
- *   class MyComponent extends WVDOMComponent {
- *     constructor() {
- *       super();
- *       ComponentMixin.applyFreeCodeMixin(this);
+ * _onViewerDestroy()
+ *   - 뷰어 모드에서만 실행 (WScript BEFORE_DESTROY 직후)
+ *   - WScript beforeDestroy에서 옮겨온 뷰어 전용 정리 로직 배치
+ *
+ *   예시:
+ *     _onViewerReady() {
+ *       const chart = echarts.init(this.element.querySelector('#echarts'));
+ *       this.chart = chart;
  *     }
  *
- *     _onImmediateUpdateDisplay() {
- *       super._onImmediateUpdateDisplay();
- *       // 컴포넌트 고유의 업데이트 로직
+ *     _onViewerDestroy() {
+ *       this.chart.dispose();
+ *       this.chart = null;
  *     }
- *
- *     _onDestroy() {
- *       // 컴포넌트 고유의 정리 로직
- *       super._onDestroy();
- *     }
- *   }
  *
  * ─────────────────────────────────────────────────────────────
  * ModelLoaderMixin - 3D ModelLoader 컴포넌트 Mixin
@@ -39,95 +38,12 @@
  *       super();
  *       ComponentMixin.applyModelLoaderMixin(this);
  *     }
- *
- *     _onImmediateUpdateDisplay() {
- *       super._onImmediateUpdateDisplay();
- *       // 컴포넌트 고유의 업데이트 로직
- *     }
- *
- *     _onDestroy() {
- *       // 컴포넌트 고유의 정리 로직
- *       super._onDestroy();
- *     }
  *   }
  *
  * ─────────────────────────────────────────────────────────────
  */
 
 const ComponentMixin = {};
-
-/**
- * FreeCode 기반 2D 컴포넌트 Mixin
- *
- * WVDOMComponent를 상속받은 컴포넌트에 FreeCode 기능을 추가합니다.
- * preview 이벤트 실행은 WVDOMComponent.onLoadPage()에서 처리됩니다.
- *
- * @param {Object} instance - 컴포넌트 인스턴스 (this)
- */
-ComponentMixin.applyFreeCodeMixin = function(instance) {
-  /**
-   * 확장 속성 사용 여부
-   */
-  instance.getExtensionProperties = function() {
-    return false;
-  };
-
-  /**
-   * 요소 생성 시 호출
-   */
-  instance._onCreateElement = function() {
-    setTimeout(() => {
-      if (instance.layerName === 'masterLayer') {
-        instance.onLoadPage();
-      }
-    });
-  };
-
-  /**
-   * 페이지 로드 시 호출
-   * preview 이벤트 실행은 WVDOMComponent.onLoadPage()에서 처리됩니다.
-   */
-  const originalOnLoadPage = instance.onLoadPage;
-  instance.onLoadPage = function() {
-    // 빈 코드일 때 미리보기 이미지 표시
-    if (
-      instance.properties.publishCode.htmlCode === '' &&
-      instance.properties.publishCode.cssCode === '' &&
-      instance.events.preview === '' &&
-      instance.isEditorMode
-    ) {
-      instance.setPreviewImage(instance.element);
-    }
-
-    // 부모 클래스의 onLoadPage 호출 (preview 이벤트 실행)
-    if (originalOnLoadPage) {
-      originalOnLoadPage.call(instance);
-    }
-  };
-
-  /**
-   * 미리보기 이미지 설정
-   */
-  instance.setPreviewImage = function(element) {
-    element.style.backgroundImage =
-      "url('./custom/packs/Template/components/FreeCode/preview.png')";
-    element.style.backgroundSize = '70px 70px';
-    element.style.backgroundPosition = 'center';
-    element.style.backgroundRepeat = 'no-repeat';
-    element.style.backgroundColor = 'rgba(255,255,255,0.3)';
-  };
-
-  /**
-   * 미리보기 이미지 리셋
-   */
-  instance.resetPreviewImage = function(element) {
-    element.style.backgroundImage = '';
-    element.style.backgroundSize = '';
-    element.style.backgroundPosition = '';
-    element.style.backgroundRepeat = '';
-    instance.setGroupPropertyValue('style', 'backgroundColor', '');
-  };
-};
 
 /**
  * ModelLoader 기반 3D 컴포넌트 Mixin

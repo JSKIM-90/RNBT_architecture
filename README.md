@@ -54,33 +54,51 @@ RENOBIT에서 컴포넌트는 클래스다. 클래스는 data와 data를 다루�
 
 참조: [Utils/ComponentMixin.js](Utils/ComponentMixin.js)
 
-### `_onImmediateUpdateDisplay()` (override)
+### 뷰어 전용 라이프사이클 훅 (2D/3D 공통)
 
-1. 부모 클래스 WVDOMComponent의 `immediateUpdateDisplay`가 실행된다
-2. htmlCode와, cssCode를 활용하는 innerHTML와 styleTag가 생성된다
-3. `super.immediateUpdateDisplay`가 실행된다 (WVComponent)
-4. `this._componentEventDispatcher.dispatchEvent(WVComponentScriptEvent.REGISTER)` 실행된다
-5. `_onImmediateUpdateDisplay()`가 실행된다 → override
+커스텀 컴포넌트에서 뷰어 전용 로직을 작성할 때 사용하는 훅입니다.
 
-> 위의 두 코드 순서를 변경하여 패치완료함. 사용자 정의 register가 최우선으로 적용될 수 있어야함.
+#### 등록 시점 (초기화)
 
-- Codebox의 register에서 `this.appendElement`에 접근할 수 있다
-- Src에서 `_onImmediateUpdateDisplay`에서 `this.appendElement`에 접근할 수 있다
+```
+1. _onViewerReady()        ← 컴포넌트 소스 (뷰어 전용)
+2. WScript REGISTER        ← Codebox
+```
 
-### `_onDestroy()` (override)
+- 두 시점 모두 `this.appendElement` 접근 가능
+- `_onViewerReady()`는 뷰어 모드에서만 실행됨
 
-1. `_beforeDestroy`가 실행된다
-   - `this._componentEventDispatcher.dispatchEvent(WVComponentScriptEvent.BEFORE_DESTROY)` → codebox beforeDestroy 탭
-2. `_onDestroy()`가 실행된다 → override 코드를 작성한다
-3. `super._onDestroy`가 실행된다 → WVDOMComponent
-4. `this.appendElement`가 제거된다
-5. `super._onDestroy`가 실행된다 → WV2DComponent
-6. `super._onDestroy`가 실행된다 → WVComponent
-7. `this._componentEventDispatcher.dispatchEvent(WVComponentScriptEvent.DESTROY)` 실행된다
+#### 소멸 시점 (정리)
 
-- Codebox의 destroy에서는 `this.appendElement`가 없다. `this`는 있다
-- Codebox의 beforeDestroy에서는 `this.appendElement`가 있다. 당연히 `this`도 있다
-- Src에서 `_onDestroy`에서는 `this.appendElement`가 있다. 당연히 `this`도 있다
+```
+1. WScript BEFORE_DESTROY  ← Codebox
+2. _onViewerDestroy()      ← 컴포넌트 소스 (뷰어 전용)
+3. WScript DESTROY         ← Codebox
+```
+
+- `BEFORE_DESTROY`, `_onViewerDestroy()`: `this.appendElement` 접근 가능
+- `DESTROY`: `this.appendElement` 접근 불가 (이미 제거됨)
+- `_onViewerDestroy()`는 뷰어 모드에서만 실행됨
+
+#### 사용 예시
+
+```javascript
+class MyChart extends WVDOMComponent {
+  _onViewerReady() {
+    // 뷰어 전용 초기화 (super 호출 불필요)
+    const chart = echarts.init(this.element.querySelector('#echarts'));
+    this.chart = chart;
+  }
+
+  _onViewerDestroy() {
+    // 뷰어 전용 정리 (super 호출 불필요)
+    if (this.chart) {
+      this.chart.dispose();
+      this.chart = null;
+    }
+  }
+}
+```
 
 라이프사이클에 대해 정리하였다. 라이프사이클에 대해 정리한 이유는 작업자가 RENOBIT에서 코드를 작업하는 영역에 대해 이해할 수 있어야 자신이 원하는 코드 작업을 원하는 위치에 작성할 수 있기 때문이다. 이러한 라이프사이클을 기반으로 다음의 아키텍쳐에 따라 코드를 작업할 수 있다.
 
@@ -3929,34 +3947,36 @@ ComponentName/
 
 ---
 
-## 부록: 라이프사이클 상세 (2D/3D 차이점)
+## 부록: 라이프사이클 상세
 
-### destroy 이벤트에서의 appendElement 접근성
+### 뷰어 훅과 WScript 이벤트 실행 순서
 
-| 구분 | appendElement 상태 | 비고 |
-|------|-------------------|------|
-| 2D 컴포넌트 | `null` (접근 불가) | `WVDOMComponent._onDestroy()`에서 먼저 null 처리 |
-| 3D 컴포넌트 | 참조 가능하나 scene에서 제거됨 | `scene.remove()` 완료 후 DESTROY 이벤트 발생 |
+#### 등록 시점
 
-### _onDestroy 실행 순서
-
-**2D:**
 ```
-WVDOMComponent._onDestroy()  ← this._element = null
-    ↓
-WV2DComponent._onDestroy()
-    ↓
-WVComponent._onDestroy()     ← DESTROY 이벤트 발생
+1. _onViewerReady()        ← 컴포넌트 소스 (뷰어 전용)
+2. WScript REGISTER        ← Codebox
 ```
 
-**3D:**
+#### 소멸 시점
+
 ```
-NWV3DComponent._onDestroy()  ← scene.remove() 완료
-    ↓
-WVComponent._onDestroy()     ← DESTROY 이벤트 발생
+1. WScript BEFORE_DESTROY  ← Codebox
+2. _onViewerDestroy()      ← 컴포넌트 소스 (뷰어 전용)
+3. WScript DESTROY         ← Codebox
 ```
 
-> **권장:** destroy 이벤트 대신 beforeDestroy에서 리소스 정리를 수행하세요.
+### 각 시점별 appendElement 접근성
+
+| 시점 | appendElement | 비고 |
+|------|---------------|------|
+| `_onViewerReady()` | 접근 가능 | 뷰어 전용 초기화 |
+| `WScript REGISTER` | 접근 가능 | |
+| `WScript BEFORE_DESTROY` | 접근 가능 | 리소스 정리 권장 시점 |
+| `_onViewerDestroy()` | 접근 가능 | 뷰어 전용 정리 |
+| `WScript DESTROY` | **접근 불가** | 이미 제거됨 |
+
+> **권장:** `WScript DESTROY` 대신 `WScript BEFORE_DESTROY` 또는 `_onViewerDestroy()`에서 리소스 정리를 수행하세요.
 
 ---
 
@@ -3971,9 +3991,9 @@ RNBT 아키텍처에서 컴포넌트는 수동적(passive)이고, 페이지가 �
 
 ### 기본 원칙
 
-**컴포넌트 개발자가 사용하는 훅:**
-- `_onImmediateUpdateDisplay()` - 로드 시점 로직
-- `_onDestroy()` - 정리 시점 로직
+**컴포넌트 개발자가 사용하는 훅 (뷰어 전용):**
+- `_onViewerReady()` - 로드 시점 로직
+- `_onViewerDestroy()` - 정리 시점 로직
 
 **프레임워크 내부 메서드 (건드리지 않음):**
 - `onLoadPage()` - WVDOMComponent에서 처리
@@ -3982,19 +4002,16 @@ RNBT 아키텍처에서 컴포넌트는 수동적(passive)이고, 페이지가 �
 class MyComponent extends WVDOMComponent {
   constructor() {
     super();
-    ComponentMixin.applyFreeCodeMixin(this);
   }
 
-  _onImmediateUpdateDisplay() {
-    super._onImmediateUpdateDisplay();
-    // 여기서 초기화 로직 수행
+  _onViewerReady() {
+    // 여기서 초기화 로직 수행 (super 호출 불필요)
     // - element 접근 가능 (this.element)
     // - properties 접근 가능 (this.properties)
   }
 
-  _onDestroy() {
-    // 정리 로직
-    super._onDestroy();
+  _onViewerDestroy() {
+    // 정리 로직 (super 호출 불필요)
   }
 }
 ```
@@ -4004,9 +4021,7 @@ class MyComponent extends WVDOMComponent {
 컴포넌트가 자체적으로 데이터를 가져와야 하는 경우:
 
 ```javascript
-_onImmediateUpdateDisplay() {
-  super._onImmediateUpdateDisplay();
-
+_onViewerReady() {
   // element가 준비된 시점이므로 fetch 실행
   this.fetchData();
 }
@@ -4027,22 +4042,19 @@ async fetchData() {
 페이지 레벨에서 관리되는 데이터를 구독하는 경우:
 
 ```javascript
-_onImmediateUpdateDisplay() {
-  super._onImmediateUpdateDisplay();
-
+_onViewerReady() {
   // 토픽 구독 - 페이지에서 데이터가 발행되면 콜백 실행
   this.subscription = GlobalDataPublisher.subscribe('myTopic', (data) => {
     this.renderData(data);
   });
 }
 
-_onDestroy() {
+_onViewerDestroy() {
   // 구독 해제
   if (this.subscription) {
     this.subscription.unsubscribe();
     this.subscription = null;
   }
-  super._onDestroy();
 }
 ```
 
@@ -4050,11 +4062,9 @@ _onDestroy() {
 
 컴포넌트가 준비되었음을 페이지에 알리고, 페이지가 후속 작업을 수행하는 경우:
 
-**컴포넌트 (register.js):**
+**컴포넌트 소스:**
 ```javascript
-_onImmediateUpdateDisplay() {
-  super._onImmediateUpdateDisplay();
-
+_onViewerReady() {
   // 컴포넌트 준비 완료를 페이지에 알림
   WEventBus.emit('@componentReady', {
     targetInstance: this,
@@ -4089,11 +4099,11 @@ onEventBusHandlers(this.eventBusHandlers);
 
 1. **`onLoadPage`를 직접 구현하지 마세요**
    - `onLoadPage`는 프레임워크 내부 메서드입니다
-   - Mixin에서 `originalOnLoadPage` 패턴으로 확장할 수는 있지만, 일반 컴포넌트에서는 `_onImmediateUpdateDisplay`를 사용하세요
+   - 일반 컴포넌트에서는 `_onViewerReady()`를 사용하세요
 
-2. **element 접근은 `_onImmediateUpdateDisplay` 이후에**
-   - `_onImmediateUpdateDisplay` 호출 시점에 `this.element`가 준비되어 있습니다
+2. **element 접근은 `_onViewerReady` 이후에**
+   - `_onViewerReady` 호출 시점에 `this.element`가 준비되어 있습니다
    - constructor에서는 element가 없습니다
 
 3. **정리는 반드시 수행**
-   - 구독, 이벤트 리스너, interval 등은 `_onDestroy`에서 정리하세요
+   - 구독, 이벤트 리스너, interval 등은 `_onViewerDestroy()`에서 정리하세요
