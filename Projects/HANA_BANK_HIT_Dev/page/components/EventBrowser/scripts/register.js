@@ -111,11 +111,10 @@ const uniqueId = `tabulator-${this.id}`;
 tableContainer.id = uniqueId;
 
 const gradeFormatter = createGradeIndicator(config.gradeIcons, config.gradeLabels);
-const containerHeight = tableContainer.offsetHeight;
 
 this.tableInstance = new Tabulator(`#${uniqueId}`, {
     layout: 'fitColumns',
-    height: containerHeight,
+    height: '100%',
     rowHeight: 36,
     placeholder: '데이터가 없습니다',
     headerSort: true,

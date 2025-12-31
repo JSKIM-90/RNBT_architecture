@@ -14,6 +14,9 @@
     height: 100%;
     min-height: 220px;
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 34px 22px 27px;
 }
 
 .event-browser__bg {
@@ -23,20 +26,19 @@
     border: 1px solid #4d634e;
     border-radius: 24px;
     backdrop-filter: blur(2px);
+    z-index: 0;
 }
 
 /* ==========================================================================
    Header
    ========================================================================== */
 .event-browser__header {
-    position: absolute;
-    top: 14px;
-    left: 27px;
-    right: 34px;
-    height: 22px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
+    z-index: 1;
 }
 
 .header__title {
@@ -270,11 +272,11 @@
    Table Container (Tabulator)
    ========================================================================== */
 .table-container {
-    position: absolute;
-    top: 50px;
-    left: 26px;
-    right: 34px;
-    bottom: 22px;
+    flex: 1;
+    margin-top: 14px;
+    min-height: 0;
+    position: relative;
+    z-index: 1;
 }
 
 /* ==========================================================================

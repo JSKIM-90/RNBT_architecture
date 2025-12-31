@@ -205,13 +205,10 @@
         // Tabulator 초기화
         // ======================
         document.addEventListener('DOMContentLoaded', () => {
-            const tableContainer = document.querySelector('.table-container');
-            const containerHeight = tableContainer.offsetHeight;
-
             const table = new Tabulator('#tabulator-table', {
                 data: mockData.items,
                 layout: 'fitColumns',
-                height: containerHeight,
+                height: '100%',
                 rowHeight: 36,
                 placeholder: '데이터가 없습니다',
                 headerSort: true,
