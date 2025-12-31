@@ -71,6 +71,20 @@ example_tutorial/
 | 초기화 | `register.js` | 구독 등록, 이벤트 바인딩, 렌더 함수 정의 |
 | 제거 | `beforeDestroy.js` | 구독 해제, 이벤트 해제, 인스턴스 정리 |
 
+### 컴포넌트 파일 구조
+
+```
+ComponentName/
+├── views/
+│   └── component.html      # HTML 템플릿
+├── styles/
+│   └── component.css       # 스타일 (#component-container 스코프)
+├── scripts/
+│   ├── register.js         # 초기화 + 렌더 함수
+│   └── beforeDestroy.js    # 정리
+└── preview.html            # 단독 테스트용 (Mock 데이터 포함)
+```
+
 ---
 
 ## 핵심 패턴
@@ -165,6 +179,20 @@ this.currentParams = {
 }
 ```
 
+### 6. 응답 구조 패턴
+
+```javascript
+// 런타임 응답 구조: response 키가 한 번 더 감싸져 있음
+// { response: { data, meta, ... } }
+
+// render 함수에서 destructuring
+function renderTable(config, { response }) {
+    const { data, meta } = response;
+    if (!data) return;
+    // ...
+}
+```
+
 ---
 
 ## 데이터셋 정의
@@ -235,6 +263,21 @@ curl http://localhost:3003/api/stats
 curl http://localhost:3003/api/sales?category=electronics
 curl http://localhost:3003/api/trend?period=24h
 ```
+
+### 3. 컴포넌트 Preview 테스트
+
+각 컴포넌트를 런타임 없이 독립적으로 테스트할 수 있습니다.
+
+```bash
+# 브라우저에서 직접 열기
+page/components/DataTable/preview.html
+page/components/TrendChart/preview.html
+page/components/StatsCards/preview.html
+```
+
+- Mock 데이터가 내장되어 있어 서버 없이 동작
+- 라이브러리(Tabulator, ECharts) 연동 확인 가능
+- 스타일 및 레이아웃 검증
 
 ---
 
