@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PerformanceMonitoring - Preview</title>
+    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        /* Container: Figma 선택 요소 크기 */
+        #component-container {
+            width: 571px;
+            height: 546px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="component-container">
+        <div class="performance-monitoring">
+            <!-- Header -->
+            <div class="header">
+                <div class="header__title">
+                    <div class="title__txt">
+                        <img src="assets/00a744e8024fa89296181f272a5ad8b0520dec37.svg" alt="icon" class="title__icon">
+                        <p class="title__text">성능 TOP10</p>
+                    </div>
+                </div>
+                <div class="header__action">
+                    <div class="action__btn" data-type="GPU">
+                        <img src="assets/949e68c009506c820469e89032879923e73e3862.svg" alt="GPU button" class="btn__bg">
+                        <p class="btn__text btn__text--inactive">GPU</p>
+                    </div>
+                    <div class="action__btn action__btn--active" data-type="CPU">
+                        <img src="assets/f361d6569f97aeb4fd632a753387cbe896a1813f.svg" alt="CPU button" class="btn__bg">
+                        <p class="btn__text btn__text--active">CPU</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List -->
+            <div class="list">
+                <!-- Template for dynamic items -->
+                <template id="list-item-template">
+                    <div class="list__item">
+                        <div class="item__num">
+                            <p class="num__text">1</p>
+                        </div>
+                        <div class="item__box">
+                            <div class="box__group">
+                                <div class="group__name">
+                                    <p class="name__text">-</p>
+                                </div>
+                                <div class="group__block">
+                                    <div class="block__btn">
+                                        <p class="btn__label">호스트명</p>
+                                    </div>
+                                    <p class="block__host">-</p>
+                                </div>
+                            </div>
+                            <div class="box__progress">
+                                <div class="progress__bar" style="--progress: 0%;"></div>
+                            </div>
+                        </div>
+                        <div class="item__value">
+                            <span class="value__number">0</span>
+                            <span class="value__unit">%</span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // ======================
+        // Mock 데이터
+        // ======================
+        const mockData = {
+            activeType: 'CPU',
+            items: [
+                { rank: 1, name: 'Application Support', hostname: 'sys-web-prd-01', value: 96 },
+                { rank: 2, name: 'Application Support', hostname: 'sys-web-prd-01', value: 88 },
+                { rank: 3, name: 'Application Support', hostname: 'sys-web-prd-01', value: 74 },
+                { rank: 4, name: 'Application Support', hostname: 'sys-web-prd-01', value: 70 },
+                { rank: 5, name: 'Application Support', hostname: 'sys-web-prd-01', value: 61 },
+                { rank: 6, name: 'Application Support', hostname: 'sys-web-prd-01', value: 58 },
+                { rank: 7, name: 'Application Support', hostname: 'sys-web-prd-01', value: 55 },
+                { rank: 8, name: 'Application Support', hostname: 'sys-web-prd-01', value: 50 },
+                { rank: 9, name: 'Application Support', hostname: 'sys-web-prd-01', value: 47 },
+                { rank: 10, name: 'Application Support', hostname: 'sys-web-prd-01', value: 44 }
+            ]
+        };
+
+        // ======================
+        // Config (register.js와 동일)
+        // ======================
+        const config = {
+            selectors: {
+                list: '.list',
+                template: '#list-item-template',
+                typeBtn: '.action__btn',
+                rank: '.num__text',
+                name: '.name__text',
+                hostname: '.block__host',
+                progressBar: '.progress__bar',
+                valueNumber: '.value__number'
+            },
+            fields: {
+                rank: 'rank',
+                name: 'name',
+                hostname: 'hostname',
+                value: 'value'
+            }
+        };
+
+        // ======================
+        // Mock 컨텍스트
+        // ======================
+        const mockThis = {
+            element: document.querySelector('.performance-monitoring')
+        };
+
+        // ======================
+        // 렌더 함수 (register.js에서 추출)
+        // ======================
+        function renderData(config, data) {
+            if (!data || !data.items) return;
+
+            const { items, activeType } = data;
+            console.log(`[PerformanceMonitoring] renderData: ${items.length} items, type: ${activeType}`);
+
+            const root = mockThis.element;
+            const list = root.querySelector(config.selectors.list);
+            const template = root.querySelector(config.selectors.template);
+
+            if (!list || !template) {
+                console.error('[PerformanceMonitoring] list or template not found');
+                return;
+            }
+
+            // Update active type buttons
+            if (activeType) {
+                const buttons = root.querySelectorAll(config.selectors.typeBtn);
+                buttons.forEach(btn => {
+                    const btnType = btn.dataset.type;
+                    const textEl = btn.querySelector('.btn__text');
+
+                    if (btnType === activeType) {
+                        btn.classList.add('action__btn--active');
+                        if (textEl) {
+                            textEl.classList.remove('btn__text--inactive');
+                            textEl.classList.add('btn__text--active');
+                        }
+                    } else {
+                        btn.classList.remove('action__btn--active');
+                        if (textEl) {
+                            textEl.classList.remove('btn__text--active');
+                            textEl.classList.add('btn__text--inactive');
+                        }
+                    }
+                });
+            }
+
+            // Clear existing items (except template)
+            const existingItems = list.querySelectorAll('.list__item');
+            existingItems.forEach(item => item.remove());
+
+            // Render items from template
+            items.forEach((itemData, index) => {
+                const clone = template.content.cloneNode(true);
+                const item = clone.querySelector('.list__item');
+
+                // Set rank
+                const rankEl = item.querySelector(config.selectors.rank);
+                if (rankEl) rankEl.textContent = itemData[config.fields.rank] ?? (index + 1);
+
+                // Set name
+                const nameEl = item.querySelector(config.selectors.name);
+                if (nameEl) nameEl.textContent = itemData[config.fields.name] ?? '-';
+
+                // Set hostname
+                const hostnameEl = item.querySelector(config.selectors.hostname);
+                if (hostnameEl) hostnameEl.textContent = itemData[config.fields.hostname] ?? '-';
+
+                // Set progress bar
+                const progressBar = item.querySelector(config.selectors.progressBar);
+                const value = itemData[config.fields.value] ?? 0;
+                if (progressBar) progressBar.style.setProperty('--progress', `${value}%`);
+
+                // Set value number
+                const valueEl = item.querySelector(config.selectors.valueNumber);
+                if (valueEl) valueEl.textContent = value;
+
+                // Store data for event handling
+                item.dataset.index = index;
+
+                list.appendChild(item);
+            });
+        }
+
+        // ======================
+        // 이벤트 바인딩 (Mock)
+        // ======================
+        document.querySelectorAll('.action__btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const type = btn.dataset.type;
+                console.log(`[PerformanceMonitoring] @typeChanged: ${type}`);
+
+                // Re-render with updated type
+                mockData.activeType = type;
+                renderData(config, mockData);
+            });
+        });
+
+        // ======================
+        // 초기 렌더
+        // ======================
+        renderData(config, mockData);
+    </script>
+</body>
+</html>
