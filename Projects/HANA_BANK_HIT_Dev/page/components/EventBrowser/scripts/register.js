@@ -223,7 +223,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderData(config, response) {
+function renderData(config, { response }) {
     const { data } = response;
     if (!data) return;
 
