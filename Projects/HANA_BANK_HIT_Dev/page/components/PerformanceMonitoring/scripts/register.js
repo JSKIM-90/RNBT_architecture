@@ -22,7 +22,7 @@
 
 const { subscribe } = GlobalDataPublisher;
 const { bindEvents } = WKit;
-const { each } = fx;
+const { go, map, each, pipe } = fx;
 
 // ======================
 // CONFIG
@@ -32,19 +32,52 @@ const config = {
     selectors: {
         list: '.list',
         template: '#list-item-template',
-        typeBtn: '.action__btn',
-        // Item selectors (relative to item element)
-        rank: '.num__text',
-        name: '.name__text',
-        hostname: '.block__host',
-        progressBar: '.progress__bar',
-        valueNumber: '.value__number'
+        item: '.list__item',
+        typeBtn: '.action__btn'
     },
     fields: {
         rank: 'TBD_rank',
         name: 'TBD_name',
         hostname: 'TBD_hostname',
         value: 'TBD_value'
+    }
+};
+
+// ======================
+// 보조 함수 (순수 함수)
+// ======================
+
+// 데이터 → 렌더링용 데이터 변환
+const toRenderData = (fields) => (item, i) => ({
+    rank: item[fields.rank] ?? (i + 1),
+    name: item[fields.name] ?? '-',
+    hostname: item[fields.hostname] ?? '-',
+    value: item[fields.value] ?? 0
+});
+
+// template clone → item element 생성
+const cloneTemplate = (template) => () =>
+    template.content.cloneNode(true).querySelector('.list__item');
+
+// item element에 데이터 바인딩
+const bindItemData = (item, data, index) => (
+    item.querySelector('.num__text').textContent = data.rank,
+    item.querySelector('.name__text').textContent = data.name,
+    item.querySelector('.block__host').textContent = data.hostname,
+    item.querySelector('.progress__bar').style.setProperty('--progress', `${data.value}%`),
+    item.querySelector('.value__number').textContent = data.value,
+    item.dataset.index = index,
+    item
+);
+
+// 버튼 활성화 상태 설정
+const setButtonActive = (activeType) => (btn) => {
+    const isActive = btn.dataset.type === activeType;
+    const textEl = btn.querySelector('.btn__text');
+    btn.classList.toggle('action__btn--active', isActive);
+    if (textEl) {
+        textEl.classList.toggle('btn__text--active', isActive);
+        textEl.classList.toggle('btn__text--inactive', !isActive);
     }
 };
 
@@ -58,7 +91,7 @@ this.subscriptions = {
 
 this.renderData = renderData.bind(this, config);
 
-fx.go(
+go(
     Object.entries(this.subscriptions),
     each(([topic, fnList]) =>
         each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
@@ -98,68 +131,25 @@ function renderData(config, response) {
         return;
     }
 
-    // Update active type buttons
+    // 1. 버튼 상태 업데이트 (부수효과)
     if (activeType) {
-        updateActiveType.call(this, config, activeType);
+        go(
+            root.querySelectorAll(config.selectors.typeBtn),
+            each(setButtonActive(activeType))
+        );
     }
 
-    // Clear existing items (except template)
-    const existingItems = list.querySelectorAll('.list__item');
-    existingItems.forEach(item => item.remove());
+    // 2. 기존 아이템 제거 (부수효과)
+    go(
+        list.querySelectorAll(config.selectors.item),
+        each(item => item.remove())
+    );
 
-    // Render items from template
-    items.forEach((itemData, index) => {
-        const clone = template.content.cloneNode(true);
-        const item = clone.querySelector('.list__item');
-
-        // Set rank
-        const rankEl = item.querySelector(config.selectors.rank);
-        if (rankEl) rankEl.textContent = itemData[config.fields.rank] ?? (index + 1);
-
-        // Set name
-        const nameEl = item.querySelector(config.selectors.name);
-        if (nameEl) nameEl.textContent = itemData[config.fields.name] ?? '-';
-
-        // Set hostname
-        const hostnameEl = item.querySelector(config.selectors.hostname);
-        if (hostnameEl) hostnameEl.textContent = itemData[config.fields.hostname] ?? '-';
-
-        // Set progress bar
-        const progressBar = item.querySelector(config.selectors.progressBar);
-        const value = itemData[config.fields.value] ?? 0;
-        if (progressBar) progressBar.style.setProperty('--progress', `${value}%`);
-
-        // Set value number
-        const valueEl = item.querySelector(config.selectors.valueNumber);
-        if (valueEl) valueEl.textContent = value;
-
-        // Store data for event handling
-        item.dataset.index = index;
-
-        list.appendChild(item);
-    });
-}
-
-function updateActiveType(config, activeType) {
-    const root = this.element;
-    const buttons = root.querySelectorAll(config.selectors.typeBtn);
-
-    buttons.forEach(btn => {
-        const btnType = btn.dataset.type;
-        const textEl = btn.querySelector('.btn__text');
-
-        if (btnType === activeType) {
-            btn.classList.add('action__btn--active');
-            if (textEl) {
-                textEl.classList.remove('btn__text--inactive');
-                textEl.classList.add('btn__text--active');
-            }
-        } else {
-            btn.classList.remove('action__btn--active');
-            if (textEl) {
-                textEl.classList.remove('btn__text--active');
-                textEl.classList.add('btn__text--inactive');
-            }
-        }
-    });
+    // 3. 데이터 변환 → DOM 생성 → 추가 (파이프라인)
+    go(
+        items,
+        map(toRenderData(config.fields)),                          // 데이터 변환
+        map((data, i) => bindItemData(cloneTemplate(template)(), data, i)),  // DOM 생성 + 바인딩
+        each(item => list.appendChild(item))                       // 부수효과: DOM 추가
+    );
 }
