@@ -100,9 +100,9 @@ console.log('[StatsCards] Registered');
  * 통계 카드 렌더링
  *
  * @param {Array} config - Summary Config
- * @param {Object} response - API 응답 { success, data }
+ * @param {Object} param - API 응답 { response: { success, data } }
  */
-function renderStats(config, response) {
+function renderStats(config, { response }) {
     const { data } = response;
     if (!data) return;
 

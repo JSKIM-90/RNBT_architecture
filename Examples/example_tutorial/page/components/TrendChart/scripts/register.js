@@ -101,9 +101,9 @@ console.log('[TrendChart] Registered');
  * 차트 렌더링
  *
  * @param {Object} config - Chart Config
- * @param {Object} response - API 응답 { success, data, meta }
+ * @param {Object} param - API 응답 { response: { success, data, meta } }
  */
-function renderChart(config, response) {
+function renderChart(config, { response }) {
     const { data, meta } = response;
     if (!data) return;
 

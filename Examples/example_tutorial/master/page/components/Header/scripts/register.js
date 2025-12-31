@@ -93,9 +93,9 @@ console.log('[Header] Registered');
  * 사용자 정보 렌더링
  *
  * @param {Object} config - Field Config
- * @param {Object} response - API 응답 { success, data }
+ * @param {Object} param - API 응답 { response: { data } }
  */
-function renderUserInfo(config, response) {
+function renderUserInfo(config, { response }) {
     const { data } = response;
     if (!data) return;
 

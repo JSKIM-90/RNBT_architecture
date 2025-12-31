@@ -142,9 +142,9 @@ console.log('[DataTable] Registered');
  * 테이블 데이터 렌더링
  *
  * @param {Object} config - Table Config
- * @param {Object} response - API 응답 { success, data, meta }
+ * @param {Object} param - API 응답 { response: { success, data, meta } }
  */
-function renderTable(config, response) {
+function renderTable(config, { response }) {
     const { data, meta } = response;
     if (!data) return;
 

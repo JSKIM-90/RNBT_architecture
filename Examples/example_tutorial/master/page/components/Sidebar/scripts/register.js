@@ -66,14 +66,14 @@ console.log('[Sidebar] Registered');
 /**
  * 네비게이션 메뉴 렌더링
  *
- * @param {Object} response - API 응답 { success, items }
+ * @param {Object} param - API 응답 { response: { success, items } }
  *
  * 렌더링 패턴:
  * 1. Template 복제
  * 2. 데이터 바인딩
  * 3. 컨테이너에 추가
  */
-function renderMenu(response) {
+function renderMenu({ response }) {
     const { items } = response;
     if (!items || !Array.isArray(items)) return;
 
