@@ -65,5 +65,3 @@ TBD 값만 실제 값으로 바꾸면 register/beforeDestroy와 동일한 코드
 | LogViewer | 실시간 로그 표시 |
 
 ---
-
-*관련 논의: `discussions/2025-12-30_component_standalone.md`*

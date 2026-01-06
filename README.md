@@ -884,7 +884,7 @@ disposeAllThreeResources(this);
 Default JS 템플릿을 기반으로 Shadow DOM Popup + Chart 기능을 확장한 개발 사례입니다.
 
 참조:
-- [Projects/IPSILON_3D](Projects/IPSILON_3D/)
+- [Projects/ECO](Projects/ECO/)
 - [Utils/PopupMixin.js](Utils/PopupMixin.js)
 
 ### 핵심 개념
