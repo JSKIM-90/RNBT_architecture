@@ -1,0 +1,93 @@
+{
+  "version": "3.2.0",
+  "data": [
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "MASTER",
+      "query": "",
+      "query_type": "",
+      "description": "User information API (Master/Header) - static",
+      "dataset_id": "user-001",
+      "name": "userApi",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/user\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "0",
+      "page_id": "MASTER",
+      "query": "",
+      "query_type": "",
+      "description": "Navigation menu API (Master/Sidebar) - static",
+      "dataset_id": "menu-001",
+      "name": "menuApi",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/menu\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [],
+      "data_type": "1",
+      "interval": "10000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Statistics cards API (Page/StatsCards) - refresh every 10s",
+      "dataset_id": "stats-001",
+      "name": "statsApi",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/stats\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "category",
+          "param_type": "string",
+          "default_value": "all"
+        }
+      ],
+      "data_type": "1",
+      "interval": "30000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Sales table API (Page/DataTable) - refresh every 30s",
+      "dataset_id": "table-001",
+      "name": "tableApi",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/sales?category=#{category}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    },
+    {
+      "datasource": "",
+      "mode": "0",
+      "delivery_type": "0",
+      "param_info": [
+        {
+          "param_name": "period",
+          "param_type": "string",
+          "default_value": "7d"
+        }
+      ],
+      "data_type": "1",
+      "interval": "15000",
+      "page_id": "PAGE",
+      "query": "",
+      "query_type": "",
+      "description": "Trend chart API (Page/TrendChart) - refresh every 15s",
+      "dataset_id": "chart-001",
+      "name": "chartApi",
+      "rest_api": "{\"url\":\"http://localhost:3003/api/trend?period=#{period}\",\"method\":\"GET\",\"headers\":{},\"body\":\"\"}"
+    }
+  ],
+  "datasource": []
+}

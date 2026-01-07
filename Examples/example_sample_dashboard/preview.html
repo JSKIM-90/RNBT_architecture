@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Dashboard - Preview</title>
+
+    <!-- External Libraries -->
+    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+    <style>
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-layout {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "sidebar main";
+            grid-template-columns: 240px 1fr;
+            grid-template-rows: 60px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Header Area */
+        .header-area {
+            grid-area: header;
+        }
+
+        /* Sidebar Area */
+        .sidebar-area {
+            grid-area: sidebar;
+        }
+
+        /* Main Content Area */
+        .main-area {
+            grid-area: main;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        /* Page Layout */
+        .page-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 1.5rem;
+            height: 100%;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            height: 180px;
+        }
+
+        /* Content Row */
+        .content-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            min-height: 400px;
+        }
+
+        /* ============================================
+           Header Component Styles
+           ============================================ */
+        .header {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            background: #1e293b;
+            color: #f8fafc;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #3b82f6;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #3b82f6;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .user-menu-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            transition: color 0.2s;
+        }
+
+        .user-menu-btn:hover {
+            color: #f8fafc;
+        }
+
+        /* ============================================
+           Sidebar Component Styles
+           ============================================ */
+        .sidebar {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .sidebar-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+
+        .sidebar-title {
+            margin: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #f8fafc;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 0.5rem;
+            overflow-y: auto;
+        }
+
+        .nav-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.25rem;
+            border-radius: 8px;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .nav-item.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+            opacity: 0.8;
+        }
+
+        .nav-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* ============================================
+           StatsCards Component Styles
+           ============================================ */
+        .stats-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-header {
+            margin-bottom: 1.25rem;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-icon {
+            font-size: 1.5rem;
+        }
+
+        .stat-change {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .stat-change.positive {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .stat-change.negative {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .stat-body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ============================================
+           DataTable Component Styles
+           ============================================ */
+        .data-table {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-table .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .panel-title-group {
+            flex: 1;
+        }
+
+        .panel-subtitle {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 0.25rem 0 0 0;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-select,
+        .period-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: #475569;
+            background: white;
+            cursor: pointer;
+        }
+
+        .filter-select:focus,
+        .period-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .table-meta {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+
+        .table-container {
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Tabulator Overrides */
+        .tabulator {
+            border: none;
+            background: transparent;
+        }
+
+        .tabulator-header {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tabulator-col {
+            background: transparent;
+            border-right: none;
+        }
+
+        .tabulator-col-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .tabulator-row {
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .tabulator-row:hover {
+            background: #f8fafc;
+        }
+
+        .tabulator-cell {
+            border-right: none;
+            font-size: 0.875rem;
+            color: #1e293b;
+        }
+
+        /* ============================================
+           TrendChart Component Styles
+           ============================================ */
+        .trend-chart {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .trend-chart .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            flex: 1;
+            min-height: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .content-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-areas:
+                    "header"
+                    "main";
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-area {
+                display: none;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Header Area -->
+        <div class="header-area">
+            <div class="header">
+                <div class="header-logo">
+                    <span class="logo-icon">S</span>
+                    <span class="logo-text">Sample Dashboard</span>
+                </div>
+                <div class="header-user">
+                    <img class="user-avatar" src="" alt="User Avatar">
+                    <div class="user-info">
+                        <span class="user-name">Loading...</span>
+                        <span class="user-role">Loading...</span>
+                    </div>
+                    <button class="user-menu-btn">▼</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Area -->
+        <div class="sidebar-area">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3 class="sidebar-title">Navigation</h3>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul class="nav-list"></ul>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-area">
+            <div class="page-layout">
+                <!-- Stats Row -->
+                <div class="stats-row">
+                    <div class="stats-panel">
+                        <div class="panel-header">
+                            <h3 class="panel-title">Dashboard Overview</h3>
+                        </div>
+                        <div class="stats-grid"></div>
+                    </div>
+                </div>
+
+                <!-- Content Row -->
+                <div class="content-row">
+                    <!-- Data Table -->
+                    <div class="data-table">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3 class="panel-title">Sales Data</h3>
+                                <p class="panel-subtitle">Recent sales records</p>
+                            </div>
+                            <div class="panel-actions">
+                                <select class="filter-select" id="category-filter">
+                                    <option value="all">All Categories</option>
+                                    <option value="electronics">Electronics</option>
+                                    <option value="clothing">Clothing</option>
+                                    <option value="food">Food</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-meta"></div>
+                        <div class="table-container" id="sales-table"></div>
+                    </div>
+
+                    <!-- Trend Chart -->
+                    <div class="trend-chart">
+                        <div class="panel-header">
+                            <div class="panel-title-group">
+                                <h3 class="panel-title">Trend Analysis</h3>
+                                <p class="panel-subtitle">Revenue and orders over time</p>
+                            </div>
+                            <div class="panel-actions">
+                                <select class="period-select" id="period-filter">
+                                    <option value="24h">Last 24 Hours</option>
+                                    <option value="7d" selected>Last 7 Days</option>
+                                    <option value="30d">Last 30 Days</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-container" id="trend-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3003';
+
+        // ============================================
+        // Data Fetching
+        // ============================================
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`[Fetch Error] ${endpoint}:`, error);
+                return null;
+            }
+        }
+
+        // ============================================
+        // Header Rendering
+        // ============================================
+
+        async function renderHeader() {
+            const result = await fetchData('/api/user');
+            if (!result?.data) return;
+
+            const { name, role, avatar } = result.data;
+            document.querySelector('.user-name').textContent = name;
+            document.querySelector('.user-role').textContent = role;
+            document.querySelector('.user-avatar').src = avatar;
+
+            console.log('[Header] Rendered');
+        }
+
+        // ============================================
+        // Sidebar Rendering
+        // ============================================
+
+        async function renderSidebar() {
+            const result = await fetchData('/api/menu');
+            if (!result?.items) return;
+
+            const container = document.querySelector('.nav-list');
+            const iconMap = {
+                home: '🏠',
+                chart: '📊',
+                document: '📄',
+                gear: '⚙️'
+            };
+
+            container.innerHTML = result.items.map(item => `
+                <li class="nav-item ${item.active ? 'active' : ''}" data-menu-id="${item.id}">
+                    <span class="nav-icon">${iconMap[item.icon] || '📁'}</span>
+                    <span class="nav-label">${item.label}</span>
+                </li>
+            `).join('');
+
+            // Click events
+            container.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    container.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    console.log('[Sidebar] Clicked:', item.dataset.menuId);
+                });
+            });
+
+            console.log('[Sidebar] Rendered');
+        }
+
+        // ============================================
+        // Stats Cards Rendering
+        // ============================================
+
+        const statsConfig = [
+            { key: 'revenue', label: 'Revenue', icon: '💰', format: (v, unit) => `${unit}${v.toLocaleString()}` },
+            { key: 'orders', label: 'Orders', icon: '📦', format: (v) => v.toLocaleString() },
+            { key: 'customers', label: 'Customers', icon: '👥', format: (v) => v.toLocaleString() },
+            { key: 'conversion', label: 'Conversion', icon: '📈', format: (v, unit) => `${v}${unit}` }
+        ];
+
+        async function renderStats() {
+            const result = await fetchData('/api/stats');
+            if (!result?.data) return;
+
+            const container = document.querySelector('.stats-grid');
+            container.innerHTML = statsConfig.map(({ key, label, icon, format }) => {
+                const stat = result.data[key];
+                if (!stat) return '';
+
+                const isPositive = stat.change >= 0;
+                const changeClass = isPositive ? 'positive' : 'negative';
+                const changeText = `${isPositive ? '+' : ''}${stat.change}%`;
+
+                return `
+                    <div class="stat-card" data-stat-key="${key}">
+                        <div class="stat-header">
+                            <span class="stat-icon">${icon}</span>
+                            <span class="stat-change ${changeClass}">${changeText}</span>
+                        </div>
+                        <div class="stat-body">
+                            <span class="stat-value">${format(stat.value, stat.unit)}</span>
+                            <span class="stat-label">${label}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Click events
+            container.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    console.log('[Stats] Clicked:', card.dataset.statKey);
+                });
+            });
+
+            console.log('[Stats] Rendered');
+        }
+
+        // ============================================
+        // Data Table Rendering (Tabulator)
+        // ============================================
+
+        let tableInstance = null;
+
+        async function renderTable(category = 'all') {
+            const result = await fetchData(`/api/sales?category=${category}`);
+            if (!result?.data) return;
+
+            // Update meta
+            const metaEl = document.querySelector('.table-meta');
+            if (metaEl && result.meta) {
+                metaEl.textContent = `Total: ${result.meta.total} items (${result.meta.category})`;
+            }
+
+            // Initialize or update table
+            if (!tableInstance) {
+                tableInstance = new Tabulator('#sales-table', {
+                    layout: 'fitColumns',
+                    height: '100%',
+                    placeholder: 'No data available',
+                    columns: [
+                        { title: 'ID', field: 'id', width: 60, hozAlign: 'center' },
+                        { title: 'Product', field: 'product', widthGrow: 2 },
+                        { title: 'Category', field: 'category', width: 120 },
+                        { title: 'Qty', field: 'quantity', width: 80, hozAlign: 'right' },
+                        { title: 'Price', field: 'price', width: 100, hozAlign: 'right',
+                          formatter: cell => `$${cell.getValue().toLocaleString()}` },
+                        { title: 'Total', field: 'total', width: 120, hozAlign: 'right',
+                          formatter: cell => `$${cell.getValue().toLocaleString()}` },
+                        { title: 'Date', field: 'date', width: 110, hozAlign: 'center' }
+                    ],
+                    data: result.data
+                });
+
+                tableInstance.on('rowClick', (e, row) => {
+                    console.log('[Table] Row clicked:', row.getData());
+                });
+            } else {
+                tableInstance.setData(result.data);
+            }
+
+            console.log('[Table] Rendered:', result.data.length, 'rows');
+        }
+
+        // ============================================
+        // Trend Chart Rendering (ECharts)
+        // ============================================
+
+        let chartInstance = null;
+
+        async function renderChart(period = '7d') {
+            const result = await fetchData(`/api/trend?period=${period}`);
+            if (!result?.data) return;
+
+            const chartContainer = document.getElementById('trend-chart');
+
+            if (!chartInstance) {
+                chartInstance = echarts.init(chartContainer);
+
+                // Resize observer
+                const resizeObserver = new ResizeObserver(() => {
+                    chartInstance && chartInstance.resize();
+                });
+                resizeObserver.observe(chartContainer);
+            }
+
+            const { labels, series } = result.data;
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' }
+                },
+                legend: {
+                    data: series.map(s => s.name),
+                    top: 0,
+                    textStyle: { fontSize: 12 }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    top: '15%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: labels,
+                    axisLabel: { fontSize: 11 },
+                    boundaryGap: false
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLabel: { fontSize: 11 },
+                    splitLine: {
+                        lineStyle: { type: 'dashed', color: '#e2e8f0' }
+                    }
+                },
+                series: series.map(s => ({
+                    name: s.name,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    data: s.data,
+                    lineStyle: { color: s.color, width: 2 },
+                    itemStyle: { color: s.color },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0, y: 0, x2: 0, y2: 1,
+                            colorStops: [
+                                { offset: 0, color: s.color + '40' },
+                                { offset: 1, color: s.color + '05' }
+                            ]
+                        }
+                    }
+                }))
+            };
+
+            chartInstance.setOption(option, true);
+            console.log('[Chart] Rendered:', period);
+        }
+
+        // ============================================
+        // Event Handlers
+        // ============================================
+
+        document.getElementById('category-filter').addEventListener('change', (e) => {
+            renderTable(e.target.value);
+        });
+
+        document.getElementById('period-filter').addEventListener('change', (e) => {
+            renderChart(e.target.value);
+        });
+
+        // ============================================
+        // Initialize Dashboard
+        // ============================================
+
+        async function initDashboard() {
+            console.log('[Dashboard] Initializing...');
+
+            // Render all components
+            await Promise.all([
+                renderHeader(),
+                renderSidebar(),
+                renderStats(),
+                renderTable(),
+                renderChart()
+            ]);
+
+            // Auto-refresh stats every 10 seconds
+            setInterval(renderStats, 10000);
+
+            console.log('[Dashboard] Initialized');
+        }
+
+        // Start
+        initDashboard();
+    </script>
+</body>
+</html>
