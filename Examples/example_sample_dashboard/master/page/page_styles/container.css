@@ -1,0 +1,27 @@
+/* Master Container Styles */
+#master-container {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-areas:
+        "header header"
+        "sidebar main";
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 60px 1fr;
+}
+
+/* Master main area (placeholder) */
+#master-container::after {
+    content: '';
+    grid-area: main;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #master-container {
+        grid-template-areas:
+            "header";
+        grid-template-columns: 1fr;
+        grid-template-rows: 60px;
+    }
+}

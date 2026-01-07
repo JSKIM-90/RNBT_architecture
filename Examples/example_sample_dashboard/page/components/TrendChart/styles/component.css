@@ -1,61 +1,65 @@
 /* TrendChart Component Styles - Sample Dashboard */
-.trend-chart {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+#trend-chart-container {
+    min-height: 400px;
 
-/* Header */
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 1rem;
-}
+    .trend-chart {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
 
-.panel-title-group {
-    flex: 1;
-}
+    /* Header */
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
 
-.panel-title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0 0 0.25rem 0;
-}
+    .panel-title-group {
+        flex: 1;
+    }
 
-.panel-subtitle {
-    font-size: 0.75rem;
-    color: #64748b;
-    margin: 0;
-}
+    .panel-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0 0 0.25rem 0;
+    }
 
-.panel-actions {
-    display: flex;
-    gap: 0.5rem;
-}
+    .panel-subtitle {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin: 0;
+    }
 
-.period-select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    color: #475569;
-    background: white;
-    cursor: pointer;
-}
+    .panel-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
 
-.period-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-}
+    .period-select {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        color: #475569;
+        background: white;
+        cursor: pointer;
 
-/* Chart Container */
-.chart-container {
-    flex: 1;
-    min-height: 0;
+        &:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+    }
+
+    /* Chart Container */
+    .chart-container {
+        flex: 1;
+        min-height: 0;
+    }
 }
