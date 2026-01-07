@@ -2328,12 +2328,15 @@ run();
 ```
 
 ```html
-<div id="component-container">       <!-- Figma 선택 요소 크기 -->
-    <div class="transaction-table">  <!-- Figma 내부 요소 (스타일 그대로) -->
+<div id="[component-name]-container">  <!-- 컴포넌트별 고유 ID (예: transaction-table-container) -->
+    <div class="transaction-table">    <!-- Figma 내부 요소 (스타일 그대로) -->
         ...
     </div>
 </div>
 ```
+
+> **컨테이너 ID 명명 규칙**: `#[component-name]-container` 형태로 컴포넌트마다 고유한 ID를 부여합니다.
+> 예: `#header-container`, `#sidebar-container`, `#stats-cards-container`
 
 ### 웹 빌더 기본 구조
 
@@ -2355,7 +2358,8 @@ run();
 
 ```css
 /* Container: Figma 선택 요소 크기 */
-#component-container {
+/* 컨테이너 ID는 컴포넌트별 고유: #[component-name]-container */
+#transaction-table-container {
     width: 524px;   /* Figma 선택 요소 width */
     height: 350px;  /* Figma 선택 요소 height */
     overflow: auto; /* 동적 렌더링 대응 */
@@ -2454,8 +2458,9 @@ ComponentName/
 
 ```css
 /* 컨테이너 ID 중심 nesting 구조 */
-#component-id {
-    .component-name {
+/* 컨테이너 ID: #[component-name]-container (예: #transaction-table-container) */
+#transaction-table-container {
+    .transaction-table {
         /* Figma에서 추출한 스타일 그대로 적용 */
         display: flex;
         flex-direction: column;
@@ -2472,15 +2477,16 @@ ComponentName/
 <head>
     <style>
         /* Container: Figma 선택 요소 크기 */
-        #component-container {
+        /* 컨테이너 ID: #[component-name]-container */
+        #transaction-table-container {
             width: 524px;   /* Figma 크기 */
             height: 350px;
             overflow: auto;
         }
 
         /* Component CSS - Figma 스타일 그대로 */
-        #component-container {
-            .component-name {
+        #transaction-table-container {
+            .transaction-table {
                 /* Figma에서 추출한 스타일 그대로 */
             }
         }
@@ -2488,8 +2494,8 @@ ComponentName/
 </head>
 <body>
     <!-- 컴포넌트만 배치 (page-root 없이) -->
-    <div id="component-container">
-        <div class="component-name">
+    <div id="transaction-table-container">
+        <div class="transaction-table">
             ...
         </div>
     </div>

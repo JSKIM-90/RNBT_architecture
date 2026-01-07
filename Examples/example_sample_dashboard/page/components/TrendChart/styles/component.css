@@ -1,8 +1,11 @@
 /* TrendChart Component Styles - Sample Dashboard */
+/* 크기: 804 x 768 */
 #trend-chart-container {
-    min-height: 400px;
+    width: 804px;
+    height: 768px;
 
     .trend-chart {
+        width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;

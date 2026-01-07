@@ -1,8 +1,12 @@
 /* StatsCards Component Styles - Sample Dashboard */
+/* 크기: 1632 x 180 (2열 전체 span) */
 #stats-cards-container {
     grid-column: 1 / -1;
+    width: 1632px;
+    height: 180px;
 
     .stats-panel {
+        width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
@@ -93,18 +97,5 @@
         color: #64748b;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-    }
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-    #stats-cards-container .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (max-width: 640px) {
-    #stats-cards-container .stats-grid {
-        grid-template-columns: 1fr;
     }
 }

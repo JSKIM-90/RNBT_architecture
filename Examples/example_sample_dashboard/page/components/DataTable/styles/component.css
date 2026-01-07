@@ -1,8 +1,11 @@
 /* DataTable Component Styles - Sample Dashboard */
+/* 크기: 804 x 768 */
 #data-table-container {
-    min-height: 400px;
+    width: 804px;
+    height: 768px;
 
     .data-table {
+        width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
