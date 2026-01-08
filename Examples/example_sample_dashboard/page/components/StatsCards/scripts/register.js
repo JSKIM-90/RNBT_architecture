@@ -96,32 +96,33 @@ function renderStats(config, { response }) {
 
     container.innerHTML = '';
 
+    // 파이프라인: config → 데이터 매칭 → 유효한 것만 필터 → DOM 생성 → 삽입
     fx.go(
         config,
-        fx.each(({ key, label, icon, format }) => {
-            const stat = data[key];
-            if (!stat) return;
-
-            const clone = template.content.cloneNode(true);
-            const card = clone.querySelector('.stat-card');
-            const iconEl = clone.querySelector('.stat-icon');
-            const labelEl = clone.querySelector('.stat-label');
-            const valueEl = clone.querySelector('.stat-value');
-            const changeEl = clone.querySelector('.stat-change');
-
-            card.dataset.statKey = key;
-            iconEl.textContent = icon;
-            labelEl.textContent = label;
-            valueEl.textContent = format(stat.value, stat.unit);
-
-            const changeValue = stat.change;
-            const isPositive = changeValue >= 0;
-            changeEl.textContent = `${isPositive ? '+' : ''}${changeValue}%`;
-            changeEl.classList.add(isPositive ? 'positive' : 'negative');
-
-            container.appendChild(clone);
-        })
+        fx.map(cfg => ({ cfg, stat: data[cfg.key] })),
+        fx.filter(({ stat }) => stat),
+        fx.map(({ cfg, stat }) => createStatCard(template, cfg, stat)),
+        fx.each(card => container.appendChild(card))
     );
 
     console.log('[StatsCards] Stats rendered');
+}
+
+/**
+ * 통계 카드 DOM 요소 생성
+ */
+function createStatCard(template, { key, label, icon, format }, stat) {
+    const clone = template.content.cloneNode(true);
+
+    clone.querySelector('.stat-card').dataset.statKey = key;
+    clone.querySelector('.stat-icon').textContent = icon;
+    clone.querySelector('.stat-label').textContent = label;
+    clone.querySelector('.stat-value').textContent = format(stat.value, stat.unit);
+
+    const changeEl = clone.querySelector('.stat-change');
+    const isPositive = stat.change >= 0;
+    changeEl.textContent = `${isPositive ? '+' : ''}${stat.change}%`;
+    changeEl.classList.add(isPositive ? 'positive' : 'negative');
+
+    return clone;
 }

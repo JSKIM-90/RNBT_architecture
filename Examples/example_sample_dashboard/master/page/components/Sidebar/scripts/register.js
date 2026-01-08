@@ -72,25 +72,28 @@ function renderMenu({ response }) {
         gear: '⚙️'
     };
 
+    // 파이프라인: items → DOM 생성 → 삽입
     fx.go(
         items,
-        fx.each(item => {
-            const clone = template.content.cloneNode(true);
-            const navItem = clone.querySelector('.nav-item');
-            const icon = clone.querySelector('.nav-icon');
-            const label = clone.querySelector('.nav-label');
-
-            navItem.dataset.menuId = item.id;
-            if (item.active) {
-                navItem.classList.add('active');
-            }
-
-            icon.textContent = iconMap[item.icon] || '📁';
-            label.textContent = item.label;
-
-            container.appendChild(clone);
-        })
+        fx.map(item => createNavItem(template, iconMap, item)),
+        fx.each(el => container.appendChild(el))
     );
 
     console.log('[Sidebar] Menu rendered:', items.length, 'items');
+}
+
+/**
+ * 네비게이션 아이템 DOM 요소 생성
+ */
+function createNavItem(template, iconMap, item) {
+    const clone = template.content.cloneNode(true);
+    const navItem = clone.querySelector('.nav-item');
+
+    navItem.dataset.menuId = item.id;
+    if (item.active) navItem.classList.add('active');
+
+    clone.querySelector('.nav-icon').textContent = iconMap[item.icon] || '📁';
+    clone.querySelector('.nav-label').textContent = item.label;
+
+    return clone;
 }
