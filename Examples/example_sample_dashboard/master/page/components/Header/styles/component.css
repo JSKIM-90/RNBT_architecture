@@ -1,7 +1,8 @@
 /* Header Component Styles - Sample Dashboard */
 /* 크기: 1920 x 60 */
+/* px 단위 사용 (rem/em 지양) */
 #header-container {
-    grid-area: header;
+    flex-shrink: 0;
     width: 1920px;
     height: 60px;
 
@@ -11,7 +12,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0 1.5rem;
+        padding: 0 24px;
         background: #1e293b;
         color: #f8fafc;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -21,7 +22,7 @@
     .header-logo {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 12px;
     }
 
     .logo-icon {
@@ -33,11 +34,11 @@
         background: #3b82f6;
         border-radius: 8px;
         font-weight: 700;
-        font-size: 1.25rem;
+        font-size: 20px;
     }
 
     .logo-text {
-        font-size: 1.25rem;
+        font-size: 20px;
         font-weight: 600;
     }
 
@@ -45,7 +46,7 @@
     .header-user {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 12px;
     }
 
     .user-avatar {
@@ -62,12 +63,12 @@
     }
 
     .user-name {
-        font-size: 0.875rem;
+        font-size: 14px;
         font-weight: 600;
     }
 
     .user-role {
-        font-size: 0.75rem;
+        font-size: 12px;
         color: #94a3b8;
     }
 
@@ -76,8 +77,8 @@
         border: none;
         color: #94a3b8;
         cursor: pointer;
-        padding: 0.5rem;
-        font-size: 0.75rem;
+        padding: 8px;
+        font-size: 12px;
         transition: color 0.2s;
 
         &:hover {

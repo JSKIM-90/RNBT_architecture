@@ -1,15 +1,15 @@
 /* DataTable Component Styles - Sample Dashboard */
-/* 크기: 804 x 768 */
+/* px 단위 사용 (rem/em 지양) */
 #data-table-container {
-    width: 804px;
-    height: 768px;
+    flex: 1;
+    min-height: 0;
 
     .data-table {
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
-        padding: 1.5rem;
+        padding: 24px;
         background: white;
         border-radius: 12px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -20,7 +20,7 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 1rem;
+        margin-bottom: 16px;
     }
 
     .panel-title-group {
@@ -28,28 +28,28 @@
     }
 
     .panel-title {
-        font-size: 1.125rem;
+        font-size: 18px;
         font-weight: 600;
         color: #1e293b;
-        margin: 0 0 0.25rem 0;
+        margin: 0 0 4px 0;
     }
 
     .panel-subtitle {
-        font-size: 0.75rem;
+        font-size: 12px;
         color: #64748b;
         margin: 0;
     }
 
     .panel-actions {
         display: flex;
-        gap: 0.5rem;
+        gap: 8px;
     }
 
     .filter-select {
-        padding: 0.5rem 0.75rem;
+        padding: 8px 12px;
         border: 1px solid #e2e8f0;
         border-radius: 6px;
-        font-size: 0.75rem;
+        font-size: 12px;
         color: #475569;
         background: white;
         cursor: pointer;
@@ -62,9 +62,9 @@
 
     /* Table Meta */
     .table-meta {
-        font-size: 0.75rem;
+        font-size: 12px;
         color: #64748b;
-        margin-bottom: 0.75rem;
+        margin-bottom: 12px;
     }
 
     /* Tabulator Container */
@@ -90,7 +90,7 @@
     }
 
     .tabulator-col-title {
-        font-size: 0.75rem;
+        font-size: 12px;
         font-weight: 600;
         color: #64748b;
         text-transform: uppercase;
@@ -106,7 +106,7 @@
 
     .tabulator-cell {
         border-right: none;
-        font-size: 0.875rem;
+        font-size: 14px;
         color: #1e293b;
     }
 }
