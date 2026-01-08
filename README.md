@@ -2615,28 +2615,7 @@ async fetchData() {
 }
 ```
 
-### 패턴 2: GlobalDataPublisher 구독
-
-페이지 레벨에서 관리되는 데이터를 구독하는 경우:
-
-```javascript
-_onViewerReady() {
-  // 토픽 구독 - 페이지에서 데이터가 발행되면 콜백 실행
-  this.subscription = GlobalDataPublisher.subscribe('myTopic', (data) => {
-    this.renderData(data);
-  });
-}
-
-_onViewerDestroy() {
-  // 구독 해제
-  if (this.subscription) {
-    this.subscription.unsubscribe();
-    this.subscription = null;
-  }
-}
-```
-
-### 패턴 3: WEventBus emit으로 페이지 핸들러 트리거
+### 패턴 2: WEventBus emit으로 페이지 핸들러 트리거
 
 컴포넌트가 준비되었음을 페이지에 알리고, 페이지가 후속 작업을 수행하는 경우:
 
@@ -2669,7 +2648,6 @@ onEventBusHandlers(this.eventBusHandlers);
 | 시나리오 | 권장 패턴 | 이유 |
 |----------|----------|------|
 | 컴포넌트가 자체 API 엔드포인트를 가짐 | 패턴 1: 직접 fetch | 완전한 자기 완결성 |
-| 여러 컴포넌트가 같은 데이터를 공유 | 패턴 2: 구독 | 데이터 중복 fetch 방지, 페이지 레벨 관리 |
-| 컴포넌트 초기화 시점을 페이지가 알아야 함 | 패턴 3: emit | 페이지가 오케스트레이션 |
-| 브라우저 이벤트를 기다려야 함 | 패턴 3: emit | 정확한 시점 제어 |
+| 컴포넌트 초기화 시점을 페이지가 알아야 함 | 패턴 2: emit | 페이지가 오케스트레이션 |
+| 브라우저 이벤트를 기다려야 함 | 패턴 2: emit | 정확한 시점 제어 |
 
