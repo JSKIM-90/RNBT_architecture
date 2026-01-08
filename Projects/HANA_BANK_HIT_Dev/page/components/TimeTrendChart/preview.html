@@ -254,7 +254,7 @@
         // ======================
         // RENDER FUNCTION (register.js와 동일 로직)
         // ======================
-        function renderLineData(config, response) {
+        function renderLineData(config, { response }) {
             const { data } = response;
             if (!data || !data[Symbol.iterator]) return;
 

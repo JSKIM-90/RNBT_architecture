@@ -83,7 +83,7 @@
             { key: 'conversion', label: 'Conversion', icon: '📈', format: (v, unit) => `${v}${unit}` }
         ];
 
-        function renderStats(config, response) {
+        function renderStats(config, { response }) {
             const { data } = response;
             if (!data) return;
 

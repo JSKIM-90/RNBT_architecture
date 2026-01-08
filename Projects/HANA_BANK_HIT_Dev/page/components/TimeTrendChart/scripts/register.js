@@ -99,7 +99,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTION (호이스팅)
 // ======================
 
-function renderLineData(config, response) {
+function renderLineData(config, { response }) {
     const { data } = response;
     if (!data || !data[Symbol.iterator]) return;
 

@@ -80,7 +80,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS (호이스팅)
 // ======================
 
-function renderData(config, response) {
+function renderData(config, { response }) {
     const { data } = response;
     if (!data) return;
 
