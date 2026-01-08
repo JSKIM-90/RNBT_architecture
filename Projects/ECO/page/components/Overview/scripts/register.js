@@ -146,20 +146,10 @@ function renderOverview({ response }) {
     if (assetsByType) {
         fx.go(
             ctx.assetTypeConfig,
-            each(({ key, selector }) => {
+            fx.filter(({ key }) => assetsByType[key]),
+            fx.each(({ key, selector }) => {
                 const el = ctx.element.querySelector(selector);
-                if (el && assetsByType[key]) {
-                    const typeData = assetsByType[key];
-                    const totalEl = el.querySelector('.type-total');
-                    const normalEl = el.querySelector('.type-normal');
-                    const warningEl = el.querySelector('.type-warning');
-                    const criticalEl = el.querySelector('.type-critical');
-
-                    if (totalEl) totalEl.textContent = typeData.total;
-                    if (normalEl) normalEl.textContent = typeData.normal;
-                    if (warningEl) warningEl.textContent = typeData.warning;
-                    if (criticalEl) criticalEl.textContent = typeData.critical;
-                }
+                if (el) renderAssetTypeStatus(el, assetsByType[key]);
             })
         );
     }
@@ -219,4 +209,24 @@ function renderEventTable({ response }) {
     if (!events || !this.tableInstance) return;
 
     this.tableInstance.setData(events);
+}
+
+/**
+ * 타입별 자산 상태 렌더링
+ */
+function renderAssetTypeStatus(containerEl, typeData) {
+    const statusFields = [
+        { selector: '.type-total', key: 'total' },
+        { selector: '.type-normal', key: 'normal' },
+        { selector: '.type-warning', key: 'warning' },
+        { selector: '.type-critical', key: 'critical' }
+    ];
+
+    fx.go(
+        statusFields,
+        fx.each(({ selector, key }) => {
+            const el = containerEl.querySelector(selector);
+            if (el) el.textContent = typeData[key];
+        })
+    );
 }
