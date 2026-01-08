@@ -44,7 +44,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderUserInfo(response) {
+function renderUserInfo({ response }) {
     const { data } = response;
     console.log(`[Header] renderUserInfo:`, data);
 
@@ -57,7 +57,7 @@ function renderUserInfo(response) {
     if (nameEl) nameEl.textContent = data.name;
 }
 
-function renderMenu(response) {
+function renderMenu({ response }) {
     const { items } = response;
     console.log(`[Header] renderMenu:`, items);
 

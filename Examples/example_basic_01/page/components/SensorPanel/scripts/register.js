@@ -41,7 +41,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderSensors(response) {
+function renderSensors({ response }) {
     const { sensors } = response;
     console.log(`[SensorPanel] renderSensors: ${sensors?.length || 0} sensors`);
 

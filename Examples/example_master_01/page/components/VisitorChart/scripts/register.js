@@ -54,7 +54,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderChart(response) {
+function renderChart({ response }) {
     const { data } = response;
     console.log(`[VisitorChart] renderChart:`, data);
 

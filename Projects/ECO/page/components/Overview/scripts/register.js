@@ -125,7 +125,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderOverview(response) {
+function renderOverview({ response }) {
     const { summary, assetsByType, kpi } = response;
     console.log('[Overview] renderOverview');
 
@@ -212,7 +212,7 @@ function renderStatusChart(summary) {
     }
 }
 
-function renderEventTable(response) {
+function renderEventTable({ response }) {
     const { events } = response;
     console.log(`[Overview] renderEventTable: ${events?.length || 0} events`);
 

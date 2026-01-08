@@ -57,7 +57,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderChart(response) {
+function renderChart({ response }) {
     const { trends } = response;
     console.log(`[TrendChart] renderChart`);
 

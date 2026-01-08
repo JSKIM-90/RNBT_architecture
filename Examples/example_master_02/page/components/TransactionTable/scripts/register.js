@@ -187,7 +187,7 @@ function updateActiveButton(currentPage) {
 // RENDER FUNCTIONS
 // ======================
 
-function renderTransactions(response) {
+function renderTransactions({ response }) {
     const { data, pagination } = response;
     console.log(`[TransactionTable] renderTransactions: ${data?.length || 0} items, page ${pagination?.page}/${pagination?.totalPages}`);
 

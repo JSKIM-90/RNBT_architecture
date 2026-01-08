@@ -156,7 +156,7 @@ this._templates = {
 // RENDER FUNCTIONS
 // ======================
 
-function renderTree(response) {
+function renderTree({ response }) {
     const { zones } = response;
     console.log(`[AssetTree] renderTree: ${zones?.length || 0} zones`);
 

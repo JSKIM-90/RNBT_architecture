@@ -29,7 +29,7 @@ fx.go(
 // RENDER FUNCTIONS
 // ======================
 
-function renderSummary(response) {
+function renderSummary({ response }) {
     const { data } = response;
     console.log(`[SummaryPanel] renderSummary:`, data);
 

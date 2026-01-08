@@ -45,7 +45,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderNotifications(response) {
+function renderNotifications({ response }) {
     const { items } = response;
     console.log(`[Sidebar] renderNotifications: ${items?.length || 0} items`);
 

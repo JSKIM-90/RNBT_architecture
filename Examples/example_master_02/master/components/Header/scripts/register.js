@@ -45,7 +45,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderCardInfo(response) {
+function renderCardInfo({ response }) {
     const { data } = response;
     console.log(`[Header] renderCardInfo:`, data);
 
@@ -62,7 +62,7 @@ function renderCardInfo(response) {
     if (nameEl) nameEl.textContent = data.userName;
 }
 
-function renderMenu(response) {
+function renderMenu({ response }) {
     const { items } = response;
     console.log(`[Header] renderMenu:`, items);
 

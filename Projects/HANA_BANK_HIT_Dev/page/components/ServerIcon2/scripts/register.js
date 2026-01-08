@@ -34,9 +34,9 @@ fx.go(
 
 /**
  * 서버 상태에 따라 SVG 색상 변경
- * @param {Object} response - { status: 'normal' | 'warning' | 'inactive' }
+ * @param {Object} param - { response: { status: 'normal' | 'warning' | 'inactive' } }
  */
-function renderStatus(response) {
+function renderStatus({ response }) {
     const { status } = response;
     console.log(`[ServerIcon2] renderStatus: ${status}`);
 

@@ -67,7 +67,7 @@ fx.go(
 // RENDER FUNCTIONS
 // ======================
 
-function renderData(response) {
+function renderData({ response }) {
     const { data } = response;
     if (!data || !data.sections) return;
 

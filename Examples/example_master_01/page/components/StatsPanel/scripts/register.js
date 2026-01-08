@@ -44,7 +44,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderStats(response) {
+function renderStats({ response }) {
     const { data } = response;
     console.log(`[StatsPanel] renderStats:`, data);
 

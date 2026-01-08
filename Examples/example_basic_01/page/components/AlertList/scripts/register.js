@@ -42,7 +42,7 @@ bindEvents(this, this.customEvents);
 // RENDER FUNCTIONS
 // ======================
 
-function renderAlerts(response) {
+function renderAlerts({ response }) {
     const { alerts } = response;
     console.log(`[AlertList] renderAlerts: ${alerts?.length || 0} alerts`);
 
