@@ -2651,3 +2651,170 @@ onEventBusHandlers(this.eventBusHandlers);
 | 컴포넌트 초기화 시점을 페이지가 알아야 함 | 패턴 2: emit | 페이지가 오케스트레이션 |
 | 브라우저 이벤트를 기다려야 함 | 패턴 2: emit | 정확한 시점 제어 |
 
+---
+
+## 부록 C: 컴포넌트 내부 이벤트 패턴
+
+### 설계 철학 맥락
+
+RNBT의 핵심 원칙은 **"컴포넌트는 수동적이며, 자신의 콘텐츠를 가지고 있다"** 입니다.
+
+여기서 "수동적"은 **데이터 흐름과 비즈니스 로직 결정**에 대한 것이며, "자신의 콘텐츠를 가지고 있다"는 **컴포넌트가 자체 UI 상태를 관리할 수 있음**을 의미합니다.
+
+따라서 컴포넌트 내부의 UI 조작(버튼 토글, 목록 확장/축소 등)은 컴포넌트가 자율적으로 처리할 수 있으며, 이는 "수동적" 원칙과 충돌하지 않습니다.
+
+### 내부 이벤트 vs 외부 이벤트
+
+| 구분 | 내부 이벤트 | 외부 이벤트 |
+|------|------------|------------|
+| **목적** | 컴포넌트 자체 UI 상태 관리 | 페이지에 사용자 행동 알림 |
+| **핸들러 등록** | `setupInternalHandlers()` | `customEvents` + `bindEvents()` |
+| **핸들러 저장** | `this._internalHandlers` | `this.customEvents` |
+| **정리** | 명시적 `removeEventListener()` | `removeCustomEvents()` |
+| **판단 기준** | "이 동작의 결과를 페이지가 알아야 하는가?" → No | "이 동작의 결과를 페이지가 알아야 하는가?" → Yes |
+
+### 공존 가능성
+
+내부 이벤트와 외부 이벤트는 **공존이 가능**합니다. 같은 버튼이 두 가지 역할을 할 수 있습니다:
+
+```javascript
+// 외부: 페이지에 알림 (필요시)
+this.customEvents = {
+    click: {
+        '.btn-toggle': '@toggleClicked'  // 페이지가 이 정보를 필요로 할 때만
+    }
+};
+bindEvents(this, this.customEvents);
+
+// 내부: UI 상태 변경
+this._internalHandlers = {};
+
+function setupInternalHandlers() {
+    this._internalHandlers.toggleClick = () => {
+        this.isExpanded = !this.isExpanded;
+        this.updateUI();
+    };
+    this.appendElement.querySelector('.btn-toggle')?.addEventListener('click', this._internalHandlers.toggleClick);
+}
+setupInternalHandlers.call(this);
+```
+
+### 일반 컴포넌트 vs 자기완결 컴포넌트 비교
+
+| 구분 | 일반 2D 컴포넌트 | 자기완결 3D 컴포넌트 |
+|------|-----------------|-------------------|
+| **위치** | `Components/` | `Projects/[Project]/self-contained-components/` |
+| **구조** | Master/Page/Component 계층 | Shadow DOM 팝업 |
+| **내부 이벤트 등록** | `setupInternalHandlers()` | `popupCreatedConfig.events` |
+| **핸들러 저장** | `this._internalHandlers = {}` | `popupCreatedConfig` 객체 |
+| **정리 방식** | 명시적 `removeEventListener()` | `destroyPopup()` 자동 처리 |
+| **정리 시점** | `beforeDestroy.js` | `onDestroyPopup` 콜백 |
+
+### 자기완결 컴포넌트의 "최소한의 페이지 지휘"
+
+자기완결 컴포넌트도 완전히 독립적이지 않습니다. **팝업 트리거 시점**은 페이지가 결정합니다.
+
+| 트리거 방식 | 페이지 역할 | 예시 |
+|------------|-----------|------|
+| 클릭 | 어떤 이벤트에 `showPopup()` 호출할지 결정 | 3D 오브젝트 클릭 |
+| 더블클릭 | 클릭과 더블클릭 구분 | 클릭=선택, 더블클릭=상세 |
+| 다른 컴포넌트 호출 | 컴포넌트 간 연동 | 리스트 행 선택 → 3D 팝업 |
+
+```javascript
+// 페이지 (before_load.js)
+this.eventBusHandlers = {
+    // 3D 오브젝트 더블클릭 시 팝업 표시
+    '@upsDoubleClicked': ({ targetInstance, event }) => {
+        targetInstance.showPopup(event.upsId);
+    },
+
+    // 다른 컴포넌트(리스트)에서 호출
+    '@listRowSelected': ({ event }) => {
+        const upsComponent = this.getComponentById('ups-3d');
+        upsComponent.showPopup(event.selectedId);
+    }
+};
+```
+
+**핵심:** 자기완결 컴포넌트는 "팝업 내부 동작"만 자율적으로 처리하고, "언제 팝업을 열지"는 페이지가 결정합니다.
+
+### 일반 컴포넌트 패턴
+
+**register.js:**
+```javascript
+this._internalHandlers = {};
+
+function setupInternalHandlers() {
+    const root = this.appendElement;
+
+    // 핸들러 참조 저장
+    this._internalHandlers.clearClick = () => this.clearLogs();
+    this._internalHandlers.scrollClick = () => this.toggleAutoScroll();
+
+    // 이벤트 등록
+    root.querySelector('.btn-clear')?.addEventListener('click', this._internalHandlers.clearClick);
+    root.querySelector('.btn-scroll')?.addEventListener('click', this._internalHandlers.scrollClick);
+}
+```
+
+**beforeDestroy.js:**
+```javascript
+const root = this.appendElement;
+if (this._internalHandlers) {
+    root.querySelector('.btn-clear')?.removeEventListener('click', this._internalHandlers.clearClick);
+    root.querySelector('.btn-scroll')?.removeEventListener('click', this._internalHandlers.scrollClick);
+}
+this._internalHandlers = null;
+```
+
+### 자기완결 컴포넌트 패턴
+
+**register.js:**
+```javascript
+// 팝업 내부 이벤트 설정
+this.popupCreatedConfig = {
+    chartSelector: '.chart-container',
+    events: {
+        click: {
+            '.close-btn': () => this.hideDetail(),
+            '.tab-btn': (e) => this.switchTab(e.target.dataset.tab)
+        }
+    }
+};
+
+// 팝업 HTML/CSS 가져오기
+const { htmlCode, cssCode } = this.properties.publishCode || {};
+this.getPopupHTML = () => extractTemplate(htmlCode || '', 'popup-component');
+this.getPopupStyles = () => cssCode || '';
+this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+
+// Shadow DOM 팝업 믹스인 적용
+applyShadowPopupMixin(this, {
+    getHTML: this.getPopupHTML,
+    getStyles: this.getPopupStyles,
+    onCreated: this.onPopupCreated
+});
+```
+
+**beforeDestroy.js:**
+```javascript
+// destroyPopup이 내부적으로 Shadow DOM과 이벤트 정리 수행
+this.destroyPopup();
+```
+
+### 생성/정리 매칭 테이블 (전체)
+
+| 생성 (register) | 정리 (beforeDestroy) |
+|-----------------|----------------------|
+| `this.subscriptions = {...}` | `this.subscriptions = null` |
+| `subscribe(topic, this, handler)` | `unsubscribe(topic, this)` |
+| `this.customEvents = {...}` | `this.customEvents = null` |
+| `bindEvents(this, customEvents)` | `removeCustomEvents(this, customEvents)` |
+| `this._internalHandlers = {...}` | `this._internalHandlers = null` |
+| `addEventListener(...)` | `removeEventListener(...)` |
+| `this.renderData = fn.bind(this)` | `this.renderData = null` |
+| `this._state = value` | `this._state = null` |
+| `createPopup(this, config)` | `destroyPopup(this)` |
+| `this.eventBusHandlers = {...}` | `this.eventBusHandlers = null` |
+| `onEventBusHandlers(handlers)` | `offEventBusHandlers(handlers)` |
+

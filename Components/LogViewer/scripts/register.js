@@ -38,6 +38,7 @@ const config = {
 // ======================
 
 this._autoScroll = true;
+this._internalHandlers = {};
 
 // ======================
 // BINDNGS (바인딩)
@@ -75,6 +76,9 @@ this.customEvents = {
 };
 
 bindEvents(this, this.customEvents);
+
+// 내부 이벤트 핸들러
+setupInternalHandlers.call(this);
 
 // ======================
 // RENDER FUNCTIONS (호이스팅)
@@ -146,4 +150,16 @@ function scrollToBottom() {
     if (!this._autoScroll) return;
     const container = this.appendElement.querySelector('.log-container');
     container.scrollTop = container.scrollHeight;
+}
+
+function setupInternalHandlers() {
+    const root = this.appendElement;
+
+    // 핸들러 참조 저장 (beforeDestroy에서 제거용)
+    this._internalHandlers.clearClick = () => this.clearLogs();
+    this._internalHandlers.scrollClick = () => this.toggleAutoScroll();
+
+    // 핸들러 바인딩
+    root.querySelector('.btn-clear')?.addEventListener('click', this._internalHandlers.clearClick);
+    root.querySelector('.btn-scroll')?.addEventListener('click', this._internalHandlers.scrollClick);
 }

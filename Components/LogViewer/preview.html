@@ -135,6 +135,9 @@
 
             bindEvents(this, this.customEvents);
 
+            // 내부 이벤트 핸들러
+            setupInternalHandlers.call(this);
+
             function renderData(config, { response }) {
                 const { data } = response;
                 if (!data) return;
@@ -156,7 +159,6 @@
             function appendLog(config, response) {
                 const { data } = response;
                 if (!data) return;
-
                 const listEl = this.appendElement.querySelector('.log-list');
                 appendLogItem.call(this, config, listEl, data);
 
@@ -199,6 +201,13 @@
                 const container = this.appendElement.querySelector('.log-container');
                 container.scrollTop = container.scrollHeight;
             }
+
+            function setupInternalHandlers() {
+                const root = this.appendElement;
+
+                root.querySelector('.btn-clear')?.addEventListener('click', () => this.clearLogs());
+                root.querySelector('.btn-scroll')?.addEventListener('click', () => this.toggleAutoScroll());
+            }
         }).call(mockThis);
 
         // ======================
@@ -237,13 +246,15 @@
 
         function sendMockData() {
             mockThis.renderData({
-                data: {
-                    title: 'System Logs',
-                    logs: [
-                        { time: '10:23:45', level: 'info', message: 'Application started' },
-                        { time: '10:23:46', level: 'warn', message: 'Cache miss' },
-                        { time: '10:23:47', level: 'error', message: 'Connection failed' }
-                    ]
+                response: {
+                    data: {
+                        title: 'System Logs',
+                        logs: [
+                            { time: '10:23:45', level: 'info', message: 'Application started' },
+                            { time: '10:23:46', level: 'warn', message: 'Cache miss' },
+                            { time: '10:23:47', level: 'error', message: 'Connection failed' }
+                        ]
+                    }
                 }
             });
         }
@@ -258,10 +269,12 @@
         ];
 
         function addRandomLog() {
-            const now = new Date();
+            const h = String(Math.floor(Math.random() * 24)).padStart(2, '0');
+            const m = String(Math.floor(Math.random() * 60)).padStart(2, '0');
+            const s = String(Math.floor(Math.random() * 60)).padStart(2, '0');
             mockThis.appendLog({
                 data: {
-                    time: now.toTimeString().split(' ')[0],
+                    time: `${h}:${m}:${s}`,
                     level: levels[Math.floor(Math.random() * levels.length)],
                     message: messages[Math.floor(Math.random() * messages.length)]
                 }

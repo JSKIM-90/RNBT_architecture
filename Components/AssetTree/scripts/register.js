@@ -49,6 +49,7 @@ this._expandedNodes = new Set();
 this._selectedNodeId = null;
 this._searchTerm = '';
 this._treeData = null;
+this._internalHandlers = {};
 
 // ======================
 // BINDINGS (바인딩)
@@ -235,8 +236,8 @@ function hasMatchingDescendants(children, fields, searchTerm) {
 function setupInternalHandlers() {
     const root = this.appendElement;
 
-    // 토글 클릭 (펼침/접힘)
-    root.addEventListener('click', (e) => {
+    // 핸들러 참조 저장 (beforeDestroy에서 제거용)
+    this._internalHandlers.toggleClick = (e) => {
         const toggle = e.target.closest('.node-toggle');
         if (toggle && !toggle.classList.contains('leaf')) {
             e.stopPropagation();
@@ -245,10 +246,9 @@ function setupInternalHandlers() {
                 this.toggleNode(nodeEl.dataset.nodeId);
             }
         }
-    });
+    };
 
-    // 노드 클릭 (선택)
-    root.addEventListener('click', (e) => {
+    this._internalHandlers.nodeClick = (e) => {
         const content = e.target.closest('.node-content');
         if (content && !e.target.closest('.node-toggle')) {
             const nodeEl = content.closest('.tree-node');
@@ -256,22 +256,18 @@ function setupInternalHandlers() {
                 this.selectNode(nodeEl.dataset.nodeId);
             }
         }
-    });
+    };
 
-    // Expand All
-    root.querySelector('.btn-expand-all')?.addEventListener('click', () => {
-        this.expandAll();
-    });
+    this._internalHandlers.expandAllClick = () => this.expandAll();
+    this._internalHandlers.collapseAllClick = () => this.collapseAll();
+    this._internalHandlers.searchInput = (e) => this.handleSearch(e.target.value);
 
-    // Collapse All
-    root.querySelector('.btn-collapse-all')?.addEventListener('click', () => {
-        this.collapseAll();
-    });
-
-    // 검색
-    root.querySelector('.search-input')?.addEventListener('input', (e) => {
-        this.handleSearch(e.target.value);
-    });
+    // 핸들러 바인딩
+    root.addEventListener('click', this._internalHandlers.toggleClick);
+    root.addEventListener('click', this._internalHandlers.nodeClick);
+    root.querySelector('.btn-expand-all')?.addEventListener('click', this._internalHandlers.expandAllClick);
+    root.querySelector('.btn-collapse-all')?.addEventListener('click', this._internalHandlers.collapseAllClick);
+    root.querySelector('.search-input')?.addEventListener('input', this._internalHandlers.searchInput);
 }
 
 function toggleNode(nodeId) {

@@ -25,6 +25,17 @@ removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
 
 // ======================
+// INTERNAL HANDLER CLEANUP
+// ======================
+
+const root = this.appendElement;
+if (this._internalHandlers) {
+    root.querySelector('.btn-clear')?.removeEventListener('click', this._internalHandlers.clearClick);
+    root.querySelector('.btn-scroll')?.removeEventListener('click', this._internalHandlers.scrollClick);
+}
+this._internalHandlers = null;
+
+// ======================
 // STATE CLEANUP
 // ======================
 

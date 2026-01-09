@@ -25,6 +25,20 @@ removeCustomEvents(this, this.customEvents);
 this.customEvents = null;
 
 // ======================
+// INTERNAL HANDLER CLEANUP
+// ======================
+
+const root = this.appendElement;
+if (this._internalHandlers) {
+    root.removeEventListener('click', this._internalHandlers.toggleClick);
+    root.removeEventListener('click', this._internalHandlers.nodeClick);
+    root.querySelector('.btn-expand-all')?.removeEventListener('click', this._internalHandlers.expandAllClick);
+    root.querySelector('.btn-collapse-all')?.removeEventListener('click', this._internalHandlers.collapseAllClick);
+    root.querySelector('.search-input')?.removeEventListener('input', this._internalHandlers.searchInput);
+}
+this._internalHandlers = null;
+
+// ======================
 // STATE CLEANUP
 // ======================
 
