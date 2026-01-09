@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetTree Preview</title>
+    <link rel="stylesheet" href="styles/component.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #0d1117;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        h1 { color: #e0e6ed; margin-bottom: 24px; }
+        .preview-container { width: 350px; height: 500px; }
+        .preview-container .asset-tree { height: 100%; }
+        .controls { margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .controls button {
+            padding: 8px 16px;
+            background: #4ade80;
+            color: #1a1f2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .controls button:hover { background: #22c55e; }
+        .controls button.destroy { background: #f87171; }
+        .controls button.destroy:hover { background: #ef4444; }
+        .controls button.secondary { background: #3b82f6; }
+    </style>
+</head>
+<body>
+    <h1>AssetTree Component Preview</h1>
+    <div id="component-root" class="preview-container"></div>
+    <div class="controls">
+        <button onclick="sendMockData()">Load Data</button>
+        <button onclick="sendLargeData()" class="secondary">Large Data</button>
+        <button onclick="destroy()" class="destroy">Destroy</button>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK CONTEXT
+        // ======================
+
+        const mockThis = {
+            appendElement: document.getElementById('component-root')
+        };
+
+        // HTML 삽입 (views/component.html 내용)
+        mockThis.appendElement.innerHTML = `
+            <div class="asset-tree">
+                <div class="tree-header">
+                    <span class="tree-title">-</span>
+                    <div class="tree-controls">
+                        <button class="btn-expand-all" title="Expand All">▼</button>
+                        <button class="btn-collapse-all" title="Collapse All">▶</button>
+                    </div>
+                </div>
+                <div class="tree-search">
+                    <input type="text" class="search-input" placeholder="Search assets...">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <div class="tree-container">
+                    <ul class="tree-root"></ul>
+                </div>
+            </div>
+        `;
+
+        // ======================
+        // MOCK DEPENDENCIES
+        // ======================
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, context, fn) => {
+                console.log(`[Mock] subscribe: ${topic}`);
+            },
+            unsubscribe: (topic, context) => {
+                console.log(`[Mock] unsubscribe: ${topic}`);
+            }
+        };
+
+        const Wkit = {
+            bindEvents: (context, events) => {
+                console.log('[Mock] bindEvents:', events);
+            },
+            removeCustomEvents: (context, events) => {
+                console.log('[Mock] removeCustomEvents:', events);
+            }
+        };
+
+        const fx = {
+            go: (arr, ...fns) => fns.reduce((acc, fn) => fn(acc), arr),
+            each: fn => arr => { arr.forEach(fn); return arr; }
+        };
+
+        // ======================
+        // REGISTER (scripts/register.js 내용 - TBD를 실제 값으로 변경)
+        // ======================
+
+        (function register() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = Wkit;
+
+            // CONFIG (TBD → 실제 값)
+            const config = {
+                titleKey: 'title',
+                itemsKey: 'items',
+                fields: {
+                    id: 'id',
+                    name: 'name',
+                    type: 'type',
+                    children: 'children'
+                },
+                defaultType: 'default'
+            };
+
+            // STATE
+            this._expandedNodes = new Set();
+            this._selectedNodeId = null;
+            this._searchTerm = '';
+            this._treeData = null;
+
+            // BINDINGS
+            this.renderData = renderData.bind(this, config);
+            this.toggleNode = toggleNode.bind(this);
+            this.selectNode = selectNode.bind(this);
+            this.expandAll = expandAll.bind(this);
+            this.collapseAll = collapseAll.bind(this);
+            this.handleSearch = handleSearch.bind(this, config);
+
+            // SUBSCRIPTIONS
+            this.subscriptions = {
+                assetData: ['renderData']
+            };
+
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            // EVENT BINDING
+            this.customEvents = {
+                click: {
+                    '.node-toggle': '@nodeToggled',
+                    '.node-content': '@nodeClicked',
+                    '.btn-expand-all': '@expandAllClicked',
+                    '.btn-collapse-all': '@collapseAllClicked'
+                },
+                input: {
+                    '.search-input': '@searchChanged'
+                }
+            };
+
+            bindEvents(this, this.customEvents);
+
+            // 내부 이벤트 핸들러
+            setupInternalHandlers.call(this);
+
+            // RENDER FUNCTIONS
+            function renderData(config, { response }) {
+                const { data } = response;
+                if (!data) return;
+
+                const titleEl = this.appendElement.querySelector('.tree-title');
+                if (titleEl && data[config.titleKey]) {
+                    titleEl.textContent = data[config.titleKey];
+                }
+
+                const items = data[config.itemsKey];
+                if (items && Array.isArray(items)) {
+                    this._treeData = items;
+                    renderTree.call(this, config, items);
+                }
+            }
+
+            function renderTree(config, items, searchTerm = '') {
+                const rootEl = this.appendElement.querySelector('.tree-root');
+                if (!rootEl) return;
+
+                rootEl.innerHTML = '';
+                const normalizedSearch = searchTerm.toLowerCase().trim();
+
+                fx.go(
+                    items,
+                    fx.each(item => {
+                        const nodeEl = createNodeElement.call(this, config, item, normalizedSearch);
+                        if (nodeEl) rootEl.appendChild(nodeEl);
+                    })
+                );
+            }
+
+            function createNodeElement(config, item, searchTerm) {
+                const { fields, defaultType } = config;
+
+                const id = item[fields.id];
+                const name = item[fields.name] || '-';
+                const type = item[fields.type] || defaultType;
+                const children = item[fields.children] || [];
+                const hasChildren = children.length > 0;
+                const isExpanded = this._expandedNodes.has(id);
+                const isSelected = this._selectedNodeId === id;
+
+                const matchesSearch = !searchTerm || name.toLowerCase().includes(searchTerm);
+                const hasMatchingChildren = hasChildren && hasMatchingDescendants(children, fields, searchTerm);
+
+                if (searchTerm && !matchesSearch && !hasMatchingChildren) {
+                    return null;
+                }
+
+                const li = document.createElement('li');
+                li.className = 'tree-node';
+                li.dataset.nodeId = id;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'node-content';
+                if (isSelected) contentDiv.classList.add('selected');
+                if (searchTerm && matchesSearch) contentDiv.classList.add('highlight');
+
+                const toggleSpan = document.createElement('span');
+                toggleSpan.className = 'node-toggle';
+                if (hasChildren) {
+                    toggleSpan.textContent = '▶';
+                    if (isExpanded) toggleSpan.classList.add('expanded');
+                } else {
+                    toggleSpan.classList.add('leaf');
+                }
+
+                const iconSpan = document.createElement('span');
+                iconSpan.className = 'node-icon';
+                iconSpan.dataset.type = type;
+
+                const labelSpan = document.createElement('span');
+                labelSpan.className = 'node-label';
+                labelSpan.textContent = name;
+                if (searchTerm && !matchesSearch && hasMatchingChildren) {
+                    labelSpan.classList.add('dimmed');
+                }
+
+                contentDiv.appendChild(toggleSpan);
+                contentDiv.appendChild(iconSpan);
+                contentDiv.appendChild(labelSpan);
+                li.appendChild(contentDiv);
+
+                if (hasChildren) {
+                    const childrenUl = document.createElement('ul');
+                    childrenUl.className = 'node-children';
+                    if (isExpanded || (searchTerm && hasMatchingChildren)) {
+                        childrenUl.classList.add('expanded');
+                    }
+
+                    fx.go(
+                        children,
+                        fx.each(child => {
+                            const childEl = createNodeElement.call(this, config, child, searchTerm);
+                            if (childEl) childrenUl.appendChild(childEl);
+                        })
+                    );
+
+                    li.appendChild(childrenUl);
+                }
+
+                return li;
+            }
+
+            function hasMatchingDescendants(children, fields, searchTerm) {
+                if (!searchTerm) return false;
+                return children.some(child => {
+                    const name = (child[fields.name] || '').toLowerCase();
+                    if (name.includes(searchTerm)) return true;
+                    const grandChildren = child[fields.children] || [];
+                    return grandChildren.length > 0 && hasMatchingDescendants(grandChildren, fields, searchTerm);
+                });
+            }
+
+            function setupInternalHandlers() {
+                const root = this.appendElement;
+
+                root.addEventListener('click', (e) => {
+                    const toggle = e.target.closest('.node-toggle');
+                    if (toggle && !toggle.classList.contains('leaf')) {
+                        e.stopPropagation();
+                        const nodeEl = toggle.closest('.tree-node');
+                        if (nodeEl) this.toggleNode(nodeEl.dataset.nodeId);
+                    }
+                });
+
+                root.addEventListener('click', (e) => {
+                    const content = e.target.closest('.node-content');
+                    if (content && !e.target.closest('.node-toggle')) {
+                        const nodeEl = content.closest('.tree-node');
+                        if (nodeEl) this.selectNode(nodeEl.dataset.nodeId);
+                    }
+                });
+
+                root.querySelector('.btn-expand-all')?.addEventListener('click', () => this.expandAll());
+                root.querySelector('.btn-collapse-all')?.addEventListener('click', () => this.collapseAll());
+                root.querySelector('.search-input')?.addEventListener('input', (e) => this.handleSearch(e.target.value));
+            }
+
+            function toggleNode(nodeId) {
+                if (this._expandedNodes.has(nodeId)) {
+                    this._expandedNodes.delete(nodeId);
+                } else {
+                    this._expandedNodes.add(nodeId);
+                }
+                updateNodeVisuals.call(this, nodeId);
+            }
+
+            function selectNode(nodeId) {
+                const prevSelected = this.appendElement.querySelector('.node-content.selected');
+                if (prevSelected) prevSelected.classList.remove('selected');
+                this._selectedNodeId = nodeId;
+                const nodeEl = this.appendElement.querySelector(`[data-node-id="${nodeId}"] > .node-content`);
+                if (nodeEl) nodeEl.classList.add('selected');
+                console.log('[AssetTree] Selected:', nodeId);
+            }
+
+            function expandAll() {
+                collectAllNodeIds.call(this, this._treeData, this._expandedNodes);
+                if (this._treeData) renderTree.call(this, config, this._treeData, this._searchTerm);
+            }
+
+            function collapseAll() {
+                this._expandedNodes.clear();
+                if (this._treeData) renderTree.call(this, config, this._treeData, this._searchTerm);
+            }
+
+            function collectAllNodeIds(items, set) {
+                if (!items) return;
+                const { fields } = config;
+                fx.go(items, fx.each(item => {
+                    const children = item[fields.children];
+                    if (children && children.length > 0) {
+                        set.add(item[fields.id]);
+                        collectAllNodeIds.call(this, children, set);
+                    }
+                }));
+            }
+
+            function handleSearch(config, value) {
+                this._searchTerm = value;
+                if (this._treeData) renderTree.call(this, config, this._treeData, value);
+            }
+
+            function updateNodeVisuals(nodeId) {
+                const nodeEl = this.appendElement.querySelector(`[data-node-id="${nodeId}"]`);
+                if (!nodeEl) return;
+                const toggle = nodeEl.querySelector(':scope > .node-content > .node-toggle');
+                const children = nodeEl.querySelector(':scope > .node-children');
+                const isExpanded = this._expandedNodes.has(nodeId);
+                if (toggle) toggle.classList.toggle('expanded', isExpanded);
+                if (children) children.classList.toggle('expanded', isExpanded);
+            }
+
+        }).call(mockThis);
+
+        // ======================
+        // BEFORE DESTROY
+        // ======================
+
+        function destroy() {
+            (function beforeDestroy() {
+                const { unsubscribe } = GlobalDataPublisher;
+                const { removeCustomEvents } = Wkit;
+                const { each } = fx;
+
+                fx.go(
+                    Object.entries(this.subscriptions),
+                    each(([topic, _]) => unsubscribe(topic, this))
+                );
+                this.subscriptions = null;
+
+                removeCustomEvents(this, this.customEvents);
+                this.customEvents = null;
+
+                this._expandedNodes = null;
+                this._selectedNodeId = null;
+                this._searchTerm = null;
+                this._treeData = null;
+
+                this.renderData = null;
+                this.toggleNode = null;
+                this.selectNode = null;
+                this.expandAll = null;
+                this.collapseAll = null;
+                this.handleSearch = null;
+
+                console.log('[AssetTree] Destroyed');
+            }).call(mockThis);
+        }
+
+        // ======================
+        // TEST HELPERS
+        // ======================
+
+        function sendMockData() {
+            mockThis.renderData({
+                response: {
+                    data: {
+                        title: 'Asset Tree',
+                        items: [
+                            {
+                                id: '1',
+                                name: 'Building A',
+                                type: 'zone',
+                                children: [
+                                    {
+                                        id: '1-1',
+                                        name: 'Floor 1',
+                                        type: 'zone',
+                                        children: [
+                                            { id: '1-1-1', name: 'HVAC Unit', type: 'equipment' },
+                                            { id: '1-1-2', name: 'Temperature Sensor', type: 'sensor' },
+                                            { id: '1-1-3', name: 'Power Meter', type: 'meter' }
+                                        ]
+                                    },
+                                    {
+                                        id: '1-2',
+                                        name: 'Floor 2',
+                                        type: 'zone',
+                                        children: [
+                                            { id: '1-2-1', name: 'Fire Alarm', type: 'alarm' },
+                                            { id: '1-2-2', name: 'Access Control', type: 'device' }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                id: '2',
+                                name: 'Building B',
+                                type: 'zone',
+                                children: [
+                                    { id: '2-1', name: 'Server Room', type: 'zone' },
+                                    { id: '2-2', name: 'UPS System', type: 'equipment' }
+                                ]
+                            },
+                            {
+                                id: '3',
+                                name: 'Outdoor',
+                                type: 'zone',
+                                children: [
+                                    { id: '3-1', name: 'Weather Station', type: 'sensor' },
+                                    { id: '3-2', name: 'Security Camera', type: 'device' }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            });
+        }
+
+        function sendLargeData() {
+            const generateChildren = (prefix, depth, maxDepth) => {
+                if (depth >= maxDepth) return [];
+                const types = ['zone', 'equipment', 'sensor', 'device', 'meter'];
+                return Array.from({ length: 3 }, (_, i) => ({
+                    id: `${prefix}-${i + 1}`,
+                    name: `Node ${prefix}-${i + 1}`,
+                    type: types[Math.floor(Math.random() * types.length)],
+                    children: generateChildren(`${prefix}-${i + 1}`, depth + 1, maxDepth)
+                }));
+            };
+
+            mockThis.renderData({
+                response: {
+                    data: {
+                        title: 'Large Asset Tree',
+                        items: Array.from({ length: 5 }, (_, i) => ({
+                            id: String(i + 1),
+                            name: `Root ${i + 1}`,
+                            type: 'folder',
+                            children: generateChildren(String(i + 1), 0, 3)
+                        }))
+                    }
+                }
+            });
+        }
+
+        // 초기 렌더링
+        sendMockData();
+    </script>
+</body>
+</html>

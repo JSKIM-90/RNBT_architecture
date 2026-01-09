@@ -63,5 +63,6 @@ TBD 값만 실제 값으로 바꾸면 register/beforeDestroy와 동일한 코드
 | 이름 | 용도 |
 |------|------|
 | LogViewer | 실시간 로그 표시 |
+| AssetTree | 계층형 자산 트리 (검색 기능 포함) |
 
 ---
