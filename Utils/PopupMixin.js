@@ -141,20 +141,20 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
      * @param {Object} events - { eventType: { selector: handler } }
      */
     instance.bindPopupEvents = function(events) {
-        Object.entries(events).forEach(([eventType, handlers]) => {
+        fx.each(([eventType, handlers]) => {
             const listener = (e) => {
-                Object.entries(handlers).forEach(([selector, handler]) => {
+                fx.each(([selector, handler]) => {
                     if (e.target.closest(selector)) {
                         handler.call(instance, e);
                     }
-                });
+                }, Object.entries(handlers));
             };
 
             instance._popup.shadowRoot.addEventListener(eventType, listener);
             instance._popup.eventCleanups.push(() => {
                 instance._popup.shadowRoot.removeEventListener(eventType, listener);
             });
-        });
+        }, Object.entries(events));
     };
 
     /**
@@ -162,7 +162,7 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
      */
     instance.destroyPopup = function() {
         // 이벤트 정리
-        instance._popup.eventCleanups.forEach(cleanup => cleanup());
+        fx.each(cleanup => cleanup(), instance._popup.eventCleanups);
         instance._popup.eventCleanups = [];
 
         // DOM 제거
@@ -251,10 +251,10 @@ PopupMixin.applyEChartsMixin = function(instance) {
     const originalDestroyPopup = instance.destroyPopup;
     instance.destroyPopup = function() {
         // 차트 정리
-        instance._popup.charts.forEach(({ chart, resizeObserver }) => {
+        fx.each(({ chart, resizeObserver }) => {
             resizeObserver.disconnect();
             chart.dispose();
-        });
+        }, instance._popup.charts.values());
         instance._popup.charts.clear();
 
         // 원래 destroyPopup 호출
@@ -452,11 +452,11 @@ PopupMixin.applyTabulatorMixin = function(instance) {
     const originalDestroyPopup = instance.destroyPopup;
     instance.destroyPopup = function() {
         // 테이블 정리
-        instance._popup.tables.forEach(({ table, resizeObserver }) => {
+        fx.each(({ table, resizeObserver }) => {
             resizeObserver.disconnect();
             table.off();  // 이벤트 해제
             table.destroy();
-        });
+        }, instance._popup.tables.values());
         instance._popup.tables.clear();
 
         // 원래 destroyPopup 호출 (차트, 이벤트, DOM 정리)

@@ -30,11 +30,9 @@ const GlobalDataPublisher = (() => {
       const subs = subscriberTable.get(topic) || new Set();
 
       try {
-        const data = await WKit.fetchData(page, datasetInfo.datasetName, param);
+        const data = await Wkit.fetchData(page, datasetInfo.datasetName, param);
 
-        for (const { instance, handler } of subs) {
-          handler.call(instance, data);
-        }
+        fx.each(({ instance, handler }) => handler.call(instance, data), subs);
       } catch (error) {
         console.error(`[GlobalDataPublisher] ${topic} fetch 실패:`, error);
         throw error;
@@ -49,9 +47,9 @@ const GlobalDataPublisher = (() => {
     unsubscribe(topic, instance) {
       const subs = subscriberTable.get(topic);
       if (!subs) return;
-      for (const sub of subs) {
-        if (sub.instance === instance) subs.delete(sub);
-      }
+
+      const toDelete = fx.find(sub => sub.instance === instance, subs);
+      if (toDelete) subs.delete(toDelete);
     },
     getGlobalMappingSchema({
       topic = 'weather',
