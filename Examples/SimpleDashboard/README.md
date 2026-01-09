@@ -5,7 +5,7 @@ RNBT 아키텍처 패턴을 따르는 샘플 대시보드 프로젝트입니다.
 ## 구조
 
 ```
-example_sample_dashboard/
+SimpleDashboard/
 ├── mock_server/                    # Express API 서버
 │   ├── server.js
 │   └── package.json
