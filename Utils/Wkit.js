@@ -1,7 +1,7 @@
-const WKit = {};
+const Wkit = {};
 
 /* Public API: 2D event binding */
-WKit.bindEvents = function (instance, customEvents) {
+Wkit.bindEvents = function (instance, customEvents) {
   fx.go(
     Object.entries(customEvents),
     fx.each(([eventName, selectorList]) => {
@@ -13,7 +13,7 @@ WKit.bindEvents = function (instance, customEvents) {
   );
 };
 
-WKit.removeCustomEvents = function (instance, customEvents) {
+Wkit.removeCustomEvents = function (instance, customEvents) {
   fx.go(
     Object.entries(customEvents),
     fx.each(([eventName, selectorList]) => {
@@ -29,7 +29,7 @@ WKit.removeCustomEvents = function (instance, customEvents) {
 
 /* Public API: 3D event binding */
 
-WKit.initThreeRaycasting = function (target, eventName) {
+Wkit.initThreeRaycasting = function (target, eventName) {
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
   const { scene, camera } = wemb.threeElements;
@@ -38,7 +38,7 @@ WKit.initThreeRaycasting = function (target, eventName) {
   return onRaycasting;
 };
 
-WKit.bind3DEvents = function (instance, customEvents) {
+Wkit.bind3DEvents = function (instance, customEvents) {
   instance.appendElement.eventListener = {};
   fx.each((browserEvent) => {
     const eventHandler = make3DHandler(instance);
@@ -47,7 +47,7 @@ WKit.bind3DEvents = function (instance, customEvents) {
 };
 
 /* Public API: 3D dispose */
-WKit.dispose3DTree = function (rootContainer) {
+Wkit.dispose3DTree = function (rootContainer) {
   if (!rootContainer) return;
 
   rootContainer.traverse((obj) => {
@@ -59,9 +59,7 @@ WKit.dispose3DTree = function (rootContainer) {
     // 2. material(s)
     if (obj.material) {
       if (Array.isArray(obj.material)) {
-        obj.material.forEach((mat) => {
-          disposeMaterial(mat);
-        });
+        fx.each(disposeMaterial, obj.material);
       } else {
         disposeMaterial(obj.material);
       }
@@ -71,9 +69,9 @@ WKit.dispose3DTree = function (rootContainer) {
 
     // 4. eventListener (custom-defined on your side)
     if (obj.eventListener) {
-      Object.keys(obj.eventListener).forEach((eventType) => {
+      fx.each((eventType) => {
         obj.eventListener[eventType] = undefined;
-      });
+      }, Object.keys(obj.eventListener));
       obj.eventListener = undefined;
     }
 
@@ -89,7 +87,7 @@ WKit.dispose3DTree = function (rootContainer) {
   }
 };
 
-WKit.clearSceneBackground = function (scene) {
+Wkit.clearSceneBackground = function (scene) {
   const bg = scene.background;
 
   if (bg && bg.dispose) {
@@ -99,12 +97,12 @@ WKit.clearSceneBackground = function (scene) {
   scene.background = null;
 };
 
-WKit.disposeAllThreeResources = function (page) {
+Wkit.disposeAllThreeResources = function (page) {
   const { scene } = wemb.threeElements;
   const { unsubscribe } = GlobalDataPublisher;
 
   fx.go(
-    WKit.makeIterator(page, 'threeLayer'),
+    Wkit.makeIterator(page, 'threeLayer'),
     fx.each((instance) => {
       // 1. Subscription 정리 (있는 경우)
       if (instance.subscriptions) {
@@ -121,16 +119,16 @@ WKit.disposeAllThreeResources = function (page) {
 
       // 3. 3D 리소스 정리
       if (instance.appendElement) {
-        WKit.dispose3DTree(instance.appendElement);
+        Wkit.dispose3DTree(instance.appendElement);
       }
     })
   );
 
-  WKit.clearSceneBackground(scene);
+  Wkit.clearSceneBackground(scene);
 };
 
 /* Public API: helper */
-WKit.makeIterator = function (page, ...layerList) {
+Wkit.makeIterator = function (page, ...layerList) {
   layerList = layerList.length ? layerList : ['masterLayer', 'twoLayer', 'threeLayer'];
   const mapName = {
     masterLayer: 'componentInstanceListMap',
@@ -145,15 +143,15 @@ WKit.makeIterator = function (page, ...layerList) {
   );
 };
 
-WKit.getInstanceByName = function (instanceName, iter) {
+Wkit.getInstanceByName = function (instanceName, iter) {
   return fx.find((ins) => ins.name === instanceName, iter);
 };
 
-WKit.getInstanceById = function (targetId, iter) {
+Wkit.getInstanceById = function (targetId, iter) {
   return fx.find((ins) => ins.id === targetId, iter);
 };
 
-WKit.fetchData = function (page, datasetName, param) {
+Wkit.fetchData = function (page, datasetName, param) {
   return new Promise((res, rej) => {
     page.dataService
       .call(datasetName, { param })
@@ -162,14 +160,14 @@ WKit.fetchData = function (page, datasetName, param) {
   });
 };
 
-WKit.emitEvent = function (eventName, targetInstance) {
-  console.log('[WKit:EmitByCode]', eventName, targetInstance);
-  WEventBus.emit(eventName, {
+Wkit.emitEvent = function (eventName, targetInstance) {
+  console.log('[Wkit:EmitByCode]', eventName, targetInstance);
+  Weventbus.emit(eventName, {
     targetInstance,
   });
 };
 
-WKit.withSelector = function (element, selector, fn) {
+Wkit.withSelector = function (element, selector, fn) {
   if (!element) return null;
 
   const target = element.querySelector(selector);
@@ -177,22 +175,22 @@ WKit.withSelector = function (element, selector, fn) {
 };
 
 /* Public API: event bus on / off */
-WKit.onEventBusHandlers = function (eventBusHandlers) {
+Wkit.onEventBusHandlers = function (eventBusHandlers) {
   fx.go(
     Object.entries(eventBusHandlers),
-    fx.each(([eventName, handler]) => WEventBus.on(eventName, handler))
+    fx.each(([eventName, handler]) => Weventbus.on(eventName, handler))
   );
 };
 
-WKit.offEventBusHandlers = function (eventBusHandlers) {
+Wkit.offEventBusHandlers = function (eventBusHandlers) {
   fx.go(
     Object.entries(eventBusHandlers),
-    fx.each(([eventName, handler]) => WEventBus.off(eventName, handler))
+    fx.each(([eventName, handler]) => Weventbus.off(eventName, handler))
   );
 };
 
 /* Public API: schema utility  */
-WKit.getGlobalMappingSchema = function () {
+Wkit.getGlobalMappingSchema = function () {
   return [
     {
       topic: 'users',
@@ -211,7 +209,7 @@ WKit.getGlobalMappingSchema = function () {
   ];
 };
 
-WKit.getCustomEventsSchema = function () {
+Wkit.getCustomEventsSchema = function () {
   return {
     click: {
       '.navbar-brand': '@triggerNavbarTitle',
@@ -224,13 +222,13 @@ WKit.getCustomEventsSchema = function () {
   };
 };
 
-WKit.getCustomEventsSchemaFor3D = function () {
+Wkit.getCustomEventsSchemaFor3D = function () {
   return {
     click: '@triggerClick',
   };
 };
 
-WKit.getSubscriptionSchema = function () {
+Wkit.getSubscriptionSchema = function () {
   return {
     users: ['method1', 'method2'],
     comments: ['method3', 'method4'],
@@ -248,7 +246,7 @@ function makeHandler(targetInstance, selector) {
     const triggerEvent = customEvents?.[event.type]?.[selector];
     if (triggerEvent) {
       console.log('@eventHandler', customEvents[event.type][selector]);
-      WEventBus.emit(triggerEvent, {
+      Weventbus.emit(triggerEvent, {
         event,
         targetInstance,
       });
@@ -285,7 +283,7 @@ function make3DHandler(targetInstance) {
   return function (event) {
     const { customEvents } = targetInstance;
     console.log('@eventHandler', customEvents[event.type]);
-    WEventBus.emit(customEvents[event.type], {
+    Weventbus.emit(customEvents[event.type], {
       event,
       targetInstance,
     });
@@ -310,13 +308,13 @@ function disposeMaterial(material) {
     'gradientMap',
   ];
 
-  slots.forEach((key) => {
+  fx.each((key) => {
     const tex = material[key];
     if (tex && tex.dispose) {
       tex.dispose();
       material[key] = null;
     }
-  });
+  }, slots);
 
   material.dispose?.();
 }

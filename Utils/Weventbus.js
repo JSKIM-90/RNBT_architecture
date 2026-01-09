@@ -1,4 +1,4 @@
-const WEventBus = (() => {
+const Weventbus = (() => {
   // controller
   const listeners = new Map();
 
@@ -18,9 +18,7 @@ const WEventBus = (() => {
 
     emit(event, data) {
       if (!listeners.has(event)) return;
-      for (const callback of listeners.get(event)) {
-        callback(data);
-      }
+      fx.each(callback => callback(data), listeners.get(event));
     },
 
     once(event, callback) {
