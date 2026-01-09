@@ -377,18 +377,28 @@ PopupMixin.applyTabulatorMixin = function(instance) {
         const defaultOptions = {
             layout: 'fitColumns',
             responsiveLayout: 'collapse',
-            height: '100%',
         };
+
+        // 초기화 상태 추적
+        const tableState = { initialized: false };
 
         const table = new Tabulator(container, { ...defaultOptions, ...options });
 
+        // tableBuilt 이벤트로 초기화 완료 감지
+        table.on('tableBuilt', () => {
+            tableState.initialized = true;
+        });
+
         // ResizeObserver로 컨테이너 크기 변경 감지
         const resizeObserver = new ResizeObserver(() => {
-            table.redraw();
+            // Tabulator 초기화 완료 후에만 redraw
+            if (tableState.initialized) {
+                table.redraw();
+            }
         });
         resizeObserver.observe(container);
 
-        instance._popup.tables.set(selector, { table, resizeObserver });
+        instance._popup.tables.set(selector, { table, resizeObserver, state: tableState });
 
         return table;
     };
@@ -401,6 +411,16 @@ PopupMixin.applyTabulatorMixin = function(instance) {
      */
     instance.getTable = function(selector) {
         return instance._popup.tables.get(selector)?.table || null;
+    };
+
+    /**
+     * 테이블 초기화 완료 여부 확인
+     *
+     * @param {string} selector - 테이블 컨테이너 선택자
+     * @returns {boolean} 초기화 완료 여부
+     */
+    instance.isTableReady = function(selector) {
+        return instance._popup.tables.get(selector)?.state?.initialized || false;
     };
 
     /**

@@ -137,17 +137,109 @@ showDetail(assetId?)   // 팝업 표시 (동적 assetId 지원)
 hideDetail()           // 팝업 숨김
 ```
 
+### PDU 컴포넌트 구조
+
+PDU는 탭 UI로 Circuits(테이블) + Power History(차트)를 제공합니다.
+
+```
+PDU/
+├── views/component.html    # 탭 UI 템플릿
+├── styles/component.css    # 테이블/차트 컨테이너 스타일
+└── scripts/
+    ├── register.js         # 테이블 + 차트 초기화, 탭 전환
+    └── beforeDestroy.js    # 정리
+```
+
+**datasetInfo 구성**:
+```javascript
+this.datasetInfo = [
+    { datasetName: 'pdu', render: ['renderPDUInfo'] },
+    { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
+    { datasetName: 'pduHistory', render: ['renderPowerChart'] }
+];
+```
+
+**Mixin 사용**:
+```javascript
+applyShadowPopupMixin(this, { ... });  // Shadow DOM 팝업
+applyEChartsMixin(this);               // 차트
+applyTabulatorMixin(this);             // 테이블
+```
+
+**렌더링 함수 바인딩 (config 부분 적용)**:
+
+`bind(this, config)` 패턴으로 config를 함수에 미리 바인딩합니다.
+
+```javascript
+// 바인딩 시점에 config 고정
+this.renderPDUInfo = renderPDUInfo.bind(this, [...this.baseInfoConfig, ...this.pduInfoConfig]);
+this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
+this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
+this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig, this.tableConfig);
+
+// 함수는 config를 첫 번째 인자로 받음
+function renderCircuitTable(config, data) {
+    const circuits = data.circuits || data;
+    this.updateTable(config.selector, circuits);
+}
+```
+
+장점:
+- config가 함수 생성 시점에 고정되어 예측 가능
+- 함수 내부에서 `this.config` 참조 불필요
+- 의존성이 명시적으로 드러남
+
 ## 실전 적용 시 고려사항
+
+### 해결된 이슈
+
+**PopupMixin의 Tabulator 초기화 타이밍 (해결됨)**
+
+문제: `switchTab()` 호출 시 Tabulator가 아직 빌드되지 않아 `table.redraw()` 에러 발생
+
+```
+Cannot read properties of null (reading 'offsetWidth')
+```
+
+해결:
+1. `tableBuilt` 이벤트로 초기화 완료 감지
+2. `isTableReady(selector)` 메서드 추가
+3. `switchTab()`에서 `isTableReady()` 체크 후 `redraw()` 호출
+
+```javascript
+// PopupMixin.js - 초기화 상태 추적
+const tableState = { initialized: false };
+table.on('tableBuilt', () => {
+    tableState.initialized = true;
+});
+
+// register.js - 탭 전환 시 체크
+if (this.isTableReady('.table-container')) {
+    const table = this.getTable('.table-container');
+    setTimeout(() => table.redraw(true), 10);
+}
+```
+
+**Tabulator height: 100% CSS 덮어쓰기 (해결됨)**
+
+문제: Tabulator JS 옵션의 `height: '100%'`가 CSS `height: 280px`를 덮어씀
+
+원인: Tabulator는 JS 옵션으로 인라인 스타일을 설정하므로 CSS보다 우선순위가 높음
+
+해결: PopupMixin의 `defaultOptions`와 컴포넌트의 `getTableOption()`에서 `height` 옵션 제거
+
+```javascript
+// 제거됨
+const defaultOptions = {
+    layout: 'fitColumns',
+    responsiveLayout: 'collapse',
+    // height: '100%'  ← 제거
+};
+```
 
 ### 점검 필요 사항
 
-**1. PopupMixin의 Tabulator 로딩 시점 문제**
-- PDU에서 Tabulator 적용 시 로딩 시점 문제 발생
-- `applyTabulatorMixin` 호출 시 테이블이 초기화되기 전 접근하는 이슈
-- 현재 PDU는 Tabulator 제거하고 Chart만 사용 중
-- 향후 팝업에 Tabulator 필요 시 시점 문제 해결 필요
-
-**2. AssetList 퍼포먼스 최적화**
+**AssetList 퍼포먼스 최적화**
 - Lazy Loading: 스크롤 시 데이터 로드
 - CSS `content-visibility`: 화면 밖 요소 렌더링 스킵
 - API 분할 (Pagination): 대용량 자산 목록 대응

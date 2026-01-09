@@ -44,12 +44,27 @@
                 </div>
             </div>
 
-            <!-- Chart Section -->
-            <div class="chart-section">
-                <div class="section-header">
-                    <span class="section-title">Power & Current History</span>
+            <!-- Tab Header -->
+            <div class="tab-header">
+                <button class="tab-btn active" data-tab="circuits">Circuits</button>
+                <button class="tab-btn" data-tab="power">Power History</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <div class="tab-panel active" data-panel="circuits">
+                    <div class="panel-header">
+                        <span class="panel-title">Circuit Status</span>
+                    </div>
+                    <div class="table-container"></div>
                 </div>
-                <div class="chart-container"></div>
+
+                <div class="tab-panel" data-panel="power">
+                    <div class="panel-header">
+                        <span class="panel-title">Power & Current History</span>
+                    </div>
+                    <div class="chart-container"></div>
+                </div>
             </div>
         </div>
     </div>
