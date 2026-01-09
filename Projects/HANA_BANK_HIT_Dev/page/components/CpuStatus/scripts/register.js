@@ -19,7 +19,7 @@
  */
 
 const { subscribe } = GlobalDataPublisher;
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 const { each, go } = fx;
 
 // ======================

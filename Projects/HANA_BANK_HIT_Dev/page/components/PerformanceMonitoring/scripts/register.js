@@ -21,7 +21,7 @@
  */
 
 const { subscribe } = GlobalDataPublisher;
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 const { go, map, each, pipe } = fx;
 
 // ======================

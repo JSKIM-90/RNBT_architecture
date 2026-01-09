@@ -6,7 +6,7 @@
  * - 온습도 히스토리 차트 (듀얼 Y축: 온도/습도)
  */
 
-const { bind3DEvents, fetchData } = WKit;
+const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 // ======================

@@ -11,7 +11,7 @@
  */
 
 const { unsubscribe } = GlobalDataPublisher;
-const { unbindEvents } = WKit;
+const { unbindEvents } = Wkit;
 
 // ======================
 // CLEANUP

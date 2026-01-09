@@ -16,7 +16,7 @@
  */
 
 const { subscribe } = GlobalDataPublisher;
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 
 // ======================
 // CONFIG (정적 선언)

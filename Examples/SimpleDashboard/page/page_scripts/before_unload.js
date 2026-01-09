@@ -10,7 +10,7 @@
  * - 메모리 정리
  */
 
-const { offEventBusHandlers } = WKit;
+const { offEventBusHandlers } = Wkit;
 const { each } = fx;
 
 // ======================

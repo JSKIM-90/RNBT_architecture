@@ -4,7 +4,7 @@
  */
 
 const { unsubscribe } = GlobalDataPublisher;
-const { removeCustomEvents } = WKit;
+const { removeCustomEvents } = Wkit;
 const { each } = fx;
 
 // ======================

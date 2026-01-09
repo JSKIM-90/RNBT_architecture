@@ -9,7 +9,7 @@
  * - Dispose all 3D resources
  */
 
-const { offEventBusHandlers, disposeAllThreeResources, withSelector } = WKit;
+const { offEventBusHandlers, disposeAllThreeResources, withSelector } = Wkit;
 const { go, each, map } = fx;
 
 onPageUnLoad.call(this);

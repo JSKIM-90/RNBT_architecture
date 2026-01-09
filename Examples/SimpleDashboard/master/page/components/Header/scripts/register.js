@@ -10,7 +10,7 @@
  */
 
 const { subscribe } = GlobalDataPublisher;
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 
 // ======================
 // CONFIG (Field Config 패턴)

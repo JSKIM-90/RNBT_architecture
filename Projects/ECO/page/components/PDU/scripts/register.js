@@ -15,7 +15,7 @@
  * 9. Popup - template 기반 탭 Shadow DOM 팝업
  */
 
-const { bind3DEvents, fetchData } = WKit;
+const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
 
 // ======================

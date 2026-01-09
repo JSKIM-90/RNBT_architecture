@@ -141,7 +141,7 @@ class MyChart extends WVDOMComponent {
 **코드 예시:**
 
 ```javascript
-const { onEventBusHandlers, fetchData } = WKit;
+const { onEventBusHandlers, fetchData } = Wkit;
 
 this.eventBusHandlers = {
     // 샘플: Primitive 조합 패턴
@@ -298,7 +298,7 @@ function onPageUnLoad() {
 #### 패턴 1: 2D 이벤트 바인딩
 
 ```javascript
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 
 this.customEvents = {
     click: {
@@ -346,7 +346,7 @@ function renderTable(data) {
 ### beforeDestroy 패턴
 
 ```javascript
-const { removeCustomEvents } = WKit;
+const { removeCustomEvents } = Wkit;
 const { unsubscribe } = GlobalDataPublisher;
 const { each } = fx;
 
@@ -455,7 +455,7 @@ setInterval(() => {
 
 [User Interaction]
   → DOM Event
-  → WEventBus.emit()
+  → Weventbus.emit()
   → Page EventBus Handler
   → currentParams 업데이트
   → 즉시 fetchAndPublish
@@ -531,7 +531,7 @@ Default JS 적용 ← 이 문서
 
 ```javascript
 const { subscribe } = GlobalDataPublisher;
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 const { each } = fx;
 
 // ======================
@@ -580,7 +580,7 @@ bindEvents(this, this.customEvents);
 
 ```javascript
 const { unsubscribe } = GlobalDataPublisher;
-const { removeCustomEvents } = WKit;
+const { removeCustomEvents } = Wkit;
 const { each } = fx;
 
 // ======================
@@ -612,7 +612,7 @@ this.customEvents = null;
 #### register.js
 
 ```javascript
-const { bind3DEvents } = WKit;
+const { bind3DEvents } = Wkit;
 
 // ======================
 // 3D EVENT BINDING
@@ -651,7 +651,7 @@ bind3DEvents(this, this.customEvents);
 #### before_load.js
 
 ```javascript
-const { onEventBusHandlers, fetchData } = WKit;
+const { onEventBusHandlers, fetchData } = Wkit;
 
 // ======================
 // EVENT BUS HANDLERS
@@ -755,7 +755,7 @@ this.startAllIntervals();
 #### before_unload.js
 
 ```javascript
-const { offEventBusHandlers } = WKit;
+const { offEventBusHandlers } = Wkit;
 const { each } = fx;
 
 // ======================
@@ -794,7 +794,7 @@ this.refreshIntervals = null;
 #### before_load.js 추가
 
 ```javascript
-const { onEventBusHandlers, initThreeRaycasting, fetchData } = WKit;
+const { onEventBusHandlers, initThreeRaycasting, fetchData } = Wkit;
 
 // ======================
 // EVENT BUS HANDLERS (3D 핸들러 추가)
@@ -824,7 +824,7 @@ onEventBusHandlers(this.eventBusHandlers);
 // 3D RAYCASTING SETUP
 // ======================
 
-const { withSelector } = WKit;
+const { withSelector } = Wkit;
 
 this.raycastingEvents = withSelector(this.appendElement, 'canvas', canvas =>
     fx.go(
@@ -844,7 +844,7 @@ this.raycastingEvents = withSelector(this.appendElement, 'canvas', canvas =>
 #### before_unload.js 추가
 
 ```javascript
-const { disposeAllThreeResources } = WKit;
+const { disposeAllThreeResources } = Wkit;
 const { each } = fx;
 
 // ... 기존 cleanup 코드 ...
@@ -853,7 +853,7 @@ const { each } = fx;
 // 3D RAYCASTING CLEANUP
 // ======================
 
-const { withSelector } = WKit;
+const { withSelector } = Wkit;
 
 withSelector(this.appendElement, 'canvas', canvas => {
     if (this.raycastingEvents) {
@@ -1841,7 +1841,7 @@ TempHumiditySensor/
  * - 온습도 히스토리 차트 (이중 축)
  */
 
-const { bind3DEvents, fetchData } = WKit;
+const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 // ======================
@@ -2615,7 +2615,7 @@ async fetchData() {
 }
 ```
 
-### 패턴 2: WEventBus emit으로 페이지 핸들러 트리거
+### 패턴 2: Weventbus emit으로 페이지 핸들러 트리거
 
 컴포넌트가 준비되었음을 페이지에 알리고, 페이지가 후속 작업을 수행하는 경우:
 
@@ -2623,7 +2623,7 @@ async fetchData() {
 ```javascript
 _onViewerReady() {
   // 컴포넌트 준비 완료를 페이지에 알림
-  WEventBus.emit('@componentReady', {
+  Weventbus.emit('@componentReady', {
     targetInstance: this,
     event: { componentId: this.id }
   });

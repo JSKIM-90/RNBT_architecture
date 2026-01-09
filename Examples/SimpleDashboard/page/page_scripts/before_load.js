@@ -8,7 +8,7 @@
  * - 현재 파라미터 상태 초기화
  */
 
-const { onEventBusHandlers } = WKit;
+const { onEventBusHandlers } = Wkit;
 
 // ======================
 // CURRENT PARAMS STATE

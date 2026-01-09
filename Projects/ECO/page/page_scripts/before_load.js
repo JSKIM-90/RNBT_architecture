@@ -18,7 +18,7 @@
  * - Drag detection for 3D click
  */
 
-const { onEventBusHandlers, initThreeRaycasting, withSelector } = WKit;
+const { onEventBusHandlers, initThreeRaycasting, withSelector } = Wkit;
 
 // ======================
 // DRAG DETECTION

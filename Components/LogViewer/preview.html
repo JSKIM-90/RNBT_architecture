@@ -75,7 +75,7 @@
             }
         };
 
-        const WKit = {
+        const Wkit = {
             bindEvents: (context, events) => {
                 console.log('[Mock] bindEvents:', events);
             },
@@ -95,7 +95,7 @@
 
         (function register() {
             const { subscribe } = GlobalDataPublisher;
-            const { bindEvents } = WKit;
+            const { bindEvents } = Wkit;
 
             const config = {
                 titleKey: 'title',
@@ -208,7 +208,7 @@
         function destroy() {
             (function beforeDestroy() {
                 const { unsubscribe } = GlobalDataPublisher;
-                const { removeCustomEvents } = WKit;
+                const { removeCustomEvents } = Wkit;
                 const { each } = fx;
 
                 fx.go(

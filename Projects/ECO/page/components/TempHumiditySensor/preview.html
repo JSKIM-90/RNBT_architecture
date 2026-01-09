@@ -201,10 +201,10 @@
             each: (fn) => (arr) => { arr.forEach(fn); return arr; }
         };
 
-        const WKit = {
-            bind3DEvents: (ctx, events) => console.log('[WKit.bind3DEvents]', Object.keys(events)),
+        const Wkit = {
+            bind3DEvents: (ctx, events) => console.log('[Wkit.bind3DEvents]', Object.keys(events)),
             fetchData: (page, datasetName, param) => {
-                console.log('[WKit.fetchData]', datasetName, param);
+                console.log('[Wkit.fetchData]', datasetName, param);
                 return Promise.resolve({ response: { data: getMockData(datasetName) } });
             }
         };
@@ -377,7 +377,7 @@
         // ======================
 
         function initComponent() {
-            const { bind3DEvents, fetchData } = WKit;
+            const { bind3DEvents, fetchData } = Wkit;
             const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
             const component = this;
@@ -463,7 +463,7 @@
                 this.datasetInfo,
                 fx.each(({ datasetName, param, render }) =>
                     fx.go(
-                        WKit.fetchData(this.page, datasetName, param),
+                        Wkit.fetchData(this.page, datasetName, param),
                         result => result?.response?.data,
                         data => data && render.forEach(fn => this[fn](data))
                     )

@@ -52,7 +52,7 @@ ComponentName/
 
 런타임 웹빌더 없이 컴포넌트를 단독으로 테스트하기 위한 파일.
 
-- Mock 의존성(`GlobalDataPublisher`, `WKit`, `fx`)을 제공
+- Mock 의존성(`GlobalDataPublisher`, `Wkit`, `fx`)을 제공
 - `register.js`와 `beforeDestroy.js` 코드를 그대로 복사하여 실행
 - 초기 데이터 렌더링, 사용자 인터랙션, destroy까지 실제 라이프사이클 재현
 

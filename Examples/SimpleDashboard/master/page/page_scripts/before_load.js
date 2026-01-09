@@ -8,7 +8,7 @@
  * - 앱 전역 설정 초기화
  */
 
-const { onEventBusHandlers } = WKit;
+const { onEventBusHandlers } = Wkit;
 
 // ======================
 // EVENT BUS HANDLERS

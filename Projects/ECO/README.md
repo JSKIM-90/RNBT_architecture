@@ -58,7 +58,7 @@ function updateView() {
 }
 ```
 
-**해결: WKit의 이벤트 위임 활용**
+**해결: Wkit의 이벤트 위임 활용**
 ```javascript
 // delegate 함수가 instance.element에 리스너 등록
 // event.target.closest(selector)로 동적 요소도 처리

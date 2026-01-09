@@ -7,7 +7,7 @@
  * - IPSILON_3D TemperatureSensor 참조 구현
  */
 
-const { bind3DEvents, fetchData } = WKit;
+const { bind3DEvents, fetchData } = Wkit;
 const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 // ======================

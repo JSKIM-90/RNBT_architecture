@@ -22,7 +22,7 @@
  */
 
 const { subscribe } = GlobalDataPublisher;
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 const { each } = fx;
 
 // ======================
@@ -119,7 +119,7 @@ this.tableInstance = new Tabulator(`#${uniqueId}`, {
     ],
     rowClick: function(e, row) {
         console.log('[InstitutionDelayTop5Tabulator] Row clicked:', row.getData());
-        WEventBus.emit('@rowClicked', { event: e, data: row.getData() });
+        Weventbus.emit('@rowClicked', { event: e, data: row.getData() });
     }
 });
 

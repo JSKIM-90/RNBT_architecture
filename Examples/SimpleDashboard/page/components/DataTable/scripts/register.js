@@ -11,7 +11,7 @@
  */
 
 const { subscribe } = GlobalDataPublisher;
-const { bindEvents } = WKit;
+const { bindEvents } = Wkit;
 
 // ======================
 // CONFIG (Table Config 패턴)
@@ -79,7 +79,7 @@ this.tableInstance = new Tabulator(`#${uniqueId}`, {
 
 this.tableInstance.on('rowClick', (e, row) => {
     const data = row.getData();
-    WEventBus.emit('@rowClicked', {
+    Weventbus.emit('@rowClicked', {
         targetInstance: this,
         event: e,
         data: data
