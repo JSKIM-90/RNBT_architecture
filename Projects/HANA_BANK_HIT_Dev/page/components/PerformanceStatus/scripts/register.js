@@ -45,11 +45,11 @@ const CYLINDER_ASSETS = {
 // DOM REFERENCES
 // ======================
 
-const itemTemplate = this.element.querySelector('#item-template');
-const itemsContainer = this.element.querySelector('.items-container');
-const headerCount = this.element.querySelector('.header-count');
-const headerTps = this.element.querySelector('.header-tps');
-const headerResponse = this.element.querySelector('.header-response');
+const itemTemplate = this.appendElement.querySelector('#item-template');
+const itemsContainer = this.appendElement.querySelector('.items-container');
+const headerCount = this.appendElement.querySelector('.header-count');
+const headerTps = this.appendElement.querySelector('.header-tps');
+const headerResponse = this.appendElement.querySelector('.header-response');
 
 // ======================
 // EVENT BINDING

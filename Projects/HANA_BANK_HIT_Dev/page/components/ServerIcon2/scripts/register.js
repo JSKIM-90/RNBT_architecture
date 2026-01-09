@@ -42,7 +42,7 @@ function renderStatus({ response }) {
 
     if (!status) return;
 
-    const wrapper = this.element.querySelector('.server-icon2-wrapper');
+    const wrapper = this.appendElement.querySelector('.server-icon2-wrapper');
     if (!wrapper) return;
 
     // data-status 속성 변경 → CSS가 색상 제어

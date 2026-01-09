@@ -122,7 +122,7 @@ function renderData(config, { response }) {
     const { items, activeType } = data;
     console.log(`[PerformanceMonitoring] renderData: ${items.length} items, type: ${activeType}`);
 
-    const root = this.element;
+    const root = this.appendElement;
     const list = root.querySelector(config.selectors.list);
     const template = root.querySelector(config.selectors.template);
 

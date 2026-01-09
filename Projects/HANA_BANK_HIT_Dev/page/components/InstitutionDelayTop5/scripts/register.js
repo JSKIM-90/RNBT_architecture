@@ -64,10 +64,10 @@ function renderData({ response }) {
     const { items } = data;
     console.log(`[InstitutionDelayTop5] renderData: ${items.length} items`);
 
-    const rowTemplate = this.element.querySelector('#row-template');
-    const categoryTemplate = this.element.querySelector('#category-template');
-    const tableBody = this.element.querySelector('.table-body');
-    const categoryTable = this.element.querySelector('.category-table');
+    const rowTemplate = this.appendElement.querySelector('#row-template');
+    const categoryTemplate = this.appendElement.querySelector('#category-template');
+    const tableBody = this.appendElement.querySelector('.table-body');
+    const categoryTable = this.appendElement.querySelector('.category-table');
 
     if (!rowTemplate || !categoryTemplate || !tableBody || !categoryTable) return;
 

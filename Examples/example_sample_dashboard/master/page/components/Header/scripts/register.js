@@ -70,7 +70,7 @@ function renderUserInfo(config, { response }) {
     fx.go(
         config.fields,
         fx.each(({ key, selector, attr }) => {
-            const el = this.element.querySelector(selector);
+            const el = this.appendElement.querySelector(selector);
             if (!el) return;
 
             const value = data[key];

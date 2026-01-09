@@ -46,7 +46,7 @@ customEvents → 페이지 핸들러 → Public API
 // 잘못된 예 - 같은 요소에 두 번 바인딩
 this.customEvents = { click: { '.btn': '@clicked' } };
 bindEvents(this, this.customEvents);
-this.element.querySelector('.btn').addEventListener('click', handler); // 중복!
+this.appendElement.querySelector('.btn').addEventListener('click', handler); // 중복!
 ```
 
 **문제 2: 동적 요소 직접 바인딩**

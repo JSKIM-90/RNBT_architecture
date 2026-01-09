@@ -96,7 +96,7 @@ class MyChart extends WVDOMComponent {
 
   _onViewerReady() {
     // 뷰어 전용 초기화 (super 호출 불필요)
-    const chart = echarts.init(this.element.querySelector('#echarts'));
+    const chart = echarts.init(this.appendElement.querySelector('#echarts'));
     this.chart = chart;
   }
 
@@ -826,7 +826,7 @@ onEventBusHandlers(this.eventBusHandlers);
 
 const { withSelector } = WKit;
 
-this.raycastingEvents = withSelector(this.element, 'canvas', canvas =>
+this.raycastingEvents = withSelector(this.appendElement, 'canvas', canvas =>
     fx.go(
         [
             { type: 'click' }
@@ -855,7 +855,7 @@ const { each } = fx;
 
 const { withSelector } = WKit;
 
-withSelector(this.element, 'canvas', canvas => {
+withSelector(this.appendElement, 'canvas', canvas => {
     if (this.raycastingEvents) {
         fx.go(
             this.raycastingEvents,
@@ -2584,7 +2584,7 @@ class MyComponent extends WVDOMComponent {
 
   _onViewerReady() {
     // 여기서 초기화 로직 수행 (super 호출 불필요)
-    // - element 접근 가능 (this.element)
+    // - element 접근 가능 (this.appendElement)
     // - properties 접근 가능 (this.properties)
   }
 

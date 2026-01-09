@@ -34,7 +34,7 @@ this.onCanvasMouseDown = (e) => {
     startPos = { x: e.clientX, y: e.clientY };
 };
 
-withSelector(this.element, 'canvas', canvas => {
+withSelector(this.appendElement, 'canvas', canvas => {
     canvas.addEventListener('mousedown', this.onCanvasMouseDown);
 });
 
@@ -152,7 +152,7 @@ onEventBusHandlers(this.eventBusHandlers);
 // 3D RAYCASTING SETUP
 // ======================
 
-this.raycastingEvents = withSelector(this.element, 'canvas', canvas =>
+this.raycastingEvents = withSelector(this.appendElement, 'canvas', canvas =>
     fx.go(
         [{ type: 'click' }],
         fx.map(event => ({

@@ -66,7 +66,7 @@ this.assetTypeConfig = [
 // ECHARTS INITIALIZATION
 // ======================
 
-const chartContainer = this.element.querySelector('.status-chart');
+const chartContainer = this.appendElement.querySelector('.status-chart');
 if (chartContainer) {
     this.chartInstance = echarts.init(chartContainer);
 
@@ -81,7 +81,7 @@ if (chartContainer) {
 // TABULATOR INITIALIZATION
 // ======================
 
-const tableContainer = this.element.querySelector('.event-table');
+const tableContainer = this.appendElement.querySelector('.event-table');
 if (tableContainer) {
     const uniqueId = `tabulator-${this.id}`;
     tableContainer.id = uniqueId;

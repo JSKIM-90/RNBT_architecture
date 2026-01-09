@@ -55,7 +55,7 @@ function clearDataPublisher() {
 // ======================
 
 function clearRaycasting() {
-    withSelector(this.element, 'canvas', canvas => {
+    withSelector(this.appendElement, 'canvas', canvas => {
         // mousedown 핸들러 정리 (드래그 감지용)
         if (this.onCanvasMouseDown) {
             canvas.removeEventListener('mousedown', this.onCanvasMouseDown);

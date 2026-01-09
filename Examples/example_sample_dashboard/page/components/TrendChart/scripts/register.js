@@ -47,7 +47,7 @@ fx.go(
 // ECHARTS INITIALIZATION
 // ======================
 
-const chartContainer = this.element.querySelector('.chart-container');
+const chartContainer = this.appendElement.querySelector('.chart-container');
 this.chartInstance = echarts.init(chartContainer);
 
 this.resizeObserver = new ResizeObserver(() => {

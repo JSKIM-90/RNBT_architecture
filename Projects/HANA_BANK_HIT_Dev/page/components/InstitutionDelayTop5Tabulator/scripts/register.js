@@ -30,7 +30,7 @@ const { each } = fx;
 // ======================
 
 // 컴포넌트 내 고유 선택자 생성
-const tableContainer = this.element.querySelector('.table-container');
+const tableContainer = this.appendElement.querySelector('.table-container');
 const uniqueId = `tabulator-${this.id}`;
 tableContainer.id = uniqueId;
 

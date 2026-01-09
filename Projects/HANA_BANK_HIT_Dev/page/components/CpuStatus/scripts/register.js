@@ -79,7 +79,7 @@ function renderData({ response }) {
     const { items } = data;
     console.log(`[CpuStatus] renderData: ${items.length} items`);
 
-    const contentsEl = this.element.querySelector('.contents');
+    const contentsEl = this.appendElement.querySelector('.contents');
     if (!contentsEl) return;
 
     // Clear existing content

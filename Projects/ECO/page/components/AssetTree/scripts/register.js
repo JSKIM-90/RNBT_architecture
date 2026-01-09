@@ -135,10 +135,10 @@ this.selectAsset = function(assetId, assetType) {
     console.log(`[AssetTree] Asset selected: ${assetId} (${assetType})`);
 
     // 선택 상태 표시
-    const prevSelected = this.element.querySelector('.asset-node.selected');
+    const prevSelected = this.appendElement.querySelector('.asset-node.selected');
     if (prevSelected) prevSelected.classList.remove('selected');
 
-    const currentNode = this.element.querySelector(`[data-asset-id="${assetId}"]`);
+    const currentNode = this.appendElement.querySelector(`[data-asset-id="${assetId}"]`);
     if (currentNode) currentNode.classList.add('selected');
 };
 
@@ -147,9 +147,9 @@ this.selectAsset = function(assetId, assetType) {
 // ======================
 
 this._templates = {
-    zone: this.element.querySelector('#tpl-zone-node'),
-    type: this.element.querySelector('#tpl-type-node'),
-    asset: this.element.querySelector('#tpl-asset-node')
+    zone: this.appendElement.querySelector('#tpl-zone-node'),
+    type: this.appendElement.querySelector('#tpl-type-node'),
+    asset: this.appendElement.querySelector('#tpl-asset-node')
 };
 
 // ======================
@@ -165,7 +165,7 @@ function renderTree({ response }) {
 }
 
 function updateTreeView() {
-    const treeRoot = this.element.querySelector('.tree-root');
+    const treeRoot = this.appendElement.querySelector('.tree-root');
     if (!treeRoot || !this._treeData) return;
 
     treeRoot.innerHTML = '';

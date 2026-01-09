@@ -17,7 +17,7 @@
  *
  *   예시:
  *     _onViewerReady() {
- *       const chart = echarts.init(this.element.querySelector('#echarts'));
+ *       const chart = echarts.init(this.appendElement.querySelector('#echarts'));
  *       this.chart = chart;
  *     }
  *

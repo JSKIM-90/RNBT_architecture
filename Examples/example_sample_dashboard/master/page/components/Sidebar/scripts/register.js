@@ -55,8 +55,8 @@ function renderMenu({ response }) {
     const { items } = response;
     if (!items || !Array.isArray(items)) return;
 
-    const template = this.element.querySelector('#nav-item-template');
-    const container = this.element.querySelector('.nav-list');
+    const template = this.appendElement.querySelector('#nav-item-template');
+    const container = this.appendElement.querySelector('.nav-list');
 
     if (!template || !container) {
         console.warn('[Sidebar] Template or container not found');

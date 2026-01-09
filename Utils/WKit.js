@@ -20,7 +20,7 @@ WKit.removeCustomEvents = function (instance, customEvents) {
       fx.each((selector) => {
         const handler = instance.userHandlerList?.[eventName]?.[selector];
         if (handler) {
-          instance.element.removeEventListener(eventName, handler);
+          instance.appendElement.removeEventListener(eventName, handler);
         }
       }, Object.keys(selectorList));
     })
@@ -333,8 +333,8 @@ function delegate(instance, eventName, selector, handler) {
     // Use closest to handle bubbling from child elements
     const target = event.target.closest(selector);
 
-    // Ensure target exists and is within instance.element
-    if (target && instance.element.contains(target)) {
+    // Ensure target exists and is within instance.appendElement
+    if (target && instance.appendElement.contains(target)) {
       return handler.call(target, event);
     }
   };
@@ -343,5 +343,5 @@ function delegate(instance, eventName, selector, handler) {
   instance.userHandlerList[eventName] = instance.userHandlerList[eventName] || {};
   instance.userHandlerList[eventName][selector] = emitEvent;
 
-  instance.element.addEventListener(eventName, emitEvent);
+  instance.appendElement.addEventListener(eventName, emitEvent);
 }

@@ -86,8 +86,8 @@ function renderStats(config, { response }) {
     const { data } = response;
     if (!data) return;
 
-    const template = this.element.querySelector('#stat-card-template');
-    const container = this.element.querySelector('.stats-grid');
+    const template = this.appendElement.querySelector('#stat-card-template');
+    const container = this.appendElement.querySelector('.stats-grid');
 
     if (!template || !container) {
         console.warn('[StatsCards] Template or container not found');

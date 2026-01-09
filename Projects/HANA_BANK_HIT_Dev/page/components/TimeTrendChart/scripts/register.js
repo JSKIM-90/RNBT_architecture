@@ -72,7 +72,7 @@ fx.go(
 // INITIALIZE ECHARTS
 // ======================
 
-const chartContainer = this.element.querySelector('#echarts');
+const chartContainer = this.appendElement.querySelector('#echarts');
 this.chartInstance = echarts.init(chartContainer, null, {
     renderer: 'canvas'
 });

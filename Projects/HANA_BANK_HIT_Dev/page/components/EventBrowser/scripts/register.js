@@ -106,7 +106,7 @@ const toRenderData = (fields) => (item) => ({
 // TABULATOR INITIALIZATION
 // ======================
 
-const tableContainer = this.element.querySelector(config.selectors.tableContainer);
+const tableContainer = this.appendElement.querySelector(config.selectors.tableContainer);
 const uniqueId = `tabulator-${this.id}`;
 tableContainer.id = uniqueId;
 
@@ -230,7 +230,7 @@ function renderData(config, { response }) {
     const { summary, items } = data;
     console.log(`[EventBrowser] renderData: ${items?.length ?? 0} items`);
 
-    const root = this.element;
+    const root = this.appendElement;
 
     // 1. 상태 요약 업데이트
     if (summary) {

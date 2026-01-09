@@ -74,7 +74,7 @@ function renderData({ response }) {
     const { sections } = data;
     console.log(`[BusinessStatus] renderData: ${sections.length} sections`);
 
-    const sectionElements = this.element.querySelectorAll('.item[data-section]');
+    const sectionElements = this.appendElement.querySelectorAll('.item[data-section]');
 
     sections.forEach((section, sectionIndex) => {
         const sectionEl = sectionElements[sectionIndex];

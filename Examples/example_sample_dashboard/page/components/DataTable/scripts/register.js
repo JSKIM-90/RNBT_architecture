@@ -66,7 +66,7 @@ fx.go(
 // TABULATOR INITIALIZATION
 // ======================
 
-const tableContainer = this.element.querySelector('.table-container');
+const tableContainer = this.appendElement.querySelector('.table-container');
 const uniqueId = `table-${Date.now()}`;
 tableContainer.id = uniqueId;
 
@@ -110,7 +110,7 @@ function renderTable(config, { response }) {
 
     this.tableInstance.setData(data);
 
-    const metaEl = this.element.querySelector('.table-meta');
+    const metaEl = this.appendElement.querySelector('.table-meta');
     if (metaEl && meta) {
         metaEl.textContent = `Total: ${meta.total} items (${meta.category})`;
     }
