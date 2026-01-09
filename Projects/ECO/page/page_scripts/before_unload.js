@@ -3,22 +3,50 @@
  * ECO (Energy & Cooling Operations) Dashboard
  *
  * Responsibilities:
+ * - Clear GlobalDataPublisher mappings
+ * - Stop refresh intervals
  * - Clear event bus handlers
- * - Clear data publisher mappings
  * - Clear 3D raycasting
  * - Dispose all 3D resources
  */
 
 const { offEventBusHandlers, disposeAllThreeResources, withSelector } = Wkit;
-const { go, each, map } = fx;
+const { go, each } = fx;
 
 onPageUnLoad.call(this);
 
 function onPageUnLoad() {
+    clearGlobalDataPublisher.call(this);
+    clearIntervals.call(this);
     clearEventBus.call(this);
-    clearDataPublisher.call(this);
     clearRaycasting.call(this);
     clearThreeResources.call(this);
+}
+
+// ======================
+// GLOBAL DATA PUBLISHER CLEANUP
+// ======================
+
+function clearGlobalDataPublisher() {
+    if (this.globalDataMappings) {
+        go(
+            this.globalDataMappings,
+            each(({ topic }) => GlobalDataPublisher.unregisterMapping(topic))
+        );
+        this.globalDataMappings = null;
+    }
+    this.currentParams = null;
+}
+
+// ======================
+// INTERVAL CLEANUP
+// ======================
+
+function clearIntervals() {
+    if (this.stopAllIntervals) {
+        this.stopAllIntervals();
+    }
+    this.refreshIntervals = null;
 }
 
 // ======================
@@ -28,26 +56,6 @@ function onPageUnLoad() {
 function clearEventBus() {
     offEventBusHandlers.call(this, this.eventBusHandlers);
     this.eventBusHandlers = null;
-}
-
-// ======================
-// DATA PUBLISHER CLEANUP
-// ======================
-
-function clearDataPublisher() {
-    go(
-        this.globalDataMappings,
-        map(({ topic }) => topic),
-        each(GlobalDataPublisher.unregisterMapping)
-    );
-
-    this.globalDataMappings = null;
-    this.currentParams = null;
-
-    if (this.stopAllIntervals) {
-        this.stopAllIntervals();
-    }
-    this.refreshIntervals = null;
 }
 
 // ======================
@@ -86,4 +94,4 @@ function clearThreeResources() {
     disposeAllThreeResources(this);
 }
 
-console.log('[Page] before_unload - ECO Dashboard cleanup completed');
+console.log('[Page] before_unload - ECO Dashboard cleanup completed (GlobalDataPublisher, intervals, events, 3D resources)');

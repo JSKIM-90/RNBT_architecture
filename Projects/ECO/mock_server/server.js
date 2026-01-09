@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-const PORT = 3004;
+const PORT = process.env.PORT || 4004;
 
 app.use(cors());
 app.use(express.json());
@@ -501,130 +501,6 @@ app.get('/api/crac/:id/history', (req, res) => {
 });
 
 // ======================
-// API ENDPOINTS - Overview
-// ======================
-
-function generateOverview() {
-    // 상태별 집계
-    const summary = {
-        total: ASSETS.length,
-        normal: ASSETS.filter(a => a.status === 'normal').length,
-        warning: ASSETS.filter(a => a.status === 'warning').length,
-        critical: ASSETS.filter(a => a.status === 'critical').length
-    };
-
-    // 타입별 자산 현황
-    const assetsByType = {};
-    ['ups', 'pdu', 'crac', 'sensor'].forEach(type => {
-        const typeAssets = ASSETS.filter(a => a.type === type);
-        assetsByType[type] = {
-            total: typeAssets.length,
-            normal: typeAssets.filter(a => a.status === 'normal').length,
-            warning: typeAssets.filter(a => a.status === 'warning').length,
-            critical: typeAssets.filter(a => a.status === 'critical').length
-        };
-    });
-
-    // KPI 계산 (임의 값)
-    const kpi = {
-        totalPower: Math.round((120 + Math.random() * 30) * 10) / 10,
-        avgLoad: Math.round((55 + Math.random() * 20) * 10) / 10,
-        pue: Math.round((1.4 + Math.random() * 0.3) * 100) / 100,
-        avgTemp: Math.round((23 + Math.random() * 3) * 10) / 10,
-        avgHumidity: Math.round((48 + Math.random() * 8) * 10) / 10
-    };
-
-    return { summary, assetsByType, kpi };
-}
-
-function generateRecentEvents() {
-    const eventTypes = ['UPS', 'PDU', 'CRAC', 'Sensor'];
-    const severities = ['info', 'info', 'info', 'warning', 'warning', 'critical'];
-    const messages = [
-        'Battery level below threshold',
-        'High temperature detected',
-        'Power consumption spike',
-        'Humidity out of range',
-        'Connection restored',
-        'Scheduled maintenance completed',
-        'Firmware update available',
-        'Load balancing activated',
-        'Cooling system optimized',
-        'Sensor calibration needed'
-    ];
-
-    const events = [];
-    const now = new Date();
-
-    for (let i = 0; i < 10; i++) {
-        const time = new Date(now.getTime() - i * 15 * 60000);
-        const type = eventTypes[Math.floor(Math.random() * eventTypes.length)];
-        const assetNum = Math.floor(Math.random() * 4) + 1;
-
-        events.push({
-            id: `evt-${i + 1}`,
-            time: time.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }),
-            asset: `${type.toLowerCase()}-${String(assetNum).padStart(3, '0')}`,
-            type,
-            severity: severities[Math.floor(Math.random() * severities.length)],
-            message: messages[Math.floor(Math.random() * messages.length)]
-        });
-    }
-
-    return { events };
-}
-
-app.get('/api/overview', (req, res) => {
-    const overview = generateOverview();
-    console.log(`[${new Date().toISOString()}] GET /api/overview`);
-    res.json({ data: overview });
-});
-
-app.get('/api/overview/events', (req, res) => {
-    const events = generateRecentEvents();
-    console.log(`[${new Date().toISOString()}] GET /api/overview/events`);
-    res.json({ data: events });
-});
-
-// ======================
-// API ENDPOINTS - AssetTree
-// ======================
-
-function generateAssetTree() {
-    const zones = ZONES.map(zoneName => {
-        const zoneAssets = ASSETS.filter(a => a.zone === zoneName);
-
-        // 타입별로 분류
-        const assetsByType = {};
-        zoneAssets.forEach(asset => {
-            if (!assetsByType[asset.type]) {
-                assetsByType[asset.type] = [];
-            }
-            assetsByType[asset.type].push({
-                id: asset.id,
-                name: asset.name,
-                status: asset.status
-            });
-        });
-
-        return {
-            id: zoneName.toLowerCase().replace('-', '_'),
-            name: zoneName,
-            totalAssets: zoneAssets.length,
-            assets: assetsByType
-        };
-    });
-
-    return { zones };
-}
-
-app.get('/api/asset-tree', (req, res) => {
-    const tree = generateAssetTree();
-    console.log(`[${new Date().toISOString()}] GET /api/asset-tree`);
-    res.json({ data: tree });
-});
-
-// ======================
 // API ENDPOINTS - Sensor
 // ======================
 
@@ -654,12 +530,9 @@ app.listen(PORT, () => {
     console.log(`  Running on http://localhost:${PORT}`);
     console.log(`========================================`);
     console.log(`\nAvailable endpoints:`);
-    console.log(`  GET /api/overview             - Dashboard overview`);
-    console.log(`  GET /api/overview/events      - Recent events`);
-    console.log(`  GET /api/asset-tree           - Asset tree structure`);
-    console.log(`  GET /api/assets/summary       - Summary only`);
     console.log(`  GET /api/assets               - All assets`);
     console.log(`  GET /api/assets?type=ups      - Filter by type`);
+    console.log(`  GET /api/assets/summary       - Summary only`);
     console.log(`  GET /api/asset/:id            - Single asset`);
     console.log(`  POST /api/assets/validate     - Batch validate`);
     console.log(`  GET /api/ups/:id              - UPS status`);

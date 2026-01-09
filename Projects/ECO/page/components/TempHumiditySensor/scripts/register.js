@@ -31,13 +31,13 @@ initComponent.call(this);
 
 function initComponent() {
     // ======================
-    // DATA DEFINITION
+    // DATA DEFINITION (동적 assetId 지원)
     // ======================
-    const assetId = this.setter.ecoAssetInfo?.assetId || 'sensor-001';
+    this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
 
     this.datasetInfo = [
-        { datasetName: 'sensor', param: { id: assetId }, render: ['renderSensorInfo'] },
-        { datasetName: 'sensorHistory', param: { id: assetId }, render: ['renderChart'] }
+        { datasetName: 'sensor', render: ['renderSensorInfo'] },
+        { datasetName: 'sensorHistory', render: ['renderChart'] }
     ];
 
     // ======================
@@ -83,7 +83,7 @@ function initComponent() {
     // CUSTOM EVENTS
     // ======================
     this.customEvents = {
-        click: '@sensorClicked'
+        click: '@assetClicked'
     };
 
     bind3DEvents(this, this.customEvents);
@@ -126,7 +126,7 @@ function initComponent() {
 
     applyEChartsMixin(this);
 
-    console.log('[TempHumiditySensor] Registered:', assetId);
+    console.log('[TempHumiditySensor] Registered:', this._defaultAssetId);
 }
 
 // ======================
@@ -215,14 +215,15 @@ function getDualAxisChartOption(config, data) {
 // ======================
 // PUBLIC METHODS
 // ======================
-function showDetail() {
+function showDetail(assetId) {
+    const targetId = assetId || this._defaultAssetId;
     this.showPopup();
 
     fx.go(
         this.datasetInfo,
-        fx.each(({ datasetName, param, render }) =>
+        fx.each(({ datasetName, render }) =>
             fx.go(
-                fetchData(this.page, datasetName, param),
+                fetchData(this.page, datasetName, { id: targetId }),
                 result => result?.response?.data,
                 data => data && render.forEach(fn => this[fn](data))
             )

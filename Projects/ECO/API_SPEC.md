@@ -2,7 +2,7 @@
 
 **Base URL**: `http://localhost:3004`
 
-**프로젝트 설명**: 데이터센터 환경 제어 시스템 (Environmental Control & Operations)
+**프로젝트 설명**: 데이터센터 전력/냉방 장비 모니터링 대시보드
 
 ---
 
@@ -10,94 +10,63 @@
 
 | API | 호출 시점 | 컴포넌트 | 기능 |
 |-----|----------|----------|------|
-| `GET /api/assets/summary` | 페이지 초기화 | Page | Summary만 조회 (타입 목록) |
-| `GET /api/assets` | 페이지 로드 | Page | 전체 자산 목록 조회 |
-| `GET /api/assets?type=ups` | 타입 펼침 | Page | 해당 타입 자산만 조회 |
-| `GET /api/asset/:id` | 개별 조회 | - | 단일 자산 조회 (404 if not found) |
-| `POST /api/assets/validate` | 페이지 로드 완료 후 | OpenPageCommand | 배치 자산 유효성 검증 |
-| `GET /api/ups/:id` | 3D UPS 클릭 | UPS | UPS 현재 상태 표시 |
-| `GET /api/ups/:id/history` | 3D UPS 클릭 | UPS | 부하/배터리 차트 렌더링 |
-| `GET /api/pdu/:id` | 3D 분전반 클릭 | PDU | PDU 현재 상태 표시 |
-| `GET /api/pdu/:id/circuits` | 3D 분전반 클릭 | PDU | 회로 테이블 렌더링 |
-| `GET /api/pdu/:id/history` | 3D 분전반 클릭 | PDU | 전력 사용량 차트 렌더링 |
-| `GET /api/crac/:id` | 3D 항온항습기 클릭 | CRAC | CRAC 현재 상태 표시 |
-| `GET /api/crac/:id/history` | 3D 항온항습기 클릭 | CRAC | 온습도 차트 렌더링 |
-| `GET /api/sensor/:id` | 3D 센서 클릭 | TempHumiditySensor | 센서 현재 상태 표시 |
-| `GET /api/sensor/:id/history` | 3D 센서 클릭 | TempHumiditySensor | 온습도 차트 렌더링 |
+| `GET /api/assets` | 페이지 로드 | AssetList | 전체 자산 목록 조회 |
+| `GET /api/ups/:id` | 행 클릭 / 3D 클릭 | UPS | UPS 현재 상태 표시 |
+| `GET /api/ups/:id/history` | 행 클릭 / 3D 클릭 | UPS | 부하/배터리 차트 렌더링 |
+| `GET /api/pdu/:id` | 행 클릭 / 3D 클릭 | PDU | PDU 현재 상태 표시 |
+| `GET /api/pdu/:id/circuits` | 행 클릭 / 3D 클릭 | PDU | 회로 테이블 렌더링 |
+| `GET /api/pdu/:id/history` | 행 클릭 / 3D 클릭 | PDU | 전력 사용량 차트 렌더링 |
+| `GET /api/crac/:id` | 행 클릭 / 3D 클릭 | CRAC | CRAC 현재 상태 표시 |
+| `GET /api/crac/:id/history` | 행 클릭 / 3D 클릭 | CRAC | 온습도 차트 렌더링 |
+| `GET /api/sensor/:id` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 센서 현재 상태 표시 |
+| `GET /api/sensor/:id/history` | 행 클릭 / 3D 클릭 | TempHumiditySensor | 온습도 차트 렌더링 |
 
 ---
 
-## 1. 자산 Summary 조회
-
-### Request
-
-```
-GET /api/assets/summary
-```
-
-### Response
-
-```json
-{
-  "data": {
-    "summary": {
-      "total": 24,
-      "byType": {
-        "ups": 4,
-        "pdu": 8,
-        "crac": 4,
-        "sensor": 8
-      },
-      "byStatus": {
-        "normal": 20,
-        "warning": 3,
-        "critical": 1
-      }
-    }
-  }
-}
-```
-
----
-
-## 2. 전체 자산 조회
+## 1. 전체 자산 조회
 
 ### Request
 
 ```
 GET /api/assets
-GET /api/assets?type=ups
-GET /api/assets?type=ups,pdu
 ```
-
-**지원하는 타입:**
-- `ups` - UPS (무정전 전원장치)
-- `pdu` - PDU (분전반/전력 분배 장치)
-- `crac` - CRAC (항온항습기)
-- `sensor` - 온습도 센서
 
 ### Response
 
 ```json
 {
-  "data": {
-    "assets": [
-      {
-        "id": "ups-001",
-        "type": "ups",
-        "name": "UPS A-1",
-        "zone": "Zone-A",
-        "status": "normal"
-      }
-    ],
-    "summary": { ... }
-  }
+  "data": [
+    {
+      "id": "ups-001",
+      "type": "ups",
+      "name": "UPS A-1",
+      "zone": "Zone-A",
+      "status": "normal"
+    },
+    {
+      "id": "pdu-001",
+      "type": "pdu",
+      "name": "PDU A-1",
+      "zone": "Zone-A",
+      "status": "warning"
+    }
+  ]
 }
 ```
 
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | 자산 ID |
+| type | string | 자산 타입 (`ups` \| `pdu` \| `crac` \| `sensor`) |
+| name | string | 자산 이름 |
+| zone | string | 존 (Zone-A ~ Zone-D) |
+| status | string | 상태 (`normal` \| `warning` \| `critical`) |
+
 ---
 
-## 3. UPS 현재 상태 조회
+## 2. UPS 현재 상태 조회
 
 ### Request
 
@@ -160,13 +129,12 @@ otherwise                           → status: "normal"
 
 ---
 
-## 4. UPS 히스토리 조회
+## 3. UPS 히스토리 조회
 
 ### Request
 
 ```
 GET /api/ups/:id/history
-GET /api/ups/:id/history?period=24h
 ```
 
 ### Response
@@ -189,7 +157,7 @@ GET /api/ups/:id/history?period=24h
 
 ---
 
-## 5. PDU 현재 상태 조회
+## 4. PDU 현재 상태 조회
 
 ### Request
 
@@ -238,7 +206,7 @@ GET /api/pdu/:id
 
 ---
 
-## 6. PDU 회로 목록 조회
+## 5. PDU 회로 목록 조회
 
 ### Request
 
@@ -269,7 +237,7 @@ GET /api/pdu/:id/circuits
 
 ---
 
-## 7. PDU 히스토리 조회
+## 6. PDU 히스토리 조회
 
 ### Request
 
@@ -293,7 +261,7 @@ GET /api/pdu/:id/history
 
 ---
 
-## 8. CRAC 현재 상태 조회
+## 7. CRAC 현재 상태 조회
 
 ### Request
 
@@ -350,7 +318,7 @@ GET /api/crac/:id
 
 ---
 
-## 9. CRAC 히스토리 조회
+## 8. CRAC 히스토리 조회
 
 ### Request
 
@@ -375,7 +343,7 @@ GET /api/crac/:id/history
 
 ---
 
-## 10. 온습도 센서 현재 상태 조회
+## 9. 온습도 센서 현재 상태 조회
 
 ### Request
 
@@ -428,7 +396,7 @@ otherwise                                                 → status: "normal"
 
 ---
 
-## 11. 온습도 센서 히스토리 조회
+## 10. 온습도 센서 히스토리 조회
 
 ### Request
 
@@ -445,7 +413,7 @@ GET /api/sensor/:id/history
     "period": "24h",
     "timestamps": ["08:00", "09:00", "10:00", "..."],
     "temperatures": [23.5, 24.1, 24.8, "..."],
-    "humidity": [45, 46, 44, "..."]
+    "humidities": [45, 46, 44, "..."]
   }
 }
 ```

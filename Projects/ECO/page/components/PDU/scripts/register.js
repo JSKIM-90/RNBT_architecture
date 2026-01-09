@@ -32,14 +32,14 @@ initComponent.call(this);
 
 function initComponent() {
     // ======================
-    // 1. 데이터 정의
+    // 1. 데이터 정의 (동적 assetId 지원)
     // ======================
-    const assetId = this.setter.ecoAssetInfo.assetId;
+    this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
 
     this.datasetInfo = [
-        { datasetName: 'pdu', param: { id: assetId }, render: ['renderPDUInfo'] },
-        { datasetName: 'pduCircuits', param: { id: assetId }, render: ['renderCircuitTable'] },
-        { datasetName: 'pduHistory', param: { id: assetId }, render: ['renderPowerChart'] }
+        { datasetName: 'pdu', render: ['renderPDUInfo'] },
+        { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
+        { datasetName: 'pduHistory', render: ['renderPowerChart'] }
     ];
 
     // ======================
@@ -137,7 +137,7 @@ function initComponent() {
     // 7. 이벤트 발행
     // ======================
     this.customEvents = {
-        click: '@pduClicked'
+        click: '@assetClicked'
     };
 
     bind3DEvents(this, this.customEvents);
@@ -177,22 +177,23 @@ function initComponent() {
     applyEChartsMixin(this);
     applyTabulatorMixin(this);
 
-    console.log('[PDU] Registered:', assetId);
+    console.log('[PDU] Registered:', this._defaultAssetId);
 }
 
 // ======================
 // PUBLIC METHODS
 // ======================
 
-function showDetail() {
+function showDetail(assetId) {
+    const targetId = assetId || this._defaultAssetId;
     this.showPopup();
     this._switchTab('circuits');
 
     fx.go(
         this.datasetInfo,
-        fx.each(({ datasetName, param, render }) =>
+        fx.each(({ datasetName, render }) =>
             fx.go(
-                fetchData(this.page, datasetName, param),
+                fetchData(this.page, datasetName, { id: targetId }),
                 result => result?.response?.data,
                 data => data && render.forEach(fn => this[fn](data))
             )

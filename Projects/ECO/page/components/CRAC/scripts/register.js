@@ -30,13 +30,13 @@ initComponent.call(this);
 
 function initComponent() {
     // ======================
-    // DATA DEFINITION
+    // DATA DEFINITION (동적 assetId 지원)
     // ======================
-    const assetId = this.setter.ecoAssetInfo?.assetId || 'crac-001';
+    this._defaultAssetId = this.setter?.ecoAssetInfo?.assetId || this.id;
 
     this.datasetInfo = [
-        { datasetName: 'crac', param: { id: assetId }, render: ['renderCRACInfo'] },
-        { datasetName: 'cracHistory', param: { id: assetId }, render: ['renderChart'] }
+        { datasetName: 'crac', render: ['renderCRACInfo'] },
+        { datasetName: 'cracHistory', render: ['renderChart'] }
     ];
 
     // ======================
@@ -87,7 +87,7 @@ function initComponent() {
     // CUSTOM EVENTS
     // ======================
     this.customEvents = {
-        click: '@cracClicked'
+        click: '@assetClicked'
     };
 
     bind3DEvents(this, this.customEvents);
@@ -130,7 +130,7 @@ function initComponent() {
 
     applyEChartsMixin(this);
 
-    console.log('[CRAC] Registered:', assetId);
+    console.log('[CRAC] Registered:', this._defaultAssetId);
 }
 
 // ======================
@@ -219,14 +219,15 @@ function getDualAxisChartOption(config, data) {
 // ======================
 // PUBLIC METHODS
 // ======================
-function showDetail() {
+function showDetail(assetId) {
+    const targetId = assetId || this._defaultAssetId;
     this.showPopup();
 
     fx.go(
         this.datasetInfo,
-        fx.each(({ datasetName, param, render }) =>
+        fx.each(({ datasetName, render }) =>
             fx.go(
-                fetchData(this.page, datasetName, param),
+                fetchData(this.page, datasetName, { id: targetId }),
                 result => result?.response?.data,
                 data => data && render.forEach(fn => this[fn](data))
             )

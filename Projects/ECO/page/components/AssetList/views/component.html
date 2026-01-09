@@ -1,0 +1,45 @@
+<div class="asset-list-panel">
+    <div class="panel-header">
+        <h2 class="panel-title">Asset List</h2>
+        <button class="refresh-btn" title="Refresh">↻</button>
+    </div>
+
+    <div class="toolbar">
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="Search by name or ID...">
+        </div>
+
+        <div class="filter-box">
+            <select class="type-filter">
+                <option value="all">All Types</option>
+                <option value="ups">UPS</option>
+                <option value="pdu">PDU</option>
+                <option value="crac">CRAC</option>
+                <option value="sensor">Sensor</option>
+            </select>
+
+            <select class="status-filter">
+                <option value="all">All Status</option>
+                <option value="normal">Normal</option>
+                <option value="warning">Warning</option>
+                <option value="critical">Critical</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="panel-body">
+        <div class="table-container"></div>
+    </div>
+
+    <div class="panel-footer">
+        <div class="legend">
+            <span class="legend-item"><span class="dot normal"></span> Normal</span>
+            <span class="legend-item"><span class="dot warning"></span> Warning</span>
+            <span class="legend-item"><span class="dot critical"></span> Critical</span>
+        </div>
+        <div class="asset-count">
+            <span class="count-label">Total:</span>
+            <span class="count-value">0</span>
+        </div>
+    </div>
+</div>

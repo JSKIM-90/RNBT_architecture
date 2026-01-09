@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetList - Preview</title>
+    <link href="https://unpkg.com/tabulator-tables@6.3.1/dist/css/tabulator.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/tabulator-tables@6.3.1/dist/js/tabulator.min.js"></script>
+    <link rel="stylesheet" href="./styles/component.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0f1219;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: #161b22;
+            border-radius: 8px;
+        }
+
+        .preview-title {
+            color: #e0e6ed;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .preview-btn {
+            padding: 8px 16px;
+            background: #21262d;
+            color: #8b949e;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .preview-btn:hover {
+            background: #30363d;
+            color: #e0e6ed;
+        }
+
+        .preview-btn.primary {
+            background: #238636;
+            border-color: #238636;
+            color: white;
+        }
+
+        .preview-btn.primary:hover {
+            background: #2ea043;
+        }
+
+        .component-container {
+            flex: 1;
+            min-height: 500px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .event-log {
+            background: #161b22;
+            border-radius: 8px;
+            padding: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .event-log-title {
+            color: #8b949e;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .event-log-content {
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            color: #7ee787;
+            line-height: 1.6;
+        }
+
+        .event-log-content .warn {
+            color: #d29922;
+        }
+
+        .event-log-content .info {
+            color: #58a6ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <span class="preview-title">AssetList Preview</span>
+        <div class="preview-controls">
+            <button class="preview-btn primary" onclick="loadData()">Load Data</button>
+            <button class="preview-btn" onclick="addRandomAsset()">Add Asset</button>
+            <button class="preview-btn" onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+
+    <div class="component-container" id="component-host"></div>
+
+    <div class="event-log">
+        <div class="event-log-title">Event Log</div>
+        <div class="event-log-content" id="event-log"></div>
+    </div>
+
+    <script>
+        // ======================
+        // MOCK DATA
+        // ======================
+        const mockAssets = [
+            { id: 'UPS-A01', name: 'Main UPS A', type: 'ups', zone: 'Server Room A', status: 'normal' },
+            { id: 'UPS-A02', name: 'Backup UPS A', type: 'ups', zone: 'Server Room A', status: 'normal' },
+            { id: 'UPS-B01', name: 'Main UPS B', type: 'ups', zone: 'Server Room B', status: 'warning' },
+            { id: 'PDU-A01', name: 'PDU Rack A1', type: 'pdu', zone: 'Server Room A', status: 'normal' },
+            { id: 'PDU-A02', name: 'PDU Rack A2', type: 'pdu', zone: 'Server Room A', status: 'normal' },
+            { id: 'PDU-B01', name: 'PDU Rack B1', type: 'pdu', zone: 'Server Room B', status: 'critical' },
+            { id: 'CRAC-A01', name: 'CRAC Unit A1', type: 'crac', zone: 'Server Room A', status: 'normal' },
+            { id: 'CRAC-A02', name: 'CRAC Unit A2', type: 'crac', zone: 'Server Room A', status: 'warning' },
+            { id: 'CRAC-B01', name: 'CRAC Unit B1', type: 'crac', zone: 'Server Room B', status: 'normal' },
+            { id: 'SENSOR-A01', name: 'Temp Sensor A1', type: 'sensor', zone: 'Server Room A', status: 'normal' },
+            { id: 'SENSOR-A02', name: 'Temp Sensor A2', type: 'sensor', zone: 'Server Room A', status: 'normal' },
+            { id: 'SENSOR-B01', name: 'Temp Sensor B1', type: 'sensor', zone: 'Server Room B', status: 'warning' },
+        ];
+
+        // ======================
+        // MOCK IMPLEMENTATIONS
+        // ======================
+        const fx = {
+            go: (data, ...fns) => fns.reduce((acc, fn) => fn(acc), data),
+            each: (fn) => (arr) => { arr.forEach(fn); return arr; }
+        };
+
+        const Wkit = {
+            bindEvents: (ctx, events) => {
+                Object.entries(events).forEach(([eventType, handlers]) => {
+                    Object.entries(handlers).forEach(([selector, eventName]) => {
+                        ctx.appendElement.querySelectorAll(selector).forEach(el => {
+                            el.addEventListener(eventType, () => {
+                                log(`[bindEvents] ${eventName} triggered`);
+                                Weventbus.emit(eventName, { targetInstance: ctx });
+                            });
+                        });
+                    });
+                });
+            },
+            removeCustomEvents: () => {}
+        };
+
+        const Weventbus = {
+            emit: (eventName, payload) => {
+                log(`[Weventbus] ${eventName}`, 'info');
+                if (eventName === '@assetSelected') {
+                    log(`  → Asset: ${payload.event.asset.id} (${payload.event.asset.type})`, 'info');
+                }
+            }
+        };
+
+        const GlobalDataPublisher = {
+            subscribe: (topic, ctx, fn) => log(`[GlobalDataPublisher] Subscribed to "${topic}"`),
+            unsubscribe: (topic, ctx) => log(`[GlobalDataPublisher] Unsubscribed from "${topic}"`)
+        };
+
+        // ======================
+        // LOGGING
+        // ======================
+        function log(message, type = 'default') {
+            const logEl = document.getElementById('event-log');
+            const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const className = type === 'warn' ? 'warn' : type === 'info' ? 'info' : '';
+            logEl.innerHTML += `<div class="${className}">[${time}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('event-log').innerHTML = '';
+        }
+
+        // ======================
+        // COMPONENT INSTANCE
+        // ======================
+        let instance = null;
+
+        function createInstance() {
+            const host = document.getElementById('component-host');
+            host.innerHTML = `
+                <div id="asset-list-container">
+                <div class="asset-list-panel">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Asset List</h2>
+                        <button class="refresh-btn" title="Refresh">↻</button>
+                    </div>
+
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <input type="text" class="search-input" placeholder="Search by name or ID...">
+                        </div>
+
+                        <div class="filter-box">
+                            <select class="type-filter">
+                                <option value="all">All Types</option>
+                                <option value="ups">UPS</option>
+                                <option value="pdu">PDU</option>
+                                <option value="crac">CRAC</option>
+                                <option value="sensor">Sensor</option>
+                            </select>
+
+                            <select class="status-filter">
+                                <option value="all">All Status</option>
+                                <option value="normal">Normal</option>
+                                <option value="warning">Warning</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="table-container"></div>
+                    </div>
+
+                    <div class="panel-footer">
+                        <div class="legend">
+                            <span class="legend-item"><span class="dot normal"></span> Normal</span>
+                            <span class="legend-item"><span class="dot warning"></span> Warning</span>
+                            <span class="legend-item"><span class="dot critical"></span> Critical</span>
+                        </div>
+                        <div class="asset-count">
+                            <span class="count-label">Total:</span>
+                            <span class="count-value">0</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            `;
+
+            instance = {
+                id: 'preview-asset-list',
+                appendElement: host.querySelector('.asset-list-panel'),
+                _allAssets: [],
+                _searchTerm: '',
+                _typeFilter: 'all',
+                _statusFilter: 'all',
+                _tableInstance: null
+            };
+
+            initComponent.call(instance);
+            log('[AssetList] Instance created');
+        }
+
+        // ======================
+        // COMPONENT LOGIC (register.js 구조)
+        // ======================
+        function initComponent() {
+            const { subscribe } = GlobalDataPublisher;
+            const { bindEvents } = Wkit;
+
+            // 1. Subscriptions
+            this.subscriptions = { 'assets': ['renderTable'] };
+
+            // 2. Table Config
+            this.tableConfig = {
+                layout: 'fitColumns',
+                height: '100%',
+                placeholder: 'No assets found',
+                selectable: 1,
+                columns: [
+                    { title: 'ID', field: 'id', widthGrow: 1, headerSort: true },
+                    { title: 'Name', field: 'name', widthGrow: 2, headerSort: true },
+                    { title: 'Type', field: 'type', widthGrow: 1, headerSort: true, formatter: typeFormatter },
+                    { title: 'Zone', field: 'zone', widthGrow: 1, headerSort: true },
+                    { title: 'Status', field: 'status', widthGrow: 1, headerSort: true, formatter: statusFormatter }
+                ]
+            };
+
+            // 3. Bind methods
+            this.renderTable = renderTable.bind(this);
+            this.search = search.bind(this);
+            this.filterByType = filterByType.bind(this);
+            this.filterByStatus = filterByStatus.bind(this);
+
+            // 4. Subscribe
+            fx.go(
+                Object.entries(this.subscriptions),
+                fx.each(([topic, fnList]) =>
+                    fx.each(fn => this[fn] && subscribe(topic, this, this[fn]), fnList)
+                )
+            );
+
+            // 5. Internal handlers
+            this._internalHandlers = {};
+            setupInternalHandlers.call(this);
+
+            // 6. External events
+            this.customEvents = { click: { '.refresh-btn': '@refreshClicked' } };
+            bindEvents(this, this.customEvents);
+
+            // 7. Init table (DOM 렌더링 완료 후 실행)
+            // setTimeout(() => , 0);
+            initTable.call(this)
+
+            log('[AssetList] Initialized');
+        }
+
+        function setupInternalHandlers() {
+            const root = this.appendElement;
+
+            this._internalHandlers.searchInput = (e) => {
+                this.search(e.target.value);
+                log(`[Internal] Search: "${e.target.value}"`);
+            };
+
+            this._internalHandlers.typeChange = (e) => {
+                this.filterByType(e.target.value);
+                log(`[Internal] Type filter: ${e.target.value}`);
+            };
+
+            this._internalHandlers.statusChange = (e) => {
+                this.filterByStatus(e.target.value);
+                log(`[Internal] Status filter: ${e.target.value}`);
+            };
+
+            root.querySelector('.search-input')?.addEventListener('input', this._internalHandlers.searchInput);
+            root.querySelector('.type-filter')?.addEventListener('change', this._internalHandlers.typeChange);
+            root.querySelector('.status-filter')?.addEventListener('change', this._internalHandlers.statusChange);
+        }
+
+        function typeFormatter(cell) {
+            const value = cell.getValue();
+            return `<span class="type-badge" data-type="${value}">${value.toUpperCase()}</span>`;
+        }
+
+        function statusFormatter(cell) {
+            const value = cell.getValue();
+            return `<span class="status-badge" data-status="${value}">${value}</span>`;
+        }
+
+        function initTable() {
+            const container = this.appendElement.querySelector('.table-container');
+            if (!container) return;
+
+            const uniqueId = `tabulator-${this.id}`;
+            container.id = uniqueId;
+
+            const ctx = this;
+
+            this._tableInstance = new Tabulator(`#${uniqueId}`, {
+                ...this.tableConfig,
+                height: 350
+            });
+
+            // Tabulator 6.x: on() 메서드로 이벤트 등록
+            this._tableInstance.on('rowClick', (e, row) => {
+                const asset = row.getData();
+                onRowClick.call(ctx, asset);
+            });
+        }
+
+        function renderTable({ response }) {
+            const { assets } = response.data;
+            this._allAssets = assets || [];
+            applyFilters.call(this);
+            updateCount.call(this);
+            log(`[renderTable] Loaded ${this._allAssets.length} assets`);
+        }
+
+        function applyFilters() {
+            const searchTerm = this._searchTerm.toLowerCase();
+            const typeFilter = this._typeFilter;
+            const statusFilter = this._statusFilter;
+
+            const filtered = this._allAssets.filter(asset => {
+                const matchesSearch = !searchTerm ||
+                    asset.name.toLowerCase().includes(searchTerm) ||
+                    asset.id.toLowerCase().includes(searchTerm);
+
+                const matchesType = typeFilter === 'all' || asset.type === typeFilter;
+                const matchesStatus = statusFilter === 'all' || asset.status === statusFilter;
+
+                return matchesSearch && matchesType && matchesStatus;
+            });
+
+            if (this._tableInstance) {
+                this._tableInstance.setData(filtered);
+            }
+
+            updateCount.call(this, filtered.length);
+        }
+
+        function updateCount(count) {
+            const countEl = this.appendElement.querySelector('.count-value');
+            if (countEl) {
+                countEl.textContent = count !== undefined ? count : this._allAssets.length;
+            }
+        }
+
+        function search(term) {
+            this._searchTerm = term;
+            applyFilters.call(this);
+        }
+
+        function filterByType(type) {
+            this._typeFilter = type;
+            applyFilters.call(this);
+        }
+
+        function filterByStatus(status) {
+            this._statusFilter = status;
+            applyFilters.call(this);
+        }
+
+        function onRowClick(asset) {
+            console.log(asset)
+            Weventbus.emit('@assetSelected', {
+                event: { asset },
+                targetInstance: this
+            });
+        }
+
+        // ======================
+        // PREVIEW CONTROLS
+        // ======================
+        function loadData() {
+            if (!instance) createInstance();
+            // 실제 API 응답 구조: { response: { data: { assets: [...] } } }
+            setTimeout(() => {
+                instance.renderTable({ response: { data: { assets: [...mockAssets] } } });
+            })
+        }
+
+        function addRandomAsset() {
+            if (!instance) {
+                log('[Warning] Create instance first', 'warn');
+                return;
+            }
+
+            const types = ['ups', 'pdu', 'crac', 'sensor'];
+            const statuses = ['normal', 'warning', 'critical'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const id = `${type.toUpperCase()}-${String(Math.random()).slice(2, 5)}`;
+
+            const newAsset = {
+                id,
+                name: `New ${type.toUpperCase()} ${id.slice(-3)}`,
+                type,
+                zone: `Zone ${String.fromCharCode(65 + Math.floor(Math.random() * 3))}`,
+                status
+            };
+
+            instance._allAssets.push(newAsset);
+            applyFilters.call(instance);
+            log(`[Added] ${newAsset.id} (${newAsset.type}, ${newAsset.status})`);
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            createInstance();
+            loadData();
+        };
+    </script>
+</body>
+</html>
