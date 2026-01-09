@@ -11,7 +11,7 @@
  * - AssetList: @assetSelected (행 클릭), @refreshClicked (새로고침)
  */
 
-const { onEventBusHandlers, initThreeRaycasting, withSelector, makeIterator, getInstanceById } = Wkit;
+const { onEventBusHandlers, initThreeRaycasting, withSelector, makeIterator, getInstanceById, getInstanceByName } = Wkit;
 
 // ======================
 // EVENT BUS HANDLERS
@@ -22,7 +22,7 @@ this.eventBusHandlers = {
     // 3D 클릭 이벤트 (자기완결 컴포넌트 공통)
     // ─────────────────────────────────────────
 
-    '@assetClicked': ({ targetInstance }) => {
+    '@assetClicked': ({ event,targetInstance }) => {
         console.log('[Page] Asset clicked:', targetInstance.name, targetInstance.id);
         targetInstance.showDetail();
     },
@@ -32,14 +32,8 @@ this.eventBusHandlers = {
     // ─────────────────────────────────────────
 
     // 자산 행 선택 → 해당 3D 컴포넌트 팝업 표시
-    '@assetSelected': ({ event }) => {
-        const { asset } = event;
-        const iter = makeIterator(this.page, 'threeLayer');
-        const component = getInstanceById(asset.id, iter);
-
-        component?.showDetail
-            ? component.showDetail()
-            : console.warn('[Page] Component not found:', asset.id);
+    '@assetSelected': ({ event, targetInstance }) => {
+        console.log(event, targetInstance)
     },
 
     // 새로고침 버튼 클릭 → GlobalDataPublisher로 데이터 재발행

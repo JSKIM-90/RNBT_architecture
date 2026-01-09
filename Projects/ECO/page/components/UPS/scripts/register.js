@@ -133,7 +133,7 @@ function showDetail(assetId) {
         this.datasetInfo,
         fx.each(({ datasetName, render }) =>
             fx.go(
-                fetchData(this.page, datasetName, { id: targetId }),
+                fetchData(this.page, datasetName, { assetId: targetId }),
                 result => result?.response?.data,
                 data => data && render.forEach(fn => this[fn](data))
             )

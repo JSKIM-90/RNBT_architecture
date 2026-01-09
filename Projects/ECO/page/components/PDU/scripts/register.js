@@ -1,22 +1,21 @@
 /*
  * PDU - Self-Contained 3D Component (Tabbed UI)
  *
- * applyShadowPopupMixin + applyTabulatorMixin을 사용한 탭 팝업 컴포넌트
+ * applyShadowPopupMixin을 사용한 탭 팝업 컴포넌트
  *
  * 핵심 구조:
- * 1. datasetInfo - 데이터 정의 (pdu, circuits, history)
+ * 1. datasetInfo - 데이터 정의 (pdu, history)
  * 2. Data Config - API 필드 매핑
- * 3. Table Config - Tabulator 컬럼 정의
- * 4. Chart Config - ECharts 옵션 빌더
- * 5. 렌더링 함수 바인딩
- * 6. Public Methods - Page에서 호출
- * 7. customEvents - 이벤트 발행
- * 8. Template Data - HTML/CSS (publishCode에서 로드)
- * 9. Popup - template 기반 탭 Shadow DOM 팝업
+ * 3. Chart Config - ECharts 옵션 빌더
+ * 4. 렌더링 함수 바인딩
+ * 5. Public Methods - Page에서 호출
+ * 6. customEvents - 이벤트 발행
+ * 7. Template Data - HTML/CSS (publishCode에서 로드)
+ * 8. Popup - template 기반 탭 Shadow DOM 팝업
  */
 
 const { bind3DEvents, fetchData } = Wkit;
-const { applyShadowPopupMixin, applyEChartsMixin, applyTabulatorMixin } = PopupMixin;
+const { applyShadowPopupMixin, applyEChartsMixin } = PopupMixin;
 
 // ======================
 // TEMPLATE HELPER
@@ -26,6 +25,13 @@ function extractTemplate(htmlCode, templateId) {
     const doc = parser.parseFromString(htmlCode, 'text/html');
     const template = doc.querySelector(`template#${templateId}`);
     return template?.innerHTML || '';
+}
+
+function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 initComponent.call(this);
@@ -38,7 +44,6 @@ function initComponent() {
 
     this.datasetInfo = [
         { datasetName: 'pdu', render: ['renderPDUInfo'] },
-        { datasetName: 'pduCircuits', render: ['renderCircuitTable'] },
         { datasetName: 'pduHistory', render: ['renderPowerChart'] }
     ];
 
@@ -60,56 +65,9 @@ function initComponent() {
     ];
 
     // ======================
-    // 3. Table Config - Tabulator 컬럼 정의
-    // ======================
-    this.tableConfig = {
-        selector: '.table-container',
-        columns: [
-            { title: 'ID', field: 'id', widthGrow: 0.5, hozAlign: 'right' },
-            { title: 'Name', field: 'name', widthGrow: 2 },
-            {
-                title: 'Current',
-                field: 'current',
-                widthGrow: 1,
-                hozAlign: 'right',
-                formatter: (cell) => `${cell.getValue()}A`
-            },
-            {
-                title: 'Power',
-                field: 'power',
-                widthGrow: 1,
-                hozAlign: 'right',
-                formatter: (cell) => `${cell.getValue()}kW`
-            },
-            {
-                title: 'Status',
-                field: 'status',
-                widthGrow: 1,
-                formatter: (cell) => {
-                    const value = cell.getValue();
-                    const colors = { active: '#22c55e', inactive: '#8892a0' };
-                    return `<span style="color: ${colors[value] || '#8892a0'}">${value}</span>`;
-                }
-            },
-            {
-                title: 'Breaker',
-                field: 'breaker',
-                widthGrow: 0.8,
-                formatter: (cell) => {
-                    const value = cell.getValue();
-                    const color = value === 'on' ? '#22c55e' : '#ef4444';
-                    return `<span style="color: ${color}">${value.toUpperCase()}</span>`;
-                }
-            }
-        ],
-        optionBuilder: this._getTableOption.bind(this)
-    };
-
-    // ======================
-    // 4. Chart Config - ECharts 옵션 빌더
+    // 3. Chart Config - ECharts 옵션 빌더
     // ======================
     this.chartConfig = {
-        selector: '.chart-container',
         xKey: 'timestamps',
         series: [
             { yKey: 'power', name: 'Power (kW)', color: '#3b82f6', smooth: true, areaStyle: true },
@@ -119,22 +77,19 @@ function initComponent() {
     };
 
     // ======================
-    // 5. 렌더링 함수 바인딩
+    // 4. 렌더링 함수 바인딩
     // ======================
-    this.renderPDUInfo = renderPDUInfo.bind(this, [...this.baseInfoConfig, ...this.pduInfoConfig]);
-    this.renderCircuitTable = renderCircuitTable.bind(this, this.tableConfig);
-    this.renderPowerChart = renderPowerChart.bind(this, this.chartConfig);
+    this.renderPDUInfo = renderPDUInfo.bind(this);
+    this.renderPowerChart = renderPowerChart.bind(this);
 
     // ======================
-    // 6. Public Methods
+    // 5. Public Methods
     // ======================
     this.showDetail = showDetail.bind(this);
     this.hideDetail = hideDetail.bind(this);
-    this._switchTab = switchTab.bind(this);
-    this._getTableOption = getTableOption.bind(this);
 
     // ======================
-    // 7. 이벤트 발행
+    // 6. 이벤트 발행
     // ======================
     this.customEvents = {
         click: '@assetClicked'
@@ -143,30 +98,34 @@ function initComponent() {
     bind3DEvents(this, this.customEvents);
 
     // ======================
-    // 8. Template Config
+    // 7. Template Config
     // ======================
     this.templateConfig = {
         popup: 'popup-pdu',
     };
 
-    // ======================
-    // 9. Popup (template 기반 탭)
-    // ======================
     this.popupCreatedConfig = {
         chartSelector: '.chart-container',
-        tableSelector: '.table-container',
         events: {
             click: {
-                '.close-btn': () => this.hideDetail(),
-                '.tab-btn': (e) => this._switchTab(e.target.dataset.tab)
+                '.close-btn': () => this.hideDetail()
             }
         }
     };
 
+    // ======================
+    // 8. Popup Setup
+    // ======================
     const { htmlCode, cssCode } = this.properties.publishCode || {};
-    this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
+    const ctx = this;
+
+    this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
     this.getPopupStyles = () => cssCode || '';
-    this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
+    this.onPopupCreated = function() {
+        const { chartSelector, events } = ctx.popupCreatedConfig;
+        if (chartSelector) ctx.createChart(chartSelector);
+        if (events) ctx.bindPopupEvents(events);
+    };
 
     applyShadowPopupMixin(this, {
         getHTML: this.getPopupHTML,
@@ -175,7 +134,6 @@ function initComponent() {
     });
 
     applyEChartsMixin(this);
-    applyTabulatorMixin(this);
 
     console.log('[PDU] Registered:', this._defaultAssetId);
 }
@@ -187,13 +145,12 @@ function initComponent() {
 function showDetail(assetId) {
     const targetId = assetId || this._defaultAssetId;
     this.showPopup();
-    this._switchTab('circuits');
 
     fx.go(
         this.datasetInfo,
         fx.each(({ datasetName, render }) =>
             fx.go(
-                fetchData(this.page, datasetName, { id: targetId }),
+                fetchData(this.page, datasetName, { assetId: targetId }),
                 result => result?.response?.data,
                 data => data && render.forEach(fn => this[fn](data))
             )
@@ -208,27 +165,12 @@ function hideDetail() {
     this.hidePopup();
 }
 
-function switchTab(tabName) {
-    const buttons = this.popupQueryAll('.tab-btn');
-    const panels = this.popupQueryAll('.tab-panel');
-
-    buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
-    panels.forEach(panel => panel.classList.toggle('active', panel.dataset.panel === tabName));
-
-    if (tabName === 'power') {
-        const chart = this.getChart('.chart-container');
-        if (chart) chart.resize();
-    } else if (tabName === 'circuits') {
-        const table = this.getTable('.table-container');
-        if (table) table.redraw(true);
-    }
-}
-
 // ======================
 // RENDER FUNCTIONS
 // ======================
 
-function renderPDUInfo(config, data) {
+function renderPDUInfo(data) {
+    const config = [...this.baseInfoConfig, ...this.pduInfoConfig];
     fx.go(
         config,
         fx.each(({ key, selector, dataAttr, suffix }) => {
@@ -236,36 +178,15 @@ function renderPDUInfo(config, data) {
             if (!el) return;
             const value = data[key];
             el.textContent = suffix ? `${value}${suffix}` : value;
-            dataAttr && (el.dataset[dataAttr] = value);
+            if (dataAttr) el.dataset[dataAttr] = value;
         })
     );
 }
 
-function renderCircuitTable(config, data) {
-    const { optionBuilder } = config;
-    const option = optionBuilder(config, data.circuits);
-    this.updateTable('.table-container', data.circuits, option);
-}
-
-function renderPowerChart(config, data) {
-    const { optionBuilder, ...chartConfig } = config;
+function renderPowerChart(data) {
+    const { optionBuilder, ...chartConfig } = this.chartConfig;
     const option = optionBuilder(chartConfig, data);
     this.updateChart('.chart-container', option);
-}
-
-// ======================
-// TABLE OPTION BUILDER
-// ======================
-
-function getTableOption(config, data) {
-    return {
-        layout: 'fitColumns',
-        responsiveLayout: 'collapse',
-        height: 250,
-        placeholder: 'No circuits found',
-        initialSort: [{ column: 'power', dir: 'desc' }],
-        columns: config.columns
-    };
 }
 
 // ======================
@@ -332,21 +253,4 @@ function getDualAxisChartOption(config, data) {
             } : null
         }))
     };
-}
-
-function hexToRgba(hex, alpha) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-// ======================
-// POPUP LIFECYCLE
-// ======================
-
-function onPopupCreated({ chartSelector, tableSelector, events }) {
-    chartSelector && this.createChart(chartSelector);
-    tableSelector && this.createTable(tableSelector);
-    events && this.bindPopupEvents(events);
 }

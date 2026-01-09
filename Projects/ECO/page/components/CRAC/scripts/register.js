@@ -60,9 +60,9 @@ function initComponent() {
     this.chartConfig = {
         xKey: 'timestamps',
         series: [
-            { yKey: 'supplyTemps', name: 'Supply', color: '#3b82f6', yAxisIndex: 0 },
-            { yKey: 'returnTemps', name: 'Return', color: '#ef4444', yAxisIndex: 0 },
-            { yKey: 'humidities', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
+            { yKey: 'supplyTemp', name: 'Supply', color: '#3b82f6', yAxisIndex: 0 },
+            { yKey: 'returnTemp', name: 'Return', color: '#ef4444', yAxisIndex: 0 },
+            { yKey: 'humidity', name: 'Humidity', color: '#22c55e', yAxisIndex: 1 }
         ],
         yAxis: [
             { name: '°C', position: 'left' },
@@ -227,7 +227,7 @@ function showDetail(assetId) {
         this.datasetInfo,
         fx.each(({ datasetName, render }) =>
             fx.go(
-                fetchData(this.page, datasetName, { id: targetId }),
+                fetchData(this.page, datasetName, { assetId: targetId }),
                 result => result?.response?.data,
                 data => data && render.forEach(fn => this[fn](data))
             )
