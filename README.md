@@ -2326,6 +2326,17 @@ run();
 3. 파이프라인의 정상 흐름은 함수 구성으로 결정된다
 4. 에러 처리 전략은 catch 위치로 결정된다
 
+### 추가 자료
+
+**[docs/fail_fast_safe_error.md](docs/fail_fast_safe_error.md)** - Fail-fast vs Fail-safe 에러 전략 상세 가이드
+
+이 문서는 **"언제 Fail-fast를 쓰고, 언제 Fail-safe(격리)를 써야 하는가"**에 대한 판단 기준과 구체적인 패턴을 제공합니다.
+
+| 전략 | 사용 시점 | 특징 |
+|------|----------|------|
+| **Fail-fast** | 초기 로딩이 완전해야 할 때, 중간 실패가 이후 단계를 무효화할 때 | 한 번 실패하면 전체 중단 |
+| **Fail-safe** | topic들이 독립적일 때, 일부 데이터 유실을 허용할 때 | 개별 catch로 격리, 전부 시도 보장 |
+
 ---
 
 ## Component Structure Guide
@@ -2721,9 +2732,22 @@ setupInternalHandlers.call(this);
 
 ### 일반 컴포넌트 vs 자기완결 컴포넌트 비교
 
+#### 왜 "자기완결"인가?
+
+자기완결 컴포넌트는 **3D 모델링, 즉 현실 세계의 물체**를 표현합니다.
+
+현실 세계의 물체(UPS, 온도 센서, 에어컨 등)는 **자체적으로 데이터를 소유**합니다:
+- 온도 센서는 온도 값을 "가지고" 있다
+- UPS는 배터리 상태를 "가지고" 있다
+- 에어컨은 가동 상태를 "가지고" 있다
+
+반면 일반 2D 컴포넌트(테이블, 차트, 리스트 등)는 **데이터 표현 도구**입니다. 데이터를 "가지고" 있는 게 아니라 "보여주는" 것입니다.
+
 | 구분 | 일반 2D 컴포넌트 | 자기완결 3D 컴포넌트 |
 |------|-----------------|-------------------|
+| **본질** | 데이터 표현 도구 | 현실 세계 물체 (데이터 소유) |
 | **위치** | `Components/` | `Projects/[Project]/self-contained-components/` |
+| **데이터 흐름** | 페이지가 전달 | 컴포넌트가 직접 fetch |
 | **구조** | Master/Page/Component 계층 | Shadow DOM 팝업 |
 | **내부 이벤트 등록** | `setupInternalHandlers()` | `popupCreatedConfig.events` |
 | **핸들러 저장** | `this._internalHandlers = {}` | `popupCreatedConfig` 객체 |
