@@ -12,7 +12,7 @@
  */
 
 const { unsubscribe } = GlobalDataPublisher;
-const { unbindEvents } = Wkit;
+const { removeCustomEvents } = Wkit;
 
 // ======================
 // CLEANUP
@@ -39,7 +39,7 @@ if (this.subscriptions) {
 }
 
 if (this.customEvents) {
-    unbindEvents(this, this.customEvents);
+    removeCustomEvents(this, this.customEvents);
     this.customEvents = null;
 }
 
