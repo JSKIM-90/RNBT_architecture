@@ -966,7 +966,9 @@ const sensorInfoConfig = [
     { key: 'temperature', selector: '.sensor-temp' }
 ];
 
-function renderInfo(config, data) {
+function renderInfo(config, { response }) {
+    const { data } = response;
+    if (!data) return;
     config.forEach(({ key, selector }) => {
         this.popupQuery(selector).textContent = data[key];
     });
@@ -1020,7 +1022,9 @@ this.sensorInfoConfig = [
 ];
 
 // 렌더링 함수 - 템플릿 구조를 모름
-function renderInfo(config, data) {
+function renderInfo(config, { response }) {
+    const { data } = response;
+    if (!data) return;
     fx.go(
         config,
         fx.each(({ key, selector, dataAttr }) => {
@@ -1078,7 +1082,9 @@ function getLineChartOption(config, data) {
 }
 
 // 렌더링 함수
-function renderChart(config, data) {
+function renderChart(config, { response }) {
+    const { data } = response;
+    if (!data) return;
     const { optionBuilder, ...chartConfig } = config;
     const option = optionBuilder(chartConfig, data);
     this.updateChart('.chart-container', option);
