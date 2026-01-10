@@ -92,7 +92,7 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
         `;
 
         // 페이지에 추가
-        instance.appendElement.appendChild(instance._popup.host);
+        instance.page.appendElement.appendChild(instance._popup.host);
 
         // 콜백
         if (onCreated) {
