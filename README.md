@@ -1312,12 +1312,17 @@ Shadow DOM 팝업 내에서 Tabulator 테이블을 관리한다.
 | `getTable(selector)` | 인스턴스 조회 |
 | `updateTable(selector, data)` | setData 호출 |
 | `updateTableOptions(selector, options)` | 컬럼/데이터 업데이트 |
+| `isTableReady(selector)` | 테이블 초기화 완료 여부 확인 |
 
 **특징:**
 - `applyShadowPopupMixin` 이후 호출 필수
 - Shadow DOM에 Tabulator CSS 자동 주입 (midnight 테마)
 - ResizeObserver로 컨테이너 크기 변경 자동 감지
 - `destroyPopup()` 호출 시 테이블 자동 정리
+- `tableBuilt` 이벤트로 초기화 완료 추적 → `isTableReady()`로 확인 가능
+- height 옵션 미지정 시 CSS height 적용됨 (JS 옵션이 CSS보다 우선순위 높음)
+
+> **실제 적용 사례**: [ECO 프로젝트 PDU 컴포넌트](Projects/ECO/README.md#pdu-컴포넌트-구조) - 탭 UI + 테이블 + 차트 조합
 
 #### destroyPopup 체이닝 패턴
 
@@ -1499,20 +1504,20 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
      * @param {Object} events - { eventType: { selector: handler } }
      */
     instance.bindPopupEvents = function(events) {
-        Object.entries(events).forEach(([eventType, handlers]) => {
+        fx.each(([eventType, handlers]) => {
             const listener = (e) => {
-                Object.entries(handlers).forEach(([selector, handler]) => {
+                fx.each(([selector, handler]) => {
                     if (e.target.closest(selector)) {
                         handler.call(instance, e);
                     }
-                });
+                }, Object.entries(handlers));
             };
 
             instance._popup.shadowRoot.addEventListener(eventType, listener);
             instance._popup.eventCleanups.push(() => {
                 instance._popup.shadowRoot.removeEventListener(eventType, listener);
             });
-        });
+        }, Object.entries(events));
     };
 
     /**
@@ -1520,7 +1525,7 @@ PopupMixin.applyShadowPopupMixin = function(instance, options) {
      */
     instance.destroyPopup = function() {
         // 이벤트 정리
-        instance._popup.eventCleanups.forEach(cleanup => cleanup());
+        fx.each(cleanup => cleanup(), instance._popup.eventCleanups);
         instance._popup.eventCleanups = [];
 
         // DOM 제거
@@ -1609,10 +1614,10 @@ PopupMixin.applyEChartsMixin = function(instance) {
     const originalDestroyPopup = instance.destroyPopup;
     instance.destroyPopup = function() {
         // 차트 정리
-        instance._popup.charts.forEach(({ chart, resizeObserver }) => {
+        fx.each(({ chart, resizeObserver }) => {
             resizeObserver.disconnect();
             chart.dispose();
-        });
+        }, instance._popup.charts.values());
         instance._popup.charts.clear();
 
         // 원래 destroyPopup 호출
@@ -1636,6 +1641,7 @@ PopupMixin.applyEChartsMixin = function(instance) {
  *   this.createTable('.table-container', options);  // Tabulator 생성 + ResizeObserver
  *   this.updateTable('.table-container', data);     // setData
  *   this.getTable('.table-container');              // 인스턴스 조회
+ *   this.isTableReady('.table-container');          // 초기화 완료 여부 확인
  *   // destroyPopup() 호출 시 테이블 자동 정리 (applyShadowPopupMixin 확장)
  *
  * 옵션 빌더 패턴:
@@ -1673,7 +1679,7 @@ PopupMixin.applyTabulatorMixin = function(instance) {
     }
 
     // 테이블 저장소 추가
-    instance._popup.tables = new Map();  // selector → { table, resizeObserver }
+    instance._popup.tables = new Map();  // selector → { table, resizeObserver, state }
     instance._popup.tabulatorCssInjected = false;
 
     // Tabulator CSS 파일 경로 (midnight 테마 - 다크 모드)
@@ -1735,18 +1741,28 @@ PopupMixin.applyTabulatorMixin = function(instance) {
         const defaultOptions = {
             layout: 'fitColumns',
             responsiveLayout: 'collapse',
-            height: '100%',
         };
+
+        // 초기화 상태 추적
+        const tableState = { initialized: false };
 
         const table = new Tabulator(container, { ...defaultOptions, ...options });
 
+        // tableBuilt 이벤트로 초기화 완료 감지
+        table.on('tableBuilt', () => {
+            tableState.initialized = true;
+        });
+
         // ResizeObserver로 컨테이너 크기 변경 감지
         const resizeObserver = new ResizeObserver(() => {
-            table.redraw();
+            // Tabulator 초기화 완료 후에만 redraw
+            if (tableState.initialized) {
+                table.redraw();
+            }
         });
         resizeObserver.observe(container);
 
-        instance._popup.tables.set(selector, { table, resizeObserver });
+        instance._popup.tables.set(selector, { table, resizeObserver, state: tableState });
 
         return table;
     };
@@ -1759,6 +1775,16 @@ PopupMixin.applyTabulatorMixin = function(instance) {
      */
     instance.getTable = function(selector) {
         return instance._popup.tables.get(selector)?.table || null;
+    };
+
+    /**
+     * 테이블 초기화 완료 여부 확인
+     *
+     * @param {string} selector - 테이블 컨테이너 선택자
+     * @returns {boolean} 초기화 완료 여부
+     */
+    instance.isTableReady = function(selector) {
+        return instance._popup.tables.get(selector)?.state?.initialized || false;
     };
 
     /**
@@ -1810,11 +1836,11 @@ PopupMixin.applyTabulatorMixin = function(instance) {
     const originalDestroyPopup = instance.destroyPopup;
     instance.destroyPopup = function() {
         // 테이블 정리
-        instance._popup.tables.forEach(({ table, resizeObserver }) => {
+        fx.each(({ table, resizeObserver }) => {
             resizeObserver.disconnect();
             table.off();  // 이벤트 해제
             table.destroy();
-        });
+        }, instance._popup.tables.values());
         instance._popup.tables.clear();
 
         // 원래 destroyPopup 호출 (차트, 이벤트, DOM 정리)
