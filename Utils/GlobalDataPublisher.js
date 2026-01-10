@@ -48,8 +48,9 @@ const GlobalDataPublisher = (() => {
       const subs = subscriberTable.get(topic);
       if (!subs) return;
 
-      const toDelete = fx.find(sub => sub.instance === instance, subs);
-      if (toDelete) subs.delete(toDelete);
+      for (const sub of subs) {
+        if (sub.instance === instance) subs.delete(sub);
+      }
     },
     getGlobalMappingSchema({
       topic = 'weather',
