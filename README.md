@@ -357,7 +357,9 @@ fx.go(
     )
 );
 
-function renderTable(data) {
+function renderTable({ response }) {
+    const { data } = response;
+    if (!data) return;
     console.log(`[Render Table] ${this.name}`, data);
     // 렌더링 로직
 }
@@ -1333,10 +1335,13 @@ Shadow DOM 팝업 내에서 Tabulator 테이블을 관리한다.
 const originalDestroyPopup = instance.destroyPopup;
 instance.destroyPopup = function() {
     // 차트 정리
-    instance._popup.charts.forEach(({ chart, resizeObserver }) => {
-        resizeObserver.disconnect();
-        chart.dispose();
-    });
+    fx.go(
+        [...instance._popup.charts.values()],
+        fx.each(({ chart, resizeObserver }) => {
+            resizeObserver.disconnect();
+            chart.dispose();
+        })
+    );
     instance._popup.charts.clear();
 
     // 원래 destroyPopup 호출
@@ -1948,10 +1953,10 @@ function initComponent() {
     };
 
     // ======================
-    // RENDER FUNCTIONS
+    // RENDER FUNCTIONS (bind(this, config) 패턴)
     // ======================
-    this.renderSensorInfo = renderSensorInfo.bind(this);
-    this.renderChart = renderChart.bind(this);
+    this.renderSensorInfo = renderSensorInfo.bind(this, [...this.baseInfoConfig, ...this.sensorInfoConfig]);
+    this.renderChart = renderChart.bind(this, this.chartConfig);
 
     // ======================
     // PUBLIC METHODS
@@ -1985,18 +1990,13 @@ function initComponent() {
     };
 
     // ======================
-    // POPUP SETUP
+    // POPUP SETUP (bind 패턴 사용)
     // ======================
     const { htmlCode, cssCode } = this.properties.publishCode || {};
-    const ctx = this;
 
-    this.getPopupHTML = () => extractTemplate(htmlCode || '', ctx.templateConfig.popup);
+    this.getPopupHTML = () => extractTemplate(htmlCode || '', this.templateConfig.popup);
     this.getPopupStyles = () => cssCode || '';
-    this.onPopupCreated = function() {
-        const { chartSelector, events } = ctx.popupCreatedConfig;
-        if (chartSelector) ctx.createChart(chartSelector);
-        if (events) ctx.bindPopupEvents(events);
-    };
+    this.onPopupCreated = onPopupCreated.bind(this, this.popupCreatedConfig);
 
     applyShadowPopupMixin(this, {
         getHTML: this.getPopupHTML,
@@ -2010,10 +2010,9 @@ function initComponent() {
 }
 
 // ======================
-// RENDER FUNCTIONS
+// RENDER FUNCTIONS (config를 첫 번째 인자로 받음)
 // ======================
-function renderSensorInfo(data) {
-    const config = [...this.baseInfoConfig, ...this.sensorInfoConfig];
+function renderSensorInfo(config, data) {
     fx.go(
         config,
         fx.each(({ key, selector, dataAttr }) => {
@@ -2026,10 +2025,18 @@ function renderSensorInfo(data) {
     );
 }
 
-function renderChart(data) {
-    const { optionBuilder, ...chartConfig } = this.chartConfig;
+function renderChart(config, data) {
+    const { optionBuilder, ...chartConfig } = config;
     const option = optionBuilder(chartConfig, data);
     this.updateChart('.chart-container', option);
+}
+
+// ======================
+// POPUP LIFECYCLE
+// ======================
+function onPopupCreated({ chartSelector, events }) {
+    if (chartSelector) this.createChart(chartSelector);
+    if (events) this.bindPopupEvents(events);
 }
 
 // ======================
